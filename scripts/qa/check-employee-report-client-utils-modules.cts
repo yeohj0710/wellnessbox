@@ -117,7 +117,7 @@ function run() {
 
   for (const [source, token] of [
     [clientSource, 'from "./_lib/client-utils.identity"'],
-    [clientSource, 'from "./_lib/client-utils.guidance"'],
+    [clientSource, 'from "./_lib/client-utils.format"'],
     [apiSource, 'from "./client-utils.identity"'],
     [apiSource, 'from "./client-utils.request"'],
     [syncFlowSource, 'from "./client-utils.identity"'],

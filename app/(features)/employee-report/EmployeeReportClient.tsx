@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { emitAuthSyncEvent } from "@/lib/client/auth-sync";
 import styles from "@/components/b2b/B2bUx.module.css";
 import ReportSummaryCards from "@/components/b2b/ReportSummaryCards";
 import InlineSpinnerLabel from "@/components/common/InlineSpinnerLabel";
@@ -544,6 +545,8 @@ export default function EmployeeReportClient({
 
   const resetIdentityFlow = useCallback(async () => {
     await deleteEmployeeSession().catch(() => null);
+    emitAuthSyncEvent({ scope: "b2b-employee-session", reason: "employee-report-reset" });
+    emitAuthSyncEvent({ scope: "nhis-link", reason: "employee-report-reset" });
     clearStoredIdentity();
     clearEmployeeSurveyDraftState();
     setWorkspace(null);
@@ -792,6 +795,8 @@ export default function EmployeeReportClient({
           identity,
           restartHealth: options?.restartHealth === true,
         });
+        emitAuthSyncEvent({ scope: "b2b-employee-session", reason: "employee-report-start" });
+        emitAuthSyncEvent({ scope: "nhis-link", reason: "employee-report-health-start" });
         saveStoredIdentity(identity);
         applyWorkspace(next);
         if (options?.restartHealth) {
@@ -925,6 +930,7 @@ export default function EmployeeReportClient({
 
     try {
       const signResult = await requestNhisSign();
+      emitAuthSyncEvent({ scope: "nhis-link", reason: "employee-report-sign-check" });
       if (!signResult.linked) {
         setPollingError(
           "카카오톡 인증 완료가 아직 확인되지 않았어요. 휴대폰에서 인증을 마친 뒤 다시 눌러 주세요."

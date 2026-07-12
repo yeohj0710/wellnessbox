@@ -19,6 +19,10 @@ const PROGRESSION_PATH = path.resolve(
   process.cwd(),
   "app/survey/_lib/use-survey-progression-actions.ts"
 );
+const CLIENT_MODEL_PATH = path.resolve(
+  process.cwd(),
+  "app/survey/_lib/survey-page-client-model.ts"
+);
 
 function run() {
   const checks: string[] = [];
@@ -27,6 +31,7 @@ function run() {
   const resultHelperSource = fs.readFileSync(RESULT_HELPER_PATH, "utf8");
   const persistenceSource = fs.readFileSync(PERSISTENCE_PATH, "utf8");
   const progressionSource = fs.readFileSync(PROGRESSION_PATH, "utf8");
+  const clientModelSource = fs.readFileSync(CLIENT_MODEL_PATH, "utf8");
 
   assert.match(
     clientSource,
@@ -61,7 +66,7 @@ function run() {
   }
   checks.push("hook_owns_answer_state_flow");
 
-  for (const source of [clientSource, persistenceSource, progressionSource]) {
+  for (const source of [clientModelSource, persistenceSource, progressionSource]) {
     assert.ok(
       source.includes("tryComputeSurveyResultFromAnswers(") ||
         source.includes("computeSurveyResultFromAnswers("),
