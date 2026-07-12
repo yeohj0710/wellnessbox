@@ -4,6 +4,7 @@ import { useMemo, useRef, useState } from "react";
 import ResearchOverview from "./ResearchOverview";
 import BlindTestExplorer from "./BlindTestExplorer";
 import ProStudySimulation from "./ProStudySimulation";
+import AdvancedProfileFields, { DEFAULT_ADVANCED } from "./AdvancedProfileFields";
 import InferenceWorkbench from "./InferenceWorkbench";
 import ResearchEvidencePanel from "./ResearchEvidencePanel";
 import type { InferenceExplanation } from "./research-types";
@@ -37,6 +38,9 @@ const GOALS = [
   ["bone_health", "뼈 건강"],
   ["immune_support", "면역 건강"],
   ["bowel_regular", "배변 활동"],
+  ["cardiovascular_wellbeing", "심혈관 건강"], ["exercise_recovery", "운동 회복"],
+  ["eye_health", "눈 건강"], ["maintain_muscle", "근육 유지"],
+  ["maternal_wellbeing", "모체 건강"], ["rapid_weight_loss", "체중 관리"],
 ] as const;
 
 const CONDITIONS = [
@@ -45,6 +49,9 @@ const CONDITIONS = [
   ["type_2_diabetes", "제2형 당뇨"],
   ["hypertension", "고혈압"],
   ["hemochromatosis", "철 과부하 질환"],
+  ["constipation", "변비"], ["hypercalcemia", "고칼슘혈증"],
+  ["hypothyroidism", "갑상선기능저하"], ["irritable_bowel_syndrome", "과민성장증후군"],
+  ["osteopenia", "골감소증"], ["postmenopause", "폐경 후"], ["recent_antibiotic_use", "최근 항생제 사용"],
 ] as const;
 
 const MEDICATIONS = [
@@ -52,6 +59,7 @@ const MEDICATIONS = [
   ["metformin", "메트포르민"],
   ["levothyroxine", "레보티록신"],
   ["statin", "스타틴"],
+  ["ace_inhibitor", "ACE 억제제"],
 ] as const;
 
 const CONSENTS = [
@@ -91,9 +99,9 @@ export default function InterimUserConsole() {
   const [goal, setGoal] = useState("sleep_quality");
   const [conditions, setConditions] = useState<string[]>([]);
   const [medications, setMedications] = useState<string[]>([]);
-  const [pregnant, setPregnant] = useState(false);
   const [fishAllergy, setFishAllergy] = useState(false);
   const [redFlag, setRedFlag] = useState(false);
+  const [advanced, setAdvanced] = useState(DEFAULT_ADVANCED);
   const [consents, setConsents] = useState<string[]>([]);
   const [busyAction, setBusyAction] = useState<LabAction | null>(null);
   const [state, setState] = useState("NEW");
@@ -109,16 +117,24 @@ export default function InterimUserConsole() {
   const profile = useMemo(
     () => ({
       age,
-      sex: "unknown",
-      pregnant,
+      sex: advanced.sex,
+      pregnant: advanced.pregnancyStatus === "pregnant",
+      pregnancyStatus: advanced.pregnancyStatus,
+      monthlyBudgetKrw: advanced.monthlyBudgetKrw,
+      maxDailyPills: advanced.maxDailyPills,
+      preferredForm: advanced.preferredForm,
       goals: [goal],
       conditions,
       medicationClasses: medications,
       allergies: fishAllergy ? ["fish"] : [],
-      currentSupplements: [],
-      riskFlags: redFlag ? ["red_flag_chest_pain"] : [],
+      dietPatterns: advanced.dietPatterns,
+      currentSupplements: advanced.currentSupplements,
+      wearableFeatures: advanced.wearableFeatures,
+      symptoms: advanced.symptoms,
+      labs: advanced.labs,
+      riskFlags: [...new Set([...(redFlag ? ["red_flag_chest_pain"] : []), ...advanced.riskFlags, ...(advanced.pregnancyStatus === "pregnant" ? ["pregnant"] : []), ...(advanced.pregnancyStatus === "lactating" ? ["lactating"] : []), ...(advanced.symptoms.some(item => item.code === "chest_pain") ? ["red_flag_chest_pain"] : []), ...(advanced.symptoms.some(item => item.code === "abdominal_pain" && item.severity === "severe") ? ["red_flag_severe_abdominal_pain"] : [])])],
     }),
-    [age, conditions, fishAllergy, goal, medications, pregnant, redFlag]
+    [advanced, age, conditions, fishAllergy, goal, medications, redFlag]
   );
 
   const recommendations = Array.isArray(recommendationResult?.recommendations)
@@ -220,6 +236,7 @@ export default function InterimUserConsole() {
               성능과 실행 결과를 검증합니다.
             </p>
           </div>
+
           <div className={styles.statusPanel}>
             <span className={styles.badge}>PROXY_GOLD_SIMULATION</span>
             <dl className={styles.statusList}>
@@ -258,6 +275,8 @@ export default function InterimUserConsole() {
             </label>
           </div>
 
+          <AdvancedProfileFields value={advanced} onChange={setAdvanced} />
+
           <div className={styles.optionGroup}>
             <strong>건강 상태</strong>
             <div className={styles.chips}>
@@ -289,7 +308,6 @@ export default function InterimUserConsole() {
           </div>
 
           <div className={styles.checkGrid}>
-            <label><input type="checkbox" checked={pregnant} onChange={(e) => setPregnant(e.target.checked)} /> 임신 중</label>
             <label><input type="checkbox" checked={fishAllergy} onChange={(e) => setFishAllergy(e.target.checked)} /> 어류 알레르기</label>
             <label className={styles.dangerCheck}><input type="checkbox" checked={redFlag} onChange={(e) => setRedFlag(e.target.checked)} /> 흉통 등 응급 위험 신호 시험</label>
           </div>

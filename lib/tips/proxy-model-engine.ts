@@ -14,11 +14,20 @@ export type TipsLabProfile = {
   age: number;
   sex?: "female" | "male" | "unknown";
   pregnant?: boolean;
+  pregnancyStatus?: "not_applicable" | "not_pregnant" | "pregnant" | "lactating";
+  monthlyBudgetKrw?: number;
+  maxDailyPills?: number;
+  preferredForm?: "capsule" | "powder" | "tablet";
   goals: string[];
   conditions: string[];
   medicationClasses: string[];
   allergies: string[];
+  dietPatterns?: string[];
   currentSupplements: string[];
+  wearableFeatures?: string[];
+  geneticFeatures?: string[];
+  symptoms?: Array<{ code: string; severity: "mild" | "moderate" | "severe"; redFlag?: boolean }>;
+  labs?: Record<string, string>;
   riskFlags: string[];
 };
 export type ModelCandidate = { ingredientId: string; label: string; score: number };
@@ -33,11 +42,12 @@ export type ExplainedCandidate = ModelCandidate & {
 };
 
 function ageBand(age: number) {
-  if (age < 30) return "20s";
-  if (age < 40) return "30s";
-  if (age < 50) return "40s";
-  if (age < 60) return "50s";
-  return "60plus";
+  if (age < 30) return "18-29";
+  if (age < 40) return "30-39";
+  if (age < 50) return "40-49";
+  if (age < 60) return "50-59";
+  if (age < 70) return "60-69";
+  return "70+";
 }
 
 function sigmoid(value: number) {
@@ -90,21 +100,28 @@ export function predictProxyTokens(snapshot: ProxyModelSnapshot, tokens: string[
   return { tokens, activeFeatureCount: indices.length, predictedCount, predicted: ranked.slice(0, predictedCount).map((row) => row.ingredientId), ranked };
 }
 
-function profileTokens(profile: TipsLabProfile) {
+export function profileTokens(profile: TipsLabProfile) {
   const result = new Set<string>([
     `age=${ageBand(profile.age)}`,
-    `sex=${profile.sex ?? "unknown"}`,
-    `pregnancy=${profile.pregnant ? "pregnant" : "not_pregnant"}`,
-    "budget=50000",
-    "pill_limit=3",
-    "form=any",
+    `pregnancy=${profile.pregnancyStatus ?? (profile.pregnant ? "pregnant" : "not_pregnant")}`,
+    `budget=${profile.monthlyBudgetKrw ?? 50000}`,
+    `pill_limit=${profile.maxDailyPills ?? 3}`,
+    `form=${profile.preferredForm ?? "capsule"}`,
   ]);
+  if (profile.sex === "female" || profile.sex === "male") result.add(`sex=${profile.sex}`);
   const lists: Array<[string, string[]]> = [
     ["goals", profile.goals], ["conditions", profile.conditions],
     ["medication_classes", profile.medicationClasses], ["allergies", profile.allergies],
     ["current_supplements", profile.currentSupplements], ["risk_flags", profile.riskFlags],
+    ["diet_patterns", profile.dietPatterns ?? []], ["wearable_features", profile.wearableFeatures ?? []],
+    ["genetic_features", profile.geneticFeatures ?? []],
   ];
   for (const [key, values] of lists) for (const value of values) result.add(`${key}:${value}`);
+  for (const symptom of profile.symptoms ?? []) {
+    result.add(`symptom:${symptom.code}`); result.add(`symptom_severity:${symptom.severity}`);
+    if (symptom.redFlag) result.add("symptom:red_flag");
+  }
+  for (const [name, status] of Object.entries(profile.labs ?? {})) if (status) result.add(`lab:${name}=${status}`);
   return [...result].sort();
 }
 

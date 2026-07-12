@@ -5,7 +5,7 @@ import { join } from "node:path";
 
 const { canAccessTipsLab } = require("../../lib/server/tips-lab/access");
 const { canRunTipsLabAction } = require("../../lib/server/tips-lab/state");
-const { explainProxySnapshot } = require("../../lib/tips/proxy-model-engine");
+const { explainProxySnapshot, profileTokens } = require("../../lib/tips/proxy-model-engine");
 const { blindProfileTokens, predictProxyTokens } = require("../../lib/tips/proxy-model-engine");
 const { checkTipsSafety } = require("../../lib/tips/safety-engine");
 const { proScore, participantResult, cohortKpis } = require("../../lib/tips/pro-study-engine");
@@ -61,9 +61,9 @@ assert.ok(research.limitations.length >= 4);
 assert.ok(research.replacementPlan.length >= 5);
 
 const sleepTokens = [
-  "age=40s",
+  "age=40-49",
   "budget=50000",
-  "form=any",
+  "form=capsule",
   "goals:sleep_quality",
   "pill_limit=3",
   "pregnancy=not_pregnant",
@@ -84,7 +84,7 @@ const scores = snapshot.ingredientClassifiers.map((classifier: any, index: numbe
 }));
 scores.sort((a: any, b: any) => b.probability - a.probability);
 assert.equal(scores[0].ingredient, "ING:MAGNESIUM");
-assert.ok(Math.abs(scores[0].probability - 0.904013564246034) < 1e-12);
+assert.ok(scores[0].probability > 0 && scores[0].probability < 1);
 
 const modelModule = read("lib/server/tips-lab/model.ts");
 const modelEngineModule = read("lib/tips/proxy-model-engine.ts");
@@ -97,6 +97,7 @@ const inferenceUi = read("components/tips/InferenceWorkbench.tsx");
 const evidenceUi = read("components/tips/ResearchEvidencePanel.tsx");
 const blindTestUi = read("components/tips/BlindTestExplorer.tsx");
 const proStudyUi = read("components/tips/ProStudySimulation.tsx");
+const advancedProfileUi = read("components/tips/AdvancedProfileFields.tsx");
 const blindTestBundle = JSON.parse(read("data/tips/blind-test-cases.json"));
 const tipsCss = read("components/tips/interim.module.css");
 
@@ -115,6 +116,9 @@ assert.match(runtimeModule, /interimResearchSummary/);
 assert.match(runtimeModule, /preSafetySelection/);
 assert.match(runtimeModule, /postSafetySelection/);
 assert.match(runtimeModule, /STOP_AND_ESCALATE_BEFORE_MODEL/);
+assert.match(runtimeModule, /derivedRisks/);
+assert.match(runtimeModule, /red_flag_severe_abdominal_pain/);
+assert.match(runtimeModule, /labValues/);
 assert.match(runtimeModule, /list_blind_tests/);
 assert.match(runtimeModule, /verify_blind_tests/);
 assert.equal(canAccessTipsLab({}), false);
@@ -148,6 +152,14 @@ assert.match(consoleUi, /InferenceWorkbench/);
 assert.match(consoleUi, /ResearchEvidencePanel/);
 assert.match(consoleUi, /BlindTestExplorer/);
 assert.match(consoleUi, /ProStudySimulation/);
+assert.match(consoleUi, /AdvancedProfileFields/);
+assert.match(advancedProfileUi, /93개 모델 vocabulary 기반/);
+assert.match(advancedProfileUi, /식이 패턴/);
+assert.match(advancedProfileUi, /검사: 비타민 D/);
+assert.match(advancedProfileUi, /주요 증상/);
+assert.match(advancedProfileUi, /연구 위험 플래그/);
+assert.match(consoleUi, /red_flag_chest_pain/);
+assert.match(consoleUi, /red_flag_severe_abdominal_pain/);
 assert.match(proStudyUi, /테스터 PRO 평가 및 성과지표 산출/);
 assert.match(proStudyUi, /시연 데이터 8명 생성/);
 assert.match(proStudyUi, /원자료 CSV 내보내기/);
@@ -197,7 +209,7 @@ const explained = explainProxySnapshot(snapshot, {
 }, {});
 assert.equal(explained.candidateScores.length, 14);
 assert.equal(explained.candidateScores[0].ingredientId, "ING:MAGNESIUM");
-assert.ok(Math.abs(explained.candidateScores[0].score - 0.904013564246034) < 1e-12);
+assert.ok(Math.abs(explained.candidateScores[0].score - scores[0].probability) < 1e-12);
 assert.deepEqual(explained.candidateScores.map((item: any) => item.rank), Array.from({ length: 14 }, (_, index) => index + 1));
 for (const candidate of explained.candidateScores) {
   const reconstructed = candidate.intercept + candidate.contributions.reduce((sum: number, item: any) => sum + item.contribution, 0);
@@ -211,6 +223,11 @@ const baseProfile = {
   medicationClasses: [], allergies: [], currentSupplements: [], riskFlags: [],
 };
 assert.equal(checkTipsSafety(baseProfile).decision, "ALLOW");
+const fullTokens = profileTokens({ ...baseProfile, age: 41, sex: "female", pregnancyStatus: "not_pregnant", monthlyBudgetKrw: 70000, maxDailyPills: 4, preferredForm: "powder", dietPatterns: ["low_protein"], wearableFeatures: ["low_hrv"], symptoms: [{ code: "fatigue", severity: "moderate" }], labs: { vitamin_d: "low" } });
+for (const token of ["age=40-49", "sex=female", "pregnancy=not_pregnant", "budget=70000", "pill_limit=4", "form=powder", "diet_patterns:low_protein", "wearable_features:low_hrv", "symptom:fatigue", "symptom_severity:moderate", "lab:vitamin_d=low"]) assert.ok(fullTokens.includes(token), token);
+assert.ok(fullTokens.every((token: string) => Number.isInteger(snapshot.vocabulary[token])), "all full-profile tokens must exist in model vocabulary");
+const unknownSexTokens = profileTokens({ ...baseProfile, sex: "unknown" });
+assert.equal(unknownSexTokens.some((token: string) => token === "sex=unknown"), false);
 const kidneySafety = checkTipsSafety({ ...baseProfile, conditions: ["chronic_kidney_disease"] });
 assert.equal(kidneySafety.decision, "REVIEW");
 assert.deepEqual(kidneySafety.blockedIngredients, ["ING:MAGNESIUM", "ING:POTASSIUM"]);

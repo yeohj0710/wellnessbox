@@ -53,19 +53,47 @@ function strings(value: unknown, limit = 20) {
     .filter(Boolean)
     .slice(0, limit);
 }
+const ALLOWED = {
+  goals: ["bone_health","bowel_regular","cardiovascular_wellbeing","energy","exercise_recovery","eye_health","immune_support","maintain_muscle","maternal_wellbeing","rapid_weight_loss","sleep_quality","stress_management"],
+  conditions: ["chronic_kidney_disease","chronic_liver_disease","constipation","hemochromatosis","hypercalcemia","hypertension","hypothyroidism","irritable_bowel_syndrome","osteopenia","postmenopause","recent_antibiotic_use","type_2_diabetes"],
+  medications: ["ace_inhibitor","levothyroxine","metformin","statin","warfarin"],
+  diets: ["low_calcium","low_fish","low_fortified_food","low_protein","low_zinc","vegan","vegetarian"],
+  supplements: ["ING:MAGNESIUM","ING:VITAMIN_D"], wearable: ["low_hrv"], allergies: ["fish"],
+  risks: ["fatigue_without_labs","lactating","low_appetite","muscle_discomfort","older_adult","polypharmacy","pregnant","red_flag_chest_pain","red_flag_severe_abdominal_pain","surgery_within_14_days","unsafe_high_dose_request"],
+} as const;
+function allowedStrings(value: unknown, allowed: readonly string[]) { const set=new Set(allowed); return strings(value).filter(item=>set.has(item)); }
 
 function profile(value: LabInput["profile"]): TipsLabProfile {
   const age = Number(value?.age ?? 40);
+  const pregnancyStatus = ["not_applicable", "not_pregnant", "pregnant", "lactating"].includes(String(value?.pregnancyStatus)) ? value?.pregnancyStatus : (value?.pregnant ? "pregnant" : "not_pregnant");
+  const symptoms = Array.isArray(value?.symptoms) ? value.symptoms.filter((item): item is { code: string; severity: "mild" | "moderate" | "severe"; redFlag?: boolean } => !!item && typeof item === "object" && ["fatigue","muscle_discomfort","abdominal_pain","chest_pain"].includes(String(item.code)) && ["mild", "moderate", "severe"].includes(String(item.severity))).slice(0, 10) : [];
+  const labValues: Record<string, readonly string[]> = { ferritin:["low","normal","unknown"], vitamin_d:["low","normal","unknown"], vitamin_b12:["low"], triglycerides:["high"], magnesium:["low"] };
+  const labs = value?.labs && typeof value.labs === "object" ? Object.fromEntries(Object.entries(value.labs).filter(([name,status]) => typeof status === "string" && labValues[name]?.includes(status)).slice(0, 10)) : {};
+  const derivedRisks = [
+    ...(pregnancyStatus === "pregnant" ? ["pregnant"] : []),
+    ...(pregnancyStatus === "lactating" ? ["lactating"] : []),
+    ...(symptoms.some(item=>item.code === "chest_pain" || item.redFlag) ? ["red_flag_chest_pain"] : []),
+    ...(symptoms.some(item=>item.code === "abdominal_pain" && item.severity === "severe") ? ["red_flag_severe_abdominal_pain"] : []),
+  ];
   return {
     age: Number.isFinite(age) ? Math.min(100, Math.max(18, Math.round(age))) : 40,
     sex: value?.sex === "female" || value?.sex === "male" ? value.sex : "unknown",
-    pregnant: value?.pregnant === true,
-    goals: strings(value?.goals, 5),
-    conditions: strings(value?.conditions, 10),
-    medicationClasses: strings(value?.medicationClasses, 10),
-    allergies: strings(value?.allergies, 10),
-    currentSupplements: strings(value?.currentSupplements, 10),
-    riskFlags: strings(value?.riskFlags, 10),
+    pregnant: pregnancyStatus === "pregnant",
+    pregnancyStatus,
+    monthlyBudgetKrw: [30000, 50000, 70000, 100000, 150000].includes(Number(value?.monthlyBudgetKrw)) ? Number(value?.monthlyBudgetKrw) : 50000,
+    maxDailyPills: [2, 3, 4, 5, 6].includes(Number(value?.maxDailyPills)) ? Number(value?.maxDailyPills) : 3,
+    preferredForm: value?.preferredForm === "powder" || value?.preferredForm === "tablet" ? value.preferredForm : "capsule",
+    goals: allowedStrings(value?.goals, ALLOWED.goals),
+    conditions: allowedStrings(value?.conditions, ALLOWED.conditions),
+    medicationClasses: allowedStrings(value?.medicationClasses, ALLOWED.medications),
+    allergies: allowedStrings(value?.allergies, ALLOWED.allergies),
+    dietPatterns: allowedStrings(value?.dietPatterns, ALLOWED.diets),
+    currentSupplements: allowedStrings(value?.currentSupplements, ALLOWED.supplements),
+    wearableFeatures: allowedStrings(value?.wearableFeatures, ALLOWED.wearable),
+    geneticFeatures: [],
+    symptoms,
+    labs,
+    riskFlags: [...new Set([...allowedStrings(value?.riskFlags, ALLOWED.risks), ...derivedRisks])],
   };
 }
 
