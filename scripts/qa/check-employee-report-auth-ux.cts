@@ -301,8 +301,25 @@ function runUiIntegrationChecks() {
 function run() {
   runStoredIdentityCases();
   runPrimaryActionLabelCases();
-  runUiIntegrationChecks();
+  runCurrentWorkspaceUiChecks();
   console.log("[qa:employee-report-auth-ux] ALL PASS");
+}
+
+function runCurrentWorkspaceUiChecks() {
+  const clientSource = read("app/(features)/employee-report/EmployeeReportClient.tsx");
+  for (const token of [
+    "readStoredIdentityWithSource",
+    "handleStartWorkspace",
+    "handleConfirmKakaoAuth",
+    "handleRefreshWorkspace",
+    'placeholder="19900101"',
+    'placeholder="01012345678"',
+    '"\\uC870\\uD68C \\uC2DC\\uC791"',
+  ]) {
+    assert.ok(clientSource.includes(token), `Employee report workspace missing UX contract: ${token}`);
+  }
+  assert.ok(!clientSource.includes("재요청"), "First-time action must not use re-request wording.");
+  console.log("[qa:employee-report-auth-ux] PASS current workspace UI checks");
 }
 
 try {
