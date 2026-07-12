@@ -11,7 +11,10 @@ const toggle=(list:string[],value:string)=>list.includes(value)?list.filter(x=>x
 export default function AdvancedProfileFields({value,onChange}:{value:AdvancedProfile;onChange:(value:AdvancedProfile)=>void}) {
  const set=<K extends keyof AdvancedProfile>(key:K,next:AdvancedProfile[K])=>onChange({...value,[key]:next});
  const symptomCode=value.symptoms[0]?.code??""; const severity=value.symptoms[0]?.severity??"mild";
- return <div className={styles.advancedProfile}>
+ const appliedCount=(value.sex!==DEFAULT_ADVANCED.sex?1:0)+(value.pregnancyStatus!==DEFAULT_ADVANCED.pregnancyStatus?1:0)+(value.monthlyBudgetKrw!==DEFAULT_ADVANCED.monthlyBudgetKrw?1:0)+(value.maxDailyPills!==DEFAULT_ADVANCED.maxDailyPills?1:0)+(value.preferredForm!==DEFAULT_ADVANCED.preferredForm?1:0)+Object.values(value.labs).filter(Boolean).length+value.symptoms.length+value.dietPatterns.length+value.currentSupplements.length+value.wearableFeatures.length+value.riskFlags.length;
+ return <details className={styles.advancedProfile}>
+  <summary className={styles.advancedProfileSummary}><span><b>상세 조건</b><small>성별, 예산, 검사값, 식이·복용 특성</small></span><em>{appliedCount ? `${appliedCount}개 변경` : "기본값 사용"}</em></summary>
+  <div className={styles.advancedProfileBody}>
   <div className={styles.advancedHeading}><div><span>MODEL INPUT SPACE</span><h3>확장 프로필 입력</h3></div><b>93개 모델 vocabulary 기반</b></div>
   <div className={styles.advancedGrid}>
    <label className={styles.control}><span>성별</span><select className={styles.field} value={value.sex} onChange={e=>set("sex",e.target.value as AdvancedProfile["sex"])}><option value="unknown">미지정</option><option value="female">여성</option><option value="male">남성</option></select></label>
@@ -35,5 +38,6 @@ export default function AdvancedProfileFields({value,onChange}:{value:AdvancedPr
   <div className={styles.advancedGroup}><strong>현재 복용 영양성분·기기 특징</strong><div className={styles.chips}>{SUPPLEMENTS.map(([v,l])=><button type="button" key={v} aria-pressed={value.currentSupplements.includes(v)} className={value.currentSupplements.includes(v)?styles.chipActive:styles.chip} onClick={()=>set("currentSupplements",toggle(value.currentSupplements,v))}>{l}</button>)}<button type="button" aria-pressed={value.wearableFeatures.includes("low_hrv")} className={value.wearableFeatures.includes("low_hrv")?styles.chipActive:styles.chip} onClick={()=>set("wearableFeatures",toggle(value.wearableFeatures,"low_hrv"))}>웨어러블 HRV 저하</button></div></div>
   <div className={styles.advancedGroup}><strong>연구 위험 플래그</strong><div className={styles.chips}>{RISKS.map(([v,l])=><button type="button" key={v} aria-pressed={value.riskFlags.includes(v)} className={value.riskFlags.includes(v)?styles.chipActive:styles.chip} onClick={()=>set("riskFlags",toggle(value.riskFlags,v))}>{l}</button>)}</div></div>
   </details>
- </div>;
+  </div>
+ </details>;
 }
