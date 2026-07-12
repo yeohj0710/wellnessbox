@@ -4,18 +4,24 @@ import path from "node:path";
 
 const CLIENT_PATH = path.resolve(process.cwd(), "app/survey/survey-page-client.tsx");
 const COPY_PATH = path.resolve(process.cwd(), "app/survey/_lib/survey-page-copy.ts");
+const PANEL_PROPS_PATH = path.resolve(process.cwd(), "app/survey/_lib/use-survey-page-panel-props.ts");
+const PROGRESSION_PATH = path.resolve(process.cwd(), "app/survey/_lib/use-survey-progression-actions.ts");
 
 function run() {
   const checks: string[] = [];
   const clientSource = fs.readFileSync(CLIENT_PATH, "utf8");
   const copySource = fs.readFileSync(COPY_PATH, "utf8");
+  const panelPropsSource = fs.readFileSync(PANEL_PROPS_PATH, "utf8");
+  const progressionSource = fs.readFileSync(PROGRESSION_PATH, "utf8");
 
   assert.match(
     clientSource,
-    /import \{ CALCULATING_MESSAGES, TEXT \} from "@\/app\/survey\/_lib\/survey-page-copy";/,
-    "survey-page-client must import TEXT and CALCULATING_MESSAGES from survey-page-copy."
+    /import \{ TEXT \} from "@\/app\/survey\/_lib\/survey-page-copy";/,
+    "survey-page-client must import TEXT from survey-page-copy."
   );
-  checks.push("survey_client_imports_copy_constants");
+  assert.match(panelPropsSource, /import \{ CALCULATING_MESSAGES, TEXT \} from "\.\/survey-page-copy";/);
+  assert.match(progressionSource, /import \{ CALCULATING_MESSAGES \} from "\.\/survey-page-copy";/);
+  checks.push("survey_modules_import_owned_copy_constants");
 
   assert.ok(
     !/const TEXT = \{/.test(clientSource),

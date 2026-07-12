@@ -446,9 +446,8 @@ async function run() {
       .first()
       .click();
     const resetConfirm = page.locator('[data-testid="survey-reset-confirm-button"]').first();
-    if ((await resetConfirm.count()) > 0 && (await resetConfirm.isVisible())) {
-      await resetConfirm.click();
-    }
+    await resetConfirm.waitFor({ state: "visible", timeout: 8000 });
+    await resetConfirm.click();
     await page
       .locator('[data-testid="survey-start-button"]')
       .first()
