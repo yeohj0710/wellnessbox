@@ -35,20 +35,16 @@ function runHealthInterpretationPlaceholderChecks() {
   const copySource = read("components/b2b/report-summary/copy.ts");
   const pagesSource = read("components/b2b/report-summary/ReportSummaryPages.tsx");
   assert.ok(
-    cardsSource.includes("REPORT_SUMMARY_HEALTH_INSIGHT_EMPTY_MESSAGE"),
-    "health interpretation summary shell should use shared empty placeholder copy constant"
+    !cardsSource.includes("REPORT_SUMMARY_HEALTH_INSIGHT_EMPTY_MESSAGE"),
+    "summary shell should not pass an unused health insight placeholder"
   );
   assert.ok(
-    copySource.includes(
-      'export const REPORT_SUMMARY_HEALTH_INSIGHT_EMPTY_MESSAGE = "내용이 없습니다.";'
-    ),
-    "health interpretation section should use fixed empty placeholder copy"
+    !copySource.includes("REPORT_SUMMARY_HEALTH_INSIGHT_EMPTY_MESSAGE"),
+    "copy module should not export an unused health insight placeholder"
   );
   assert.ok(
-    pagesSource.includes(
-      "<p className={styles.reportDataEmpty}>{healthInsightEmptyMessage}</p>"
-    ),
-    "health interpretation section should render empty placeholder paragraph"
+    !pagesSource.includes("healthInsightEmptyMessage"),
+    "health page should not declare an unused health insight prop"
   );
   assert.ok(
     !pagesSource.includes("buildHealthInsightLines"),

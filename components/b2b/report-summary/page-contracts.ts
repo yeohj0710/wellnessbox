@@ -111,7 +111,6 @@ export type ReportSummaryOverviewPageProps = {
 export type ReportSummaryHealthPageProps = {
   pageNumber: number;
   healthMetrics: ReportSummaryHealthMetricRow[];
-  healthInsightEmptyMessage: string;
   text: ReportSummaryHealthPageText;
 };
 

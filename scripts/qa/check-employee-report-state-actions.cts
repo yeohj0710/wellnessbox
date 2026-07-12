@@ -2,69 +2,33 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 
-const CLIENT_PATH = path.resolve(
-  process.cwd(),
-  "app/(features)/employee-report/EmployeeReportClient.tsx"
-);
-const HOOK_PATH = path.resolve(
-  process.cwd(),
-  "app/(features)/employee-report/_lib/use-employee-report-state-actions.ts"
-);
+const ROOT = process.cwd();
+const read = (file: string) => fs.readFileSync(path.resolve(ROOT, file), "utf8");
 
 function run() {
+  const source = read("app/(features)/employee-report/EmployeeReportClient.tsx");
   const checks: string[] = [];
-  const clientSource = fs.readFileSync(CLIENT_PATH, "utf8");
-  const hookSource = fs.readFileSync(HOOK_PATH, "utf8");
 
-  assert.match(
-    clientSource,
-    /useEmployeeReportStateActions\(/,
-    "EmployeeReportClient는 상태 전이 공통 훅을 사용해야 합니다."
-  );
-  checks.push("client_uses_state_actions_hook");
+  for (const token of [
+    "const applyWorkspace = useCallback(",
+    "setWorkspace(next)",
+    "setSelectedReportId(next?.selectedReportId ?? null)",
+    "const handleStartWorkspace = useCallback(",
+    "const handleRefreshWorkspace = useCallback(",
+    "const handleSelectReport = useCallback(",
+    "const resetIdentityFlow = useCallback(",
+  ]) assert.ok(source.includes(token), `missing workspace state transition: ${token}`);
+  checks.push("workspace_owns_current_state_transitions");
 
-  assert.ok(
-    !/setSyncNextAction\(/.test(clientSource),
-    "EmployeeReportClient에서 setSyncNextAction 직접 호출을 금지합니다."
-  );
-  checks.push("client_has_no_direct_setSyncNextAction");
+  assert.ok(!source.includes("setSyncNextAction("));
+  assert.ok(!source.includes("setSyncGuidance("));
+  assert.ok(!source.includes("setPendingSignForceRefresh("));
+  checks.push("legacy_state_transitions_absent");
 
-  assert.ok(
-    !/setSyncGuidance\(/.test(clientSource),
-    "EmployeeReportClient에서 setSyncGuidance 직접 호출을 금지합니다."
-  );
-  checks.push("client_has_no_direct_setSyncGuidance");
+  assert.ok(!fs.existsSync(path.resolve(ROOT, "app/(features)/employee-report/_lib/use-employee-report-state-actions.ts")));
+  checks.push("unused_legacy_hook_removed");
 
-  assert.ok(
-    !/setPendingSignForceRefresh\(/.test(clientSource),
-    "EmployeeReportClient에서 setPendingSignForceRefresh 직접 호출을 금지합니다."
-  );
-  checks.push("client_has_no_direct_setPendingSignForceRefresh");
-
-  assert.match(
-    hookSource,
-    /applyAdminOnlyBlockedState/,
-    "상태 전이 훅은 관리자 차단 상태 전이 함수를 제공해야 합니다."
-  );
-  checks.push("hook_exposes_admin_only_transition");
-
-  assert.match(
-    hookSource,
-    /applyMissingReportState/,
-    "상태 전이 훅은 리포트 미존재 상태 전이 함수를 제공해야 합니다."
-  );
-  checks.push("hook_exposes_missing_report_transition");
-
-  console.log(
-    JSON.stringify(
-      {
-        ok: true,
-        checks,
-      },
-      null,
-      2
-    )
-  );
+  console.log(JSON.stringify({ ok: true, checks }, null, 2));
 }
 
 run();

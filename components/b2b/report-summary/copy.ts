@@ -53,5 +53,3 @@ export const REPORT_SUMMARY_MEDICATION_PAGE_TEXT = {
   periodLabel: "기간",
   mockSuffix: " / 데모 데이터",
 } as const;
-
-export const REPORT_SUMMARY_HEALTH_INSIGHT_EMPTY_MESSAGE = "내용이 없습니다.";

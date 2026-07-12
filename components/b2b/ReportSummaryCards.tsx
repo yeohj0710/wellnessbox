@@ -10,7 +10,6 @@ import {
   hasReportSummaryHealthMetricsContent,
 } from "./report-summary/detail-data-model";
 import {
-  REPORT_SUMMARY_HEALTH_INSIGHT_EMPTY_MESSAGE,
   REPORT_SUMMARY_HEALTH_PAGE_TEXT,
   REPORT_SUMMARY_OVERVIEW_TEXT,
 } from "./report-summary/copy";
@@ -112,7 +111,6 @@ export default function ReportSummaryCards(props: {
         <ReportSummaryHealthPage
           pageNumber={healthDataPageNumber}
           healthMetrics={healthMetrics}
-          healthInsightEmptyMessage={REPORT_SUMMARY_HEALTH_INSIGHT_EMPTY_MESSAGE}
           text={REPORT_SUMMARY_HEALTH_PAGE_TEXT}
         />
       ) : null}

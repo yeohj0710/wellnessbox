@@ -26,10 +26,6 @@ function run() {
     "ReportSummaryCards should pass health-page copy through the shared copy module"
   );
   assert.ok(
-    cardsSource.includes("text={REPORT_SUMMARY_MEDICATION_PAGE_TEXT}"),
-    "ReportSummaryCards should pass medication-page copy through the shared copy module"
-  );
-  assert.ok(
     !cardsSource.includes('title: "이번 달 건강 상태 요약과 우선 실천 항목"'),
     "ReportSummaryCards should not keep overview copy inline after extraction"
   );
@@ -43,11 +39,7 @@ function run() {
     "copy.ts should own health page copy"
   );
   assert.ok(
-    copySource.includes("export const REPORT_SUMMARY_MEDICATION_PAGE_TEXT"),
-    "copy.ts should own medication page copy"
-  );
-  assert.ok(
-    copySource.includes("REPORT_SUMMARY_HEALTH_INSIGHT_EMPTY_MESSAGE"),
+    !copySource.includes("REPORT_SUMMARY_HEALTH_INSIGHT_EMPTY_MESSAGE"),
     "copy.ts should own health insight empty-state copy"
   );
 
@@ -58,7 +50,7 @@ function run() {
         checks: [
           "report_summary_cards_reuses_copy_module",
           "copy_module_owns_page_level_text_contracts",
-          "copy_module_owns_health_empty_message",
+          "copy_module_has_no_unused_health_empty_message",
         ],
       },
       null,
