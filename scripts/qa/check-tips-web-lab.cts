@@ -97,6 +97,7 @@ assert.match(advancedProfileUi, /<details className=\{styles\.advancedDetails\}>
 assert.match(advancedProfileUi, /검사·증상·식이 등 상세 입력/);
 for (const token of ["예시로 바로 시험하기", "전체 과정 실행", "DEMO_SCENARIOS", "runScenario", "추천부터 추적 기록까지 자동 실행"]) assert.match(consoleUi, new RegExp(token));
 const researchOverviewUi = read("components/tips/ResearchOverview.tsx");
+const workflowMapUi = read("components/tips/ResearchWorkflowMap.tsx");
 const inferenceUi = read("components/tips/InferenceWorkbench.tsx");
 const evidenceUi = read("components/tips/ResearchEvidencePanel.tsx");
 const blindTestUi = read("components/tips/BlindTestExplorer.tsx");
@@ -160,6 +161,8 @@ assert.match(consoleUi, /stageRefs/);
 assert.match(consoleUi, /proStudyRef\.current\?\.next/);
 assert.match(consoleUi, /proStudyRef\.current\?\.previous/);
 assert.match(consoleUi, /PRO_STAGE_HELP/);
+assert.match(consoleUi, /ResearchWorkflowMap/);
+for (const token of ["데이터 레이크", "개인화 안전 검증 엔진", "개인화 효과 추론 모델", "다목적 조합 최적화 엔진", "자기적응형 AI", "바이오센서·유전 데이터 연동", "onNavigate"]) assert.match(workflowMapUi, new RegExp(token));
 assert.match(consoleUi, /aria-pressed=/);
 assert.match(consoleUi, /scrollIntoView/);
 assert.match(consoleUi, /blockedIngredients/);

@@ -7,6 +7,7 @@ import ProStudySimulation, { type ProStudySimulationHandle } from "./ProStudySim
 import AdvancedProfileFields, { DEFAULT_ADVANCED, type AdvancedProfile } from "./AdvancedProfileFields";
 import InferenceWorkbench from "./InferenceWorkbench";
 import ResearchEvidencePanel from "./ResearchEvidencePanel";
+import ResearchWorkflowMap from "./ResearchWorkflowMap";
 import type { InferenceExplanation } from "./research-types";
 import styles from "./interim.module.css";
 
@@ -334,7 +335,10 @@ export default function InterimUserConsole() {
           </div>
         </header>
 
-        <div ref={(node)=>{stageRefs.current[0]=node;}} className={styles.stageAnchor}><ResearchOverview /></div>
+        <div ref={(node)=>{stageRefs.current[0]=node;}} className={styles.stageAnchor}>
+          <ResearchWorkflowMap activeStage={activeStage} agentState={state} safetyDecision={safety?.decision??""} recommendationCount={recommendations.length} consentCount={consents.length} deviceConnected={consents.includes("device:write")&&state!=="NEW"} onNavigate={moveToStage} />
+          <ResearchOverview />
+        </div>
 
         <div ref={(node)=>{stageRefs.current[1]=node;}} className={styles.stageAnchor}><BlindTestExplorer /></div>
 
