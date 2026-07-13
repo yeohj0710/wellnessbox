@@ -66,6 +66,29 @@ const TEST_CASES = ROUTES.flatMap((route) =>
   )
 );
 
+let sharedDemoFixturePromise = null;
+
+function getSharedDemoFixture(context, baseUrl) {
+  if (!sharedDemoFixturePromise) {
+    sharedDemoFixturePromise = (async () => {
+      const seedResult = await seedDemoEmployee(context, baseUrl);
+      if (!seedResult.employeeId) {
+        throw new Error(`seed employee missing (status=${seedResult.status})`);
+      }
+      const detailResult = await fetchEmployeeIdentity(
+        context,
+        baseUrl,
+        seedResult.employeeId
+      );
+      if (!detailResult.employee) {
+        throw new Error(`employee detail missing (status=${detailResult.status})`);
+      }
+      return { seedResult, detailResult };
+    })();
+  }
+  return sharedDemoFixturePromise;
+}
+
 function resolveActiveCases() {
   if (!CASE_FILTER) return TEST_CASES;
   return TEST_CASES.filter((testCase) => {
@@ -792,7 +815,7 @@ function evaluateMetrics(metrics, thresholds) {
 async function captureRoutePdf(caseConfig, caseDir, context, baseUrl, output) {
   const page = await context.newPage();
 
-  const seedResult = await seedDemoEmployee(context, baseUrl);
+  const { seedResult, detailResult } = await getSharedDemoFixture(context, baseUrl);
   output.seedStatus = seedResult.status;
   output.employeeId = seedResult.employeeId;
   if (!seedResult.employeeId) {
@@ -800,7 +823,6 @@ async function captureRoutePdf(caseConfig, caseDir, context, baseUrl, output) {
   }
 
   if (caseConfig.route === "employee") {
-    const detailResult = await fetchEmployeeIdentity(context, baseUrl, seedResult.employeeId);
     output.employeeDetailStatus = detailResult.status;
     if (!detailResult.employee) {
       throw new Error(`employee detail missing (status=${detailResult.status})`);
