@@ -2,6 +2,7 @@
 
 import { useCallback } from "react";
 import type { EmployeeWorkspaceResponse } from "./client-types";
+import { downloadEmployeeReportPdf } from "./pdf-download";
 
 type LoadWorkspace = (input?: {
   reportId?: string | null;
@@ -27,6 +28,8 @@ type UseEmployeeReportReportActionsInput = {
   setShowSurvey: (next: boolean) => void;
   setNotice: (next: string) => void;
   setPolling: (next: boolean) => void;
+  workspace: EmployeeWorkspaceResponse | null;
+  getCaptureTarget: () => HTMLDivElement | null;
 };
 
 export function useEmployeeReportReportActions(input: UseEmployeeReportReportActionsInput) {
@@ -86,5 +89,37 @@ export function useEmployeeReportReportActions(input: UseEmployeeReportReportAct
     }
   }, [input]);
 
-  return { handleSelectReport, handleSurveyCompleted, handleRefreshWorkspace };
+  const handleDownloadPdf = useCallback(async () => {
+    const report = input.workspace?.report;
+    if (!report) return;
+    input.setPendingAction("report");
+    input.setBusy(true);
+    input.setError("");
+    const result = await downloadEmployeeReportPdf({
+      reportData: {
+        ok: true,
+        employee: input.workspace?.employee,
+        report: {
+          ...report,
+          periodKey: report.periodKey ?? undefined,
+        },
+        periodKey: input.workspace?.selectedPeriodKey ?? undefined,
+        availablePeriods: input.workspace?.availablePeriods,
+      },
+      selectedPeriodKey: input.workspace?.selectedPeriodKey ?? "",
+      captureTarget: input.getCaptureTarget(),
+      updateBusy: ({ message }) => input.setNotice(message),
+    });
+    if (result.ok) input.setNotice(result.notice);
+    else input.setError(result.error);
+    input.setPendingAction(null);
+    input.setBusy(false);
+  }, [input]);
+
+  return {
+    handleSelectReport,
+    handleSurveyCompleted,
+    handleRefreshWorkspace,
+    handleDownloadPdf,
+  };
 }

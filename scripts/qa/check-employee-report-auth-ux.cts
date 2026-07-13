@@ -307,8 +307,14 @@ function run() {
 
 function runCurrentWorkspaceUiChecks() {
   const clientSource = read("app/(features)/employee-report/EmployeeReportClient.tsx");
+  const bootstrapSource = read(
+    "app/(features)/employee-report/_lib/use-employee-report-session-bootstrap.ts"
+  );
+  assert.ok(
+    bootstrapSource.includes("readStoredIdentityWithSource"),
+    "Employee report session bootstrap must restore stored identity."
+  );
   for (const token of [
-    "readStoredIdentityWithSource",
     "handleStartWorkspace",
     "handleConfirmKakaoAuth",
     "handleRefreshWorkspace",

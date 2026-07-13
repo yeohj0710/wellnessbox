@@ -284,11 +284,8 @@ function runStaticRegressionChecks() {
   const reportActionsSource = read(
     "app/(features)/employee-report/_lib/use-employee-report-report-actions.ts"
   );
-  const readyPanelSource = read(
-    "app/(features)/employee-report/_components/EmployeeReportReadyPanel.tsx"
-  );
-  const copySource = read(
-    "app/(features)/employee-report/_lib/employee-report-copy.ts"
+  const clientSource = read(
+    "app/(features)/employee-report/EmployeeReportClient.tsx"
   );
   const pdfSource = read("app/(features)/employee-report/_lib/pdf-download.ts");
   assert.ok(
@@ -300,16 +297,8 @@ function runStaticRegressionChecks() {
     "sync notice helper should receive auth reuse context"
   );
   assert.ok(
-    readyPanelSource.includes(
-      "primarySyncActionLabel={EMPLOYEE_REPORT_PRIMARY_SYNC_ACTION_LABEL}"
-    ),
-    "Ready panel should use the shared generalized summary CTA text"
-  );
-  assert.ok(
-    copySource.includes(
-      'EMPLOYEE_REPORT_PRIMARY_SYNC_ACTION_LABEL = "최신 정보 확인"'
-    ),
-    "Employee report copy should centralize the generalized summary CTA text"
+    clientSource.includes('data-testid="employee-report-restart-auth"'),
+    "Current workspace must keep an explicit health-information restart action"
   );
   assert.ok(
     reportActionsSource.includes("downloadEmployeeReportPdf"),

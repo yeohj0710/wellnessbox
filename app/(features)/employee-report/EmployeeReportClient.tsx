@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import styles from "@/components/b2b/B2bUx.module.css";
 import ReportSummaryCards from "@/components/b2b/ReportSummaryCards";
 import InlineSpinnerLabel from "@/components/common/InlineSpinnerLabel";
@@ -25,6 +25,7 @@ import { useEmployeeReportReportLoading } from "./_lib/use-employee-report-repor
 import { useEmployeeReportReportActions } from "./_lib/use-employee-report-report-actions";
 import { useEmployeeReportSyncActions } from "./_lib/use-employee-report-sync-actions";
 import { useEmployeeReportExistingRecordActions } from "./_lib/use-employee-report-existing-record-actions";
+import { useEmployeeReportPageHandlers } from "./_lib/use-employee-report-page-handlers";
 
 type WorkflowTone = "on" | "warn" | "off";
 type WorkflowStepState = "done" | "current" | "pending" | "error";
@@ -440,6 +441,7 @@ export default function EmployeeReportClient({
   const [pendingAction, setPendingAction] = useState<
     "start" | "health" | "refresh" | "report" | "sign" | null
   >(null);
+  const reportCaptureRef = useRef<HTMLDivElement | null>(null);
 
   const validIdentity = useMemo(
     () => isValidIdentityInput(toIdentityPayload(identity)),
@@ -683,18 +685,11 @@ export default function EmployeeReportClient({
     workspace?.sync?.step,
   ]);
 
-  const handleIdentityChange = useCallback(
-    (key: keyof IdentityInput, value: string) => {
-      setIdentity((prev) => ({
-        ...prev,
-        [key]:
-          key === "name"
-            ? value
-            : value.replace(/\D/g, "").slice(0, key === "birthDate" ? 8 : 11),
-      }));
-    },
-    []
-  );
+  const {
+    handleIdentityNameChange,
+    handleIdentityBirthDateChange,
+    handleIdentityPhoneChange,
+  } = useEmployeeReportPageHandlers({ setIdentity });
 
   const { handleStartWorkspace, handleConfirmKakaoAuth } =
     useEmployeeReportSyncActions({
@@ -715,7 +710,12 @@ export default function EmployeeReportClient({
       setPolling,
     });
 
-  const { handleSelectReport, handleSurveyCompleted, handleRefreshWorkspace } =
+  const {
+    handleSelectReport,
+    handleSurveyCompleted,
+    handleRefreshWorkspace,
+    handleDownloadPdf,
+  } =
     useEmployeeReportReportActions({
       loadWorkspace,
       selectedReportId,
@@ -732,6 +732,8 @@ export default function EmployeeReportClient({
       setShowSurvey,
       setNotice,
       setPolling,
+      workspace,
+      getCaptureTarget: () => reportCaptureRef.current,
     });
 
   useEffect(() => {
@@ -1050,9 +1052,7 @@ export default function EmployeeReportClient({
                   value={identity.name}
                   disabled={busy}
                   placeholder="홍길동"
-                  onChange={(event) =>
-                    handleIdentityChange("name", event.target.value)
-                  }
+                  onChange={(event) => handleIdentityNameChange(event.target.value)}
                 />
               </label>
               <label className={styles.field}>
@@ -1065,7 +1065,7 @@ export default function EmployeeReportClient({
                   disabled={busy}
                   placeholder="19900101"
                   onChange={(event) =>
-                    handleIdentityChange("birthDate", event.target.value)
+                    handleIdentityBirthDateChange(event.target.value)
                   }
                 />
               </label>
@@ -1079,7 +1079,7 @@ export default function EmployeeReportClient({
                   disabled={busy}
                   placeholder="01012345678"
                   onChange={(event) =>
-                    handleIdentityChange("phone", event.target.value)
+                    handleIdentityPhoneChange(event.target.value)
                   }
                 />
               </label>
@@ -1664,12 +1664,20 @@ export default function EmployeeReportClient({
                         ? "현재 주기 최신본"
                         : "부분 데이터 반영본"}
                     </span>
+                    <button
+                      type="button"
+                      className={styles.buttonSecondary}
+                      disabled={busy}
+                      onClick={() => void handleDownloadPdf()}
+                    >
+                      {pendingAction === "report" ? "PDF 저장 중" : "PDF 저장"}
+                    </button>
                   </div>
                 </div>
                 <div
                   className={`${styles.reportCanvasBoard} ${styles.reportCanvasBoardWide} ${styles.reportCanvasBoardScrollable}`}
                 >
-                  <div className={styles.reportCaptureSurface}>
+                  <div ref={reportCaptureRef} className={styles.reportCaptureSurface}>
                     <ReportSummaryCards payload={workspace.report.payload} viewerMode="employee" />
                   </div>
                 </div>
