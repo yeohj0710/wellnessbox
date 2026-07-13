@@ -280,8 +280,12 @@ export default function InterimUserConsole() {
 
         <section className={styles.section}>
           <p className={styles.sectionLabel}>1. 시험 조건 입력</p>
-          <h2 className={styles.sectionTitle}>시험할 사람의 조건을 선택하세요</h2>
-          <p className={styles.sectionBody}>직접 입력하거나 아래 예시를 선택할 수 있습니다. 조건에 따라 추천 성분과 제외 사유가 달라지는지 확인하는 단계입니다.</p>
+          <h2 className={styles.sectionTitle}>예시 조건으로 추천 모델을 실행합니다</h2>
+          <p className={styles.sectionBody}>`다음`을 누르면 기본 예시의 추천, 안전 판정, 근거 확인과 후속 기록까지 자동으로 실행합니다.</p>
+          <div className={styles.quickScenarioSummary}><span>실행 예시</span><strong>{DEMO_SCENARIOS[0].title}</strong><small>{DEMO_SCENARIOS[0].description}</small></div>
+          <button type="button" className={styles.primaryButton} onClick={()=>runScenario(DEMO_SCENARIOS[0])} disabled={busyAction!==null}>{busyAction!==null?demoProgress||"실행 중…":"다음"}</button>
+          <details className={styles.secondaryOptions}>
+            <summary>다른 예시 선택 또는 입력값 수정</summary>
           <div className={styles.demoPanel}>
             <div><strong>예시로 바로 시험하기</strong><p>세 가지 예시 중 하나를 선택하세요. 조건만 불러온 뒤 직접 실행하거나, 마지막 기록 단계까지 자동으로 확인할 수 있습니다.</p></div>
             <div className={styles.demoScenarios}>{DEMO_SCENARIOS.map(s=><article key={s.id}><h3>{s.title}</h3><p>{s.description}</p><div><button type="button" onClick={()=>applyScenario(s)} disabled={busyAction!==null}>조건만 불러오기</button><button type="button" className={styles.demoRun} onClick={()=>runScenario(s)} disabled={busyAction!==null}>전체 과정 실행</button></div></article>)}</div>
@@ -347,6 +351,7 @@ export default function InterimUserConsole() {
           <button className={styles.primaryButton} disabled={busyAction !== null} onClick={() => execute("recommend")}>
             {busyAction === "recommend" ? "판단 중…" : "안전 검사 후 추천 보기"}
           </button>
+          </details>
         </section>
 
         <section ref={resultRef} className={`${styles.section} ${styles.softSection}`}>
