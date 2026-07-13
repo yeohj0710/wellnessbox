@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import ResearchOverview from "./ResearchOverview";
 import BlindTestExplorer from "./BlindTestExplorer";
 import ProStudySimulation from "./ProStudySimulation";
@@ -75,6 +75,16 @@ const CONSENTS = [
   ["device:write", "기기 데이터 기록"],
 ] as const;
 
+const EVALUATION_STAGES = [
+  { title: "연구 개요", purpose: "개발한 추천 모델과 검증 범위를 먼저 확인합니다.", input: "학습 데이터 규모, 입력 변수, 추천 성분 분류기, 독립 시험 데이터", process: "연구 산출물과 성능지표를 항목별로 요약합니다.", output: "평가자가 뒤에서 직접 재현할 검증 항목 목록" },
+  { title: "독립 시험 데이터", purpose: "학습에 사용하지 않은 5,000건에서 추천 결과가 정답 기준과 일치하는지 확인합니다.", input: "나이·질환·약물·영양 상태 등이 포함된 독립 시험 사례", process: "저장된 모델이 각 사례를 다시 계산하고 기준 추천과 비교합니다.", output: "사례별 일치 여부와 전체 정확도" },
+  { title: "복용 전후 건강 변화", purpose: "같은 공인 설문을 복용 전과 4주 후에 측정해 건강 변화량을 계산합니다.", input: "PSQI·ISI·PSS-10 승인본에서 산출한 복용 전후 점수", process: "원점수를 시작 시점 분포로 표준화하고 건강 백분위 차이로 변환합니다.", output: "개인별 개선도와 100명 이상 집단의 평균 개선도" },
+  { title: "추천 모델 실행", purpose: "한 사람의 조건이 실제 추천 결과로 변환되는 전체 과정을 실행합니다.", input: "나이, 관리 목표, 질환, 복용 약물, 검사 결과 등 최대 93개 특성", process: "학습 모델이 14개 성분 점수를 계산한 뒤 안전 규칙이 금기·상호작용 후보를 제외합니다.", output: "최종 추천 성분, 제외 성분과 제외 사유" },
+  { title: "추천 결과 분석", purpose: "모델이 어떤 입력을 근거로 각 성분 점수를 계산했는지 확인합니다.", input: "입력 특성, 학습된 계수, 성분별 선형 점수", process: "특성별 기여도를 합산해 확률을 계산하고 안전 판정 전후 결과를 비교합니다.", output: "추천 순위, 계산 근거, 안전 필터 적용 결과" },
+  { title: "추천 이후 기록", purpose: "추천 후 필요한 근거·추적·자가보고·기기·이상사례 기록 기능을 검증합니다.", input: "추천 세션과 저장 허용 범위", process: "근거 조회, 후속 일정, PRO, 스마트워치 데이터 또는 이상사례를 세션에 연결합니다.", output: "기록 성공 여부와 이상사례 발생 시 추천 중단 상태" },
+  { title: "모델 및 검증 산출물", purpose: "평가에 사용된 모델과 성능 결과가 지정된 산출물과 연결되는지 확인합니다.", input: "모델 구조, 데이터 규모, 독립 시험 결과, 검증 파일", process: "모델 명세와 재현 가능한 평가 결과를 한 화면에 정리합니다.", output: "기관 평가자가 확인할 최종 기술·성능 요약" },
+] as const;
+
 function toggle(current: string[], value: string) {
   return current.includes(value)
     ? current.filter((item) => item !== value)
@@ -101,6 +111,9 @@ async function runLab(body: JsonRecord) {
 }
 
 export default function InterimUserConsole() {
+  const [activeStage, setActiveStage] = useState(0);
+  const [helpOpen, setHelpOpen] = useState(false);
+  const stageRefs = useRef<Array<HTMLElement | null>>([]);
   const [age, setAge] = useState(41);
   const [goal, setGoal] = useState("sleep_quality");
   const [conditions, setConditions] = useState<string[]>([]);
@@ -115,7 +128,7 @@ export default function InterimUserConsole() {
   const [recommendationResult, setRecommendationResult] = useState<JsonRecord | null>(null);
   const [feedback, setFeedback] = useState<Feedback | null>(null);
   const [demoProgress, setDemoProgress] = useState("");
-  const resultRef = useRef<HTMLElement>(null);
+  const resultRef = useRef<HTMLElement | null>(null);
   const actionFeedbackRef = useRef<HTMLDivElement>(null);
   const [trace, setTrace] = useState<JsonRecord>({
     안내: "시험 프로필 설정 후 추천 모델을 실행하십시오.",
@@ -156,6 +169,29 @@ export default function InterimUserConsole() {
       ? (recommendationResult.inference as InferenceExplanation)
       : null;
   const terminalState = state === "ESCALATED" || state === "STOPPED" || state === "ADVERSE_EVENT";
+
+  useEffect(() => {
+    if (!helpOpen) return;
+    const close = (event: KeyboardEvent) => { if (event.key === "Escape") setHelpOpen(false); };
+    window.addEventListener("keydown", close);
+    return () => window.removeEventListener("keydown", close);
+  }, [helpOpen]);
+
+  function moveToStage(next: number) {
+    const bounded = Math.max(0, Math.min(EVALUATION_STAGES.length - 1, next));
+    setActiveStage(bounded);
+    requestAnimationFrame(() => stageRefs.current[bounded]?.scrollIntoView({ behavior: "smooth", block: "start" }));
+  }
+
+  async function nextStage() {
+    if (activeStage === 3 && !recommendationResult) {
+      await runScenario(DEMO_SCENARIOS[0]);
+      setActiveStage(4);
+      requestAnimationFrame(() => stageRefs.current[4]?.scrollIntoView({ behavior: "smooth", block: "start" }));
+      return;
+    }
+    moveToStage(activeStage + 1);
+  }
 
   function describeResult(action: LabAction, result: JsonRecord): Feedback {
     if (action === "recommend") {
@@ -272,18 +308,17 @@ export default function InterimUserConsole() {
           </div>
         </header>
 
-        <ResearchOverview />
+        <div ref={(node)=>{stageRefs.current[0]=node;}} className={styles.stageAnchor}><ResearchOverview /></div>
 
-        <BlindTestExplorer />
+        <div ref={(node)=>{stageRefs.current[1]=node;}} className={styles.stageAnchor}><BlindTestExplorer /></div>
 
-        <ProStudySimulation />
+        <div ref={(node)=>{stageRefs.current[2]=node;}} className={styles.stageAnchor}><ProStudySimulation /></div>
 
-        <section className={styles.section}>
+        <section ref={(node)=>{stageRefs.current[3]=node;}} className={styles.section}>
           <p className={styles.sectionLabel}>1. 시험 조건 입력</p>
           <h2 className={styles.sectionTitle}>예시 조건으로 추천 모델을 실행합니다</h2>
           <p className={styles.sectionBody}>`다음`을 누르면 기본 예시의 추천, 안전 판정, 근거 확인과 후속 기록까지 자동으로 실행합니다.</p>
           <div className={styles.quickScenarioSummary}><span>실행 예시</span><strong>{DEMO_SCENARIOS[0].title}</strong><small>{DEMO_SCENARIOS[0].description}</small></div>
-          <button type="button" className={styles.primaryButton} onClick={()=>runScenario(DEMO_SCENARIOS[0])} disabled={busyAction!==null}>{busyAction!==null?demoProgress||"실행 중…":"다음"}</button>
           <details className={styles.secondaryOptions}>
             <summary>다른 예시 선택 또는 입력값 수정</summary>
           <div className={styles.demoPanel}>
@@ -354,7 +389,7 @@ export default function InterimUserConsole() {
           </details>
         </section>
 
-        <section ref={resultRef} className={`${styles.section} ${styles.softSection}`}>
+        <section ref={(node)=>{resultRef.current=node;stageRefs.current[4]=node;}} className={`${styles.section} ${styles.softSection}`}>
           <p className={styles.sectionLabel}>2. 추천 결과 확인</p>
           <h2 className={styles.sectionTitle}>무엇이 추천되었고, 무엇이 제외되었는가</h2>
           <p className={styles.sectionBody}>입력 조건을 모델에 적용한 뒤 복용 약물·질환·알레르기 안전 규칙을 순서대로 확인한 결과입니다.</p>
@@ -393,7 +428,7 @@ export default function InterimUserConsole() {
 
         {inference && <InferenceWorkbench inference={inference} />}
 
-        <section className={styles.section}>
+        <section ref={(node)=>{stageRefs.current[5]=node;}} className={styles.section}>
           <p className={styles.sectionLabel}>4. 추천 이후 기록 기능 시험</p>
           <h2 className={styles.sectionTitle}>추천 후 필요한 기록이 정상 처리되는지 확인하세요</h2>
           <p className={styles.sectionBody}>먼저 저장을 허용할 항목을 선택한 다음 아래 버튼을 누르세요. `자가보고 결과`는 본인이 느낀 건강 변화를 뜻합니다. `중대한 이상사례`를 누르면 추가 추천이 중단되는지도 확인할 수 있습니다.</p>
@@ -425,7 +460,7 @@ export default function InterimUserConsole() {
           </div>
         </section>
 
-        <ResearchEvidencePanel />
+        <div ref={(node)=>{stageRefs.current[6]=node;}} className={styles.stageAnchor}><ResearchEvidencePanel /></div>
 
         <details className={styles.trace}>
           <summary>연구용 실행 추적 보기</summary>
@@ -433,6 +468,13 @@ export default function InterimUserConsole() {
         </details>
 
       </div>
+      <div className={styles.evaluatorDock} aria-label="평가 단계 이동">
+        <div><span>{activeStage + 1} / {EVALUATION_STAGES.length}</span><strong>{EVALUATION_STAGES[activeStage].title}</strong></div>
+        <button type="button" onClick={()=>moveToStage(activeStage-1)} disabled={activeStage===0||busyAction!==null}>이전</button>
+        <button type="button" className={styles.helpButton} onClick={()=>setHelpOpen(true)}>자세히 설명</button>
+        <button type="button" className={styles.dockNext} onClick={nextStage} disabled={activeStage===EVALUATION_STAGES.length-1||busyAction!==null}>{busyAction!==null?"실행 중…":"다음"}</button>
+      </div>
+      {helpOpen&&<div className={styles.helpOverlay} role="presentation" onMouseDown={(event)=>{if(event.target===event.currentTarget)setHelpOpen(false);}}><section className={styles.stageHelpModal} role="dialog" aria-modal="true" aria-labelledby="stage-help-title"><header><div><span>단계 {activeStage+1}</span><h2 id="stage-help-title">{EVALUATION_STAGES[activeStage].title}</h2></div><button type="button" aria-label="설명 닫기" onClick={()=>setHelpOpen(false)}>×</button></header><p className={styles.helpPurpose}>{EVALUATION_STAGES[activeStage].purpose}</p><dl><div><dt>무엇을 입력하나</dt><dd>{EVALUATION_STAGES[activeStage].input}</dd></div><div><dt>어떻게 계산하나</dt><dd>{EVALUATION_STAGES[activeStage].process}</dd></div><div><dt>무엇을 확인하나</dt><dd>{EVALUATION_STAGES[activeStage].output}</dd></div></dl><button type="button" className={styles.primaryButton} onClick={()=>setHelpOpen(false)}>설명 닫기</button></section></div>}
     </main>
   );
 }
