@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import ResearchOverview from "./ResearchOverview";
 import BlindTestExplorer from "./BlindTestExplorer";
-import ProStudySimulation from "./ProStudySimulation";
+import ProStudySimulation, { type ProStudySimulationHandle } from "./ProStudySimulation";
 import AdvancedProfileFields, { DEFAULT_ADVANCED, type AdvancedProfile } from "./AdvancedProfileFields";
 import InferenceWorkbench from "./InferenceWorkbench";
 import ResearchEvidencePanel from "./ResearchEvidencePanel";
@@ -85,6 +85,14 @@ const EVALUATION_STAGES = [
   { title: "모델 및 검증 산출물", purpose: "평가에 사용된 모델과 성능 결과가 지정된 산출물과 연결되는지 확인합니다.", input: "모델 구조, 데이터 규모, 독립 시험 결과, 검증 파일", process: "모델 명세와 재현 가능한 평가 결과를 한 화면에 정리합니다.", output: "기관 평가자가 확인할 최종 기술·성능 요약" },
 ] as const;
 
+const PRO_STAGE_LABELS = ["안내", "복용 전 점수", "4주 후 점수", "개선도 결과"] as const;
+const PRO_STAGE_HELP = [
+  { purpose:"복용 전후 평가의 대상, 설문과 계산 순서를 확인합니다.", input:"기본 테스터와 PSQI 설문", process:"복용 전 측정, 추천 실행, 4주 후 동일 설문 측정 순서를 준비합니다.", output:"이번 평가에서 재현할 전체 절차" },
+  { purpose:"테스터의 복용 전 건강 상태를 기준점으로 저장하고 추천 모델을 실행합니다.", input:"테스터 정보, 관리 목표, 승인된 PSQI 구성요소 점수", process:"설문 원점수를 저장하고 동일 프로필로 추천 성분을 계산합니다.", output:"복용 전 기준 점수와 추천 성분" },
+  { purpose:"같은 테스터의 4주 후 건강 상태를 같은 설문으로 기록합니다.", input:"4주 후 PSQI 점수, 복용 순응도, 이상사례 여부", process:"복용 전과 같은 척도의 원점수를 저장해 직접 비교 가능한 상태로 만듭니다.", output:"4주 후 점수와 복용 상태" },
+  { purpose:"복용 전후 점수 차이가 건강 상태에서 어느 정도 변화인지 계산합니다.", input:"복용 전 점수, 4주 후 점수, 시작 시점 집단 분포", process:"두 점수를 Z-표준화한 뒤 건강 백분위 차이(pp)로 변환합니다.", output:"개인 개선도, 개선 여부와 집단 평균 성과" },
+] as const;
+
 function toggle(current: string[], value: string) {
   return current.includes(value)
     ? current.filter((item) => item !== value)
@@ -112,8 +120,11 @@ async function runLab(body: JsonRecord) {
 
 export default function InterimUserConsole() {
   const [activeStage, setActiveStage] = useState(0);
+  const [proStep, setProStep] = useState<0|1|2|3>(0);
+  const [proBusy, setProBusy] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
   const stageRefs = useRef<Array<HTMLElement | null>>([]);
+  const proStudyRef = useRef<ProStudySimulationHandle | null>(null);
   const [age, setAge] = useState(41);
   const [goal, setGoal] = useState("sleep_quality");
   const [conditions, setConditions] = useState<string[]>([]);
@@ -169,6 +180,8 @@ export default function InterimUserConsole() {
       ? (recommendationResult.inference as InferenceExplanation)
       : null;
   const terminalState = state === "ESCALATED" || state === "STOPPED" || state === "ADVERSE_EVENT";
+  const activeHelp = activeStage === 2 ? PRO_STAGE_HELP[proStep] : EVALUATION_STAGES[activeStage];
+  const activeStageTitle = activeStage === 2 ? `복용 전후 건강 변화 · ${PRO_STAGE_LABELS[proStep]}` : EVALUATION_STAGES[activeStage].title;
 
   useEffect(() => {
     if (!helpOpen) return;
@@ -184,6 +197,14 @@ export default function InterimUserConsole() {
   }
 
   async function nextStage() {
+    if (activeStage === 2) {
+      setProBusy(true);
+      try {
+        const completed = await proStudyRef.current?.next();
+        if (completed) moveToStage(3);
+      } finally { setProBusy(false); }
+      return;
+    }
     if (activeStage === 3 && !recommendationResult) {
       await runScenario(DEMO_SCENARIOS[0]);
       setActiveStage(4);
@@ -191,6 +212,11 @@ export default function InterimUserConsole() {
       return;
     }
     moveToStage(activeStage + 1);
+  }
+
+  function previousStage() {
+    if (activeStage === 2 && proStudyRef.current?.previous()) return;
+    moveToStage(activeStage - 1);
   }
 
   function describeResult(action: LabAction, result: JsonRecord): Feedback {
@@ -312,7 +338,7 @@ export default function InterimUserConsole() {
 
         <div ref={(node)=>{stageRefs.current[1]=node;}} className={styles.stageAnchor}><BlindTestExplorer /></div>
 
-        <div ref={(node)=>{stageRefs.current[2]=node;}} className={styles.stageAnchor}><ProStudySimulation /></div>
+        <div ref={(node)=>{stageRefs.current[2]=node;}} className={styles.stageAnchor}><ProStudySimulation ref={proStudyRef} onStepChange={setProStep} /></div>
 
         <section ref={(node)=>{stageRefs.current[3]=node;}} className={styles.section}>
           <p className={styles.sectionLabel}>1. 시험 조건 입력</p>
@@ -469,12 +495,12 @@ export default function InterimUserConsole() {
 
       </div>
       <div className={styles.evaluatorDock} aria-label="평가 단계 이동">
-        <div><span>{activeStage + 1} / {EVALUATION_STAGES.length}</span><strong>{EVALUATION_STAGES[activeStage].title}</strong></div>
-        <button type="button" onClick={()=>moveToStage(activeStage-1)} disabled={activeStage===0||busyAction!==null}>이전</button>
+        <div><span>{activeStage + 1} / {EVALUATION_STAGES.length}</span><strong>{activeStageTitle}</strong></div>
+        <button type="button" onClick={previousStage} disabled={activeStage===0||busyAction!==null||proBusy}>이전</button>
         <button type="button" className={styles.helpButton} onClick={()=>setHelpOpen(true)}>자세히 설명</button>
-        <button type="button" className={styles.dockNext} onClick={nextStage} disabled={activeStage===EVALUATION_STAGES.length-1||busyAction!==null}>{busyAction!==null?"실행 중…":"다음"}</button>
+        <button type="button" className={styles.dockNext} onClick={nextStage} disabled={activeStage===EVALUATION_STAGES.length-1||busyAction!==null||proBusy}>{busyAction!==null||proBusy?"실행 중…":"다음"}</button>
       </div>
-      {helpOpen&&<div className={styles.helpOverlay} role="presentation" onMouseDown={(event)=>{if(event.target===event.currentTarget)setHelpOpen(false);}}><section className={styles.stageHelpModal} role="dialog" aria-modal="true" aria-labelledby="stage-help-title"><header><div><span>단계 {activeStage+1}</span><h2 id="stage-help-title">{EVALUATION_STAGES[activeStage].title}</h2></div><button type="button" aria-label="설명 닫기" onClick={()=>setHelpOpen(false)}>×</button></header><p className={styles.helpPurpose}>{EVALUATION_STAGES[activeStage].purpose}</p><dl><div><dt>무엇을 입력하나</dt><dd>{EVALUATION_STAGES[activeStage].input}</dd></div><div><dt>어떻게 계산하나</dt><dd>{EVALUATION_STAGES[activeStage].process}</dd></div><div><dt>무엇을 확인하나</dt><dd>{EVALUATION_STAGES[activeStage].output}</dd></div></dl><button type="button" className={styles.primaryButton} onClick={()=>setHelpOpen(false)}>설명 닫기</button></section></div>}
+      {helpOpen&&<div className={styles.helpOverlay} role="presentation" onMouseDown={(event)=>{if(event.target===event.currentTarget)setHelpOpen(false);}}><section className={styles.stageHelpModal} role="dialog" aria-modal="true" aria-labelledby="stage-help-title"><header><div><span>단계 {activeStage+1}</span><h2 id="stage-help-title">{activeStageTitle}</h2></div><button type="button" aria-label="설명 닫기" onClick={()=>setHelpOpen(false)}>×</button></header><p className={styles.helpPurpose}>{activeHelp.purpose}</p><dl><div><dt>무엇을 입력하나</dt><dd>{activeHelp.input}</dd></div><div><dt>어떻게 계산하나</dt><dd>{activeHelp.process}</dd></div><div><dt>무엇을 확인하나</dt><dd>{activeHelp.output}</dd></div></dl><button type="button" className={styles.primaryButton} onClick={()=>setHelpOpen(false)}>설명 닫기</button></section></div>}
     </main>
   );
 }
