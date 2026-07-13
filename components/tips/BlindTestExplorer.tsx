@@ -63,6 +63,13 @@ const INGREDIENTS: Record<string, string> = {
 };
 const label = (id: string) => INGREDIENTS[id] ? `${INGREDIENTS[id]} (${id})` : id;
 const format = (value: number) => new Intl.NumberFormat("ko-KR").format(value);
+const PROFILE_LABELS: Record<string, string> = {
+  age_band: "연령대", allergies: "알레르기", conditions: "질환",
+  current_supplements: "현재 복용 영양성분", diet_patterns: "식이 특성",
+  genetic_features: "유전 특성", goals: "관리 목표", labs: "검사 결과",
+  medication_classes: "복용 약물", preferences: "복용 선호 조건",
+  pregnancy_status: "임신 상태", sex: "성별", wearable_features: "기기 측정 특성",
+};
 
 async function callLab(action: "list_blind_tests" | "verify_blind_tests", payload: Record<string, unknown>) {
   const initialized = await fetch("/api/tips/lab", {
@@ -96,6 +103,7 @@ export default function BlindTestExplorer() {
   const [verified, setVerified] = useState<Summary | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [explanationOpen, setExplanationOpen] = useState(false);
   const requestSequence = useRef(0);
 
   const load = useCallback(async (nextPage: number, nextFilter: Filter, nextQuery: string) => {
@@ -111,6 +119,12 @@ export default function BlindTestExplorer() {
   }, []);
 
   useEffect(() => { void load(1, "all", ""); }, [load]);
+  useEffect(() => {
+    if (!explanationOpen) return;
+    const close = (event: KeyboardEvent) => event.key === "Escape" && setExplanationOpen(false);
+    window.addEventListener("keydown", close);
+    return () => window.removeEventListener("keydown", close);
+  }, [explanationOpen]);
 
   const profileEntries = useMemo(() => selected ? Object.entries(selected.profile) : [], [selected]);
 
@@ -136,9 +150,12 @@ export default function BlindTestExplorer() {
 
   return (
     <section className={`${styles.section} ${styles.blindExplorer}`} aria-labelledby="blind-test-title">
-      <p className={styles.sectionLabel}>BLIND TEST REPLAY</p>
-      <h2 id="blind-test-title" className={styles.sectionTitle}>학습에 쓰지 않은 5,000건으로 정확도 다시 확인</h2>
-      <p className={styles.sectionBody}>목록에서 시험 사례를 선택하면 입력 조건, 모델의 현재 추천, 미리 정한 기준 추천을 나란히 비교할 수 있습니다. `5,000건 전체 다시 계산`을 누르면 전체 정확도를 즉시 재검사합니다.</p>
+      <p className={styles.sectionLabel}>추천 결과 재현 시험</p>
+      <div className={styles.explainedTitleRow}>
+        <h2 id="blind-test-title" className={styles.sectionTitle}>5,000명의 조건으로 추천 결과를 다시 계산합니다</h2>
+        <button type="button" className={styles.explanationButton} onClick={() => setExplanationOpen(true)}>이 시험은 무엇인가요?</button>
+      </div>
+      <p className={styles.sectionBody}>모델이 각 사람에게 추천한 영양성분 목록을 미리 정한 기준 추천과 비교합니다.</p>
 
       <div className={styles.replaySummary}>
         <div><span>검증 대상</span><strong>{format(verified?.evaluated ?? result?.summary.evaluated ?? 5000)}건</strong></div>
@@ -174,7 +191,7 @@ export default function BlindTestExplorer() {
         <article className={styles.caseDetail}>
           {selected ? <>
             <div className={styles.caseHeading}><div><span>{selected.caseId}</span><h3>{selected.archetypeId}</h3></div><b className={selected.exactMatch ? styles.pass : styles.fail}>{selected.exactMatch ? "정답과 완전 일치" : "불일치 발견"}</b></div>
-            <dl className={styles.profileFacts}>{profileEntries.map(([key, value]) => <div key={key}><dt>{key}</dt><dd>{renderValue(value)}</dd></div>)}</dl>
+            <dl className={styles.profileFacts}>{profileEntries.map(([key, value]) => <div key={key}><dt>{PROFILE_LABELS[key] ?? key}</dt><dd>{renderValue(value)}</dd></div>)}</dl>
             <div className={styles.answerCompare}>
               <div><span>비교 기준 추천</span><strong>{selected.gold.length ? selected.gold.map(label).join(", ") : "추천 없음"}</strong></div>
               <div><span>현재 모델 재추론</span><strong>{selected.predicted.length ? selected.predicted.map(label).join(", ") : "추천 없음"}</strong></div>
@@ -193,6 +210,29 @@ export default function BlindTestExplorer() {
         </article>
       </div>
       <div className={styles.sourceHash}><strong>원본 SHA-256</strong><code>{result?.source?.cases?.sha256 ?? "불러오는 중"}</code></div>
+      {explanationOpen ? (
+        <div className={styles.explanationOverlay} role="presentation" onMouseDown={(event) => event.target === event.currentTarget && setExplanationOpen(false)}>
+          <section className={styles.explanationModal} role="dialog" aria-modal="true" aria-labelledby="blind-explanation-title">
+            <div className={styles.explanationModalHeader}>
+              <div><span>시험 설명</span><h3 id="blind-explanation-title">추천 모델이 기준대로 작동하는지 확인하는 시험</h3></div>
+              <button type="button" onClick={() => setExplanationOpen(false)} aria-label="설명 닫기">×</button>
+            </div>
+            <p className={styles.explanationLead}>학습에 사용하지 않은 가상 시험 대상 5,000명의 건강 조건을 모델에 다시 넣고, 모델이 고른 영양성분이 사전에 정한 기준 추천과 같은지 확인합니다.</p>
+            <ol className={styles.explanationSteps}>
+              <li><b>입력</b><span>나이, 건강 목표, 질환, 복용 약물, 알레르기 등 한 사람의 조건을 모델에 넣습니다.</span></li>
+              <li><b>모델 출력</b><span>모델이 그 사람에게 적합하다고 계산한 영양성분 목록을 만듭니다.</span></li>
+              <li><b>비교 대상</b><span>현재 모델의 추천 목록을 데이터에 미리 저장된 기준 추천 목록과 비교합니다.</span></li>
+              <li><b>통과 판정</b><span>두 목록의 성분과 개수가 모두 같으면 `완전 일치`, 하나라도 다르면 `불일치`입니다.</span></li>
+            </ol>
+            <div className={styles.explanationGlossary}>
+              <div><b>완전 일치</b><span>5,000명 중 추천 목록 전체가 기준과 똑같은 사람 수</span></div>
+              <div><b>추천 항목 정밀도</b><span>모델이 추천한 전체 성분 중 기준 추천에도 포함된 성분의 비율</span></div>
+              <div><b>안전 개입</b><span>약물·질환·알레르기 조건 때문에 후보를 제외하거나 추천을 중단한 사례</span></div>
+            </div>
+            <button type="button" className={styles.explanationClose} onClick={() => setExplanationOpen(false)}>설명 확인</button>
+          </section>
+        </div>
+      ) : null}
     </section>
   );
 }

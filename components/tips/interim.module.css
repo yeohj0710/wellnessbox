@@ -68,6 +68,23 @@
 .researchOverview { padding-top: 72px; }
 
 .blindExplorer { background: #f9fafb; }
+.explainedTitleRow { display:flex; align-items:flex-start; justify-content:space-between; gap:24px; }
+.explainedTitleRow .sectionTitle { max-width:760px; }
+.explanationButton { flex:0 0 auto; margin-top:8px; padding:11px 16px; border:1px solid #bcd5ff; border-radius:12px; background:#fff; color:#1b64da; font:inherit; font-size:14px; font-weight:800; cursor:pointer; }
+.explanationOverlay { position:fixed; inset:0; z-index:1200; display:grid; place-items:center; padding:24px; background:rgba(15,23,42,.56); backdrop-filter:blur(4px); }
+.explanationModal { width:min(680px,100%); max-height:calc(100vh - 48px); overflow:auto; padding:30px; border-radius:24px; background:#fff; box-shadow:0 24px 80px rgba(15,23,42,.28); }
+.explanationModalHeader { display:flex; align-items:flex-start; justify-content:space-between; gap:20px; }
+.explanationModalHeader span { color:#3182f6; font-size:13px; font-weight:800; }
+.explanationModalHeader h3 { margin:7px 0 0; color:#191f28; font-size:26px; line-height:1.35; }
+.explanationModalHeader>button { width:36px; height:36px; border:0; border-radius:50%; background:#f2f4f6; color:#4e5968; font-size:24px; cursor:pointer; }
+.explanationLead { margin:20px 0; color:#4e5968; font-size:16px; line-height:1.65; }
+.explanationSteps { display:grid; gap:10px; margin:0; padding:0; list-style:none; counter-reset:explain-step; }
+.explanationSteps li { counter-increment:explain-step; display:grid; grid-template-columns:28px 100px 1fr; gap:10px; align-items:start; padding:14px; border-radius:14px; background:#f7faff; }
+.explanationSteps li::before { content:counter(explain-step); display:grid; place-items:center; width:24px; height:24px; border-radius:50%; background:#3182f6; color:#fff; font-size:12px; font-weight:800; }
+.explanationSteps b { color:#191f28; }.explanationSteps span { color:#4e5968; line-height:1.5; }
+.explanationGlossary { display:grid; gap:8px; margin-top:18px; padding-top:18px; border-top:1px solid #e5e8eb; }
+.explanationGlossary div { display:grid; grid-template-columns:130px 1fr; gap:12px; }.explanationGlossary b { color:#333d4b; }.explanationGlossary span { color:#6b7684; line-height:1.5; }
+.explanationClose { width:100%; margin-top:22px; padding:14px; border:0; border-radius:14px; background:#3182f6; color:#fff; font:inherit; font-weight:800; cursor:pointer; }
 .replaySummary { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)) auto; gap: 12px; align-items: stretch; margin-bottom: 14px; }
 .replaySummary>div { display: grid; gap: 8px; padding: 20px; border: 1px solid #e5e8eb; border-radius: 18px; background: #fff; }
 .replaySummary span { color: #6b7684; font-size: 13px; font-weight: 700; }
@@ -166,6 +183,7 @@
 .advancedDetails { margin-top: 18px; border-top: 1px solid #dbe5f5; }.advancedDetails summary { display: flex; justify-content: space-between; align-items: center; padding: 18px 2px 2px; color: #4e5968; font-weight: 800; cursor: pointer; }.advancedDetails summary b { padding: 5px 9px; border-radius: 999px; background: #e8f3ff; color: #1b64da; font-size: 11px; }.advancedDetails[open] summary { margin-bottom: 18px; }.advancedDetails>.advancedGrid { margin-top: 0; }
 
 @media (max-width: 760px) {
+  .explainedTitleRow { display:grid; }.explanationButton { margin-top:-10px; justify-self:start; }.explanationModal { padding:22px; border-radius:20px; }.explanationModalHeader h3 { font-size:22px; }.explanationSteps li { grid-template-columns:28px 1fr; }.explanationSteps li span { grid-column:2; }.explanationGlossary div { grid-template-columns:1fr; gap:3px; }
   .shell { width: auto; margin: 0 24px; padding: 54px 0 84px; }
   .hero { grid-template-columns: 1fr; gap: 36px; padding: 24px 0 64px; }
   .eyebrow,.sectionLabel { margin-bottom: 10px; font-size: 18px; }
