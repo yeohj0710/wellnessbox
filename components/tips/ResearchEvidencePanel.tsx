@@ -21,15 +21,6 @@ export default function ResearchEvidencePanel() {
             <div><dt>추천 목록 전체 일치율</dt><dd>{(research.model.exactMatch * 100).toFixed(2)}%</dd></div>
           </dl>
       </div>
-      <details className={styles.researchPanel}>
-        <summary className={styles.advancedProfileSummary}><span><b>검증 파일 식별정보</b><small>기관 검토 시 모델과 결과 파일이 바뀌지 않았는지 대조하는 값</small></span></summary>
-        <dl className={styles.hashList}>
-          <div><dt>검증 파일 목록</dt><dd><code>{research.provenance.bundledEvidenceManifest}</code></dd></div>
-          <div><dt>전체 증적 파일 식별값</dt><dd><code>{research.provenance.manifestSha256}</code></dd></div>
-          <div><dt>학습 모델 식별값</dt><dd><code>{research.provenance.modelArtifactSha256}</code></dd></div>
-          <div><dt>성과지표 결과 식별값</dt><dd><code>{research.provenance.proxyKpiReportSha256}</code></dd></div>
-        </dl>
-      </details>
     </section>
   );
 }

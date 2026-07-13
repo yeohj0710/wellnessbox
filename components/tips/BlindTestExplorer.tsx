@@ -43,7 +43,6 @@ type ListResult = {
   pages: number;
   summary: Summary;
   rows: BlindRow[];
-  source: Record<string, { relativePath: string; sha256: string }>;
 };
 
 const FILTERS: Array<[Filter, string]> = [
@@ -68,7 +67,25 @@ const PROFILE_LABELS: Record<string, string> = {
   current_supplements: "현재 복용 영양성분", diet_patterns: "식이 특성",
   genetic_features: "유전 특성", goals: "관리 목표", labs: "검사 결과",
   medication_classes: "복용 약물", preferences: "복용 선호 조건",
-  pregnancy_status: "임신 상태", sex: "성별", wearable_features: "기기 측정 특성",
+  pregnancy_status: "임신 상태", sex: "성별", sex_at_birth: "성별", wearable_features: "기기 측정 특성",
+  risk_flags: "주의 조건", symptoms: "주요 증상",
+};
+const VALUE_LABELS: Record<string, string> = {
+  male: "남성", female: "여성", not_applicable: "해당 없음", not_pregnant: "비임신",
+  bone_health: "뼈 건강", sleep_quality: "수면의 질", exercise_recovery: "운동 회복",
+  low_fortified_food: "강화식품 섭취 부족", low_protein: "단백질 섭취 부족", low_fish: "생선 섭취 부족",
+  capsule: "캡슐", powder: "분말", CONTINUE: "추천 절차 계속", STOP_AND_ESCALATE: "추천 중단 후 전문가 확인",
+  ACCEPT: "기준 충족", REJECT: "기준 미충족",
+};
+const ARCHETYPE_LABELS: Record<string, string> = {
+  athlete_low_protein: "운동량이 많고 단백질 섭취가 부족한 사례",
+  eye_strain: "눈의 피로를 호소하는 사례",
+  healthy_low_sun: "질환은 없지만 햇빛 노출이 부족한 사례",
+  low_fish_intake: "생선 섭취가 부족한 사례",
+  chest_pain: "흉통 위험 신호가 있는 사례",
+  ckd: "만성 신장질환이 있는 사례",
+  vegan_b12: "채식으로 비타민 B12 섭취가 부족한 사례",
+  surgery_upcoming: "수술 예정인 사례",
 };
 
 async function callLab(action: "list_blind_tests" | "verify_blind_tests", payload: Record<string, unknown>) {
@@ -87,10 +104,19 @@ async function callLab(action: "list_blind_tests" | "verify_blind_tests", payloa
   return result;
 }
 
-function renderValue(value: unknown) {
-  if (Array.isArray(value)) return value.length ? value.join(", ") : "없음";
-  if (value && typeof value === "object") return JSON.stringify(value);
-  return String(value ?? "없음");
+function renderValue(value: unknown): string {
+  if (Array.isArray(value)) return value.length ? value.map((item) => renderValue(item)).join(", ") : "없음";
+  if (value && typeof value === "object") {
+    const entries = Object.entries(value as Record<string, unknown>);
+    if (!entries.length) return "없음";
+    return entries.map(([key, item]) => {
+      const names: Record<string, string> = { max_daily_pills: "하루 최대 복용 수", monthly_budget_krw: "월 예산", preferred_form: "선호 제형" };
+      const rendered: string = key === "monthly_budget_krw" && typeof item === "number" ? `${format(item)}원` : renderValue(item);
+      return `${names[key] ?? key}: ${rendered}`;
+    }).join(" · ");
+  }
+  const text = String(value ?? "없음");
+  return VALUE_LABELS[text] ?? text;
 }
 
 export default function BlindTestExplorer() {
@@ -105,6 +131,7 @@ export default function BlindTestExplorer() {
   const [error, setError] = useState("");
   const [explanationOpen, setExplanationOpen] = useState(false);
   const requestSequence = useRef(0);
+  const detailRef = useRef<HTMLElement>(null);
 
   const load = useCallback(async (nextPage: number, nextFilter: Filter, nextQuery: string) => {
     const requestId = ++requestSequence.current;
@@ -126,7 +153,7 @@ export default function BlindTestExplorer() {
     return () => window.removeEventListener("keydown", close);
   }, [explanationOpen]);
 
-  const profileEntries = useMemo(() => selected ? Object.entries(selected.profile) : [], [selected]);
+  const profileEntries = useMemo(() => selected ? Object.entries(selected.profile).filter(([key]) => key !== "profile_id") : [], [selected]);
 
   async function verifyAll() {
     setBusy(true); setError("");
@@ -146,6 +173,22 @@ export default function BlindTestExplorer() {
     const index = Math.floor(Math.random() * 5000);
     const id = `case_proxy_blind_test_${String(index).padStart(7, "0")}`;
     setFilter("all"); setQueryInput(id); setQuery(id); void load(1, "all", id);
+  }
+
+  function selectCase(row: BlindRow) {
+    setSelected(row);
+    requestAnimationFrame(() => detailRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }));
+  }
+
+  async function selectNextCase() {
+    if (!result || !selected) return;
+    const index = result.rows.findIndex((row) => row.caseId === selected.caseId);
+    const next = result.rows[index + 1];
+    if (next) return selectCase(next);
+    if (page < result.pages) {
+      await load(page + 1, filter, query);
+      requestAnimationFrame(() => detailRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }));
+    }
   }
 
   return (
@@ -181,35 +224,33 @@ export default function BlindTestExplorer() {
         <aside className={styles.caseList} aria-label="블라인드 테스트 케이스 목록">
           <div className={styles.caseListHeader}><strong>{format(result?.filteredRows ?? 0)}건</strong><span>{page} / {result?.pages ?? 1}쪽</span></div>
           {result?.rows.map((row) => (
-            <button key={row.caseId} type="button" aria-pressed={selected?.caseId === row.caseId} className={selected?.caseId === row.caseId ? styles.caseActive : ""} onClick={() => setSelected(row)}>
-              <span>{row.caseId.replace("case_proxy_blind_test_", "#")}</span><strong>{row.archetypeId}</strong><i className={row.exactMatch ? styles.pass : styles.fail}>{row.exactMatch ? "일치" : "불일치"}</i>
+            <button key={row.caseId} type="button" aria-pressed={selected?.caseId === row.caseId} className={selected?.caseId === row.caseId ? styles.caseActive : ""} onClick={() => selectCase(row)}>
+              <span>시험 사례 {Number(row.caseId.slice(-7)) + 1}</span><strong>{ARCHETYPE_LABELS[row.archetypeId] ?? row.archetypeId}</strong><i className={row.exactMatch ? styles.pass : styles.fail}>{row.exactMatch ? "통과" : "확인 필요"}</i>
             </button>
           ))}
           <div className={styles.pagination}><button type="button" disabled={page <= 1 || busy} onClick={() => load(page - 1, filter, query)}>이전</button><button type="button" disabled={page >= (result?.pages ?? 1) || busy} onClick={() => load(page + 1, filter, query)}>다음</button></div>
         </aside>
 
-        <article className={styles.caseDetail}>
+        <article ref={detailRef} className={styles.caseDetail}>
           {selected ? <>
-            <div className={styles.caseHeading}><div><span>{selected.caseId}</span><h3>{selected.archetypeId}</h3></div><b className={selected.exactMatch ? styles.pass : styles.fail}>{selected.exactMatch ? "정답과 완전 일치" : "불일치 발견"}</b></div>
+            <div className={styles.caseHeading}><div><span>현재 평가 사례</span><h3>{ARCHETYPE_LABELS[selected.archetypeId] ?? selected.archetypeId}</h3></div><b className={selected.exactMatch ? styles.pass : styles.fail}>평가 결과: {selected.exactMatch ? "통과" : "확인 필요"}</b></div>
             <dl className={styles.profileFacts}>{profileEntries.map(([key, value]) => <div key={key}><dt>{PROFILE_LABELS[key] ?? key}</dt><dd>{renderValue(value)}</dd></div>)}</dl>
             <div className={styles.answerCompare}>
-              <div><span>비교 기준 추천</span><strong>{selected.gold.length ? selected.gold.map(label).join(", ") : "추천 없음"}</strong></div>
-              <div><span>현재 모델 재추론</span><strong>{selected.predicted.length ? selected.predicted.map(label).join(", ") : "추천 없음"}</strong></div>
+              <div><span>이 조건에서 나와야 하는 추천</span><strong>{selected.gold.length ? selected.gold.map(label).join(", ") : "추천 없음"}</strong></div>
+              <div><span>현재 모델이 계산한 추천</span><strong>{selected.predicted.length ? selected.predicted.map(label).join(", ") : "추천 없음"}</strong></div>
             </div>
             <dl className={styles.caseAudit}>
-              <div><dt>추천 항목 정밀도</dt><dd>{selected.setPrecisionPercent.toFixed(2)}%</dd></div>
-              <div><dt>당시 저장 예측</dt><dd>{selected.storedPredicted.length ? selected.storedPredicted.map(label).join(", ") : "추천 없음"}</dd></div>
-              <div><dt>활성 특징 / 추천 개수</dt><dd>{selected.liveInference.activeFeatureCount} / {selected.liveInference.predictedCount}</dd></div>
-              <div><dt>기대 다음 행동</dt><dd>{selected.nextAction}</dd></div>
-              <div><dt>위험 등급 / abstain</dt><dd>{selected.riskTier} / {String(selected.abstain)}</dd></div>
-              <div><dt>Verifier</dt><dd>{selected.verifierDecision}</dd></div>
-              <div><dt>Teacher session</dt><dd>{selected.teacherSession}</dd></div>
-              <div><dt>사례 재현 번호</dt><dd>{selected.provenance.seed}</dd></div>
+              <div><dt>추천 항목 비교</dt><dd>{selected.setPrecisionPercent.toFixed(2)}% 일치</dd></div>
+              <div><dt>안전 규칙 처리</dt><dd>{selected.riskTier > 0 ? `위험 단계 ${selected.riskTier} 적용` : "추가 제한 없음"}</dd></div>
+              <div><dt>모델 처리 결과</dt><dd>{VALUE_LABELS[selected.nextAction] ?? selected.nextAction}</dd></div>
             </dl>
+            <div className={styles.caseNextAction}>
+              <p><strong>{selected.exactMatch ? "이 사례는 통과했습니다." : "추천 결과가 기준과 다릅니다."}</strong><span>{selected.exactMatch ? "다음 사례를 같은 방식으로 평가할 수 있습니다." : "입력 조건과 안전 규칙 적용 결과를 확인하세요."}</span></p>
+              <button type="button" onClick={selectNextCase} disabled={busy || (page >= (result?.pages ?? 1) && result?.rows.at(-1)?.caseId === selected.caseId)}>다음 사례 평가</button>
+            </div>
           </> : <p>조건에 맞는 케이스가 없습니다.</p>}
         </article>
       </div>
-      <div className={styles.sourceHash}><strong>원본 SHA-256</strong><code>{result?.source?.cases?.sha256 ?? "불러오는 중"}</code></div>
       {explanationOpen ? (
         <div className={styles.explanationOverlay} role="presentation" onMouseDown={(event) => event.target === event.currentTarget && setExplanationOpen(false)}>
           <section className={styles.explanationModal} role="dialog" aria-modal="true" aria-labelledby="blind-explanation-title">
