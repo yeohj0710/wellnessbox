@@ -15,7 +15,7 @@ export default function AdvancedProfileFields({value,onChange}:{value:AdvancedPr
  return <details className={styles.advancedProfile}>
   <summary className={styles.advancedProfileSummary}><span><b>상세 조건</b><small>성별, 예산, 검사값, 식이·복용 특성</small></span><em>{appliedCount ? `${appliedCount}개 변경` : "기본값 사용"}</em></summary>
   <div className={styles.advancedProfileBody}>
-  <div className={styles.advancedHeading}><div><span>MODEL INPUT SPACE</span><h3>확장 프로필 입력</h3></div><b>93개 모델 vocabulary 기반</b></div>
+  <div className={styles.advancedHeading}><div><span>추가 시험 조건</span><h3>상세 조건 입력</h3></div><b>전체 93개 조건 중 선택</b></div>
   <div className={styles.advancedGrid}>
    <label className={styles.control}><span>성별</span><select className={styles.field} value={value.sex} onChange={e=>set("sex",e.target.value as AdvancedProfile["sex"])}><option value="unknown">미지정</option><option value="female">여성</option><option value="male">남성</option></select></label>
    <label className={styles.control}><span>임신·수유 상태</span><select className={styles.field} value={value.pregnancyStatus} onChange={e=>set("pregnancyStatus",e.target.value as AdvancedProfile["pregnancyStatus"])}><option value="not_applicable">해당 없음</option><option value="not_pregnant">비임신</option><option value="pregnant">임신</option><option value="lactating">수유</option></select></label>

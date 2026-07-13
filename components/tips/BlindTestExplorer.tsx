@@ -137,8 +137,8 @@ export default function BlindTestExplorer() {
   return (
     <section className={`${styles.section} ${styles.blindExplorer}`} aria-labelledby="blind-test-title">
       <p className={styles.sectionLabel}>BLIND TEST REPLAY</p>
-      <h2 id="blind-test-title" className={styles.sectionTitle}>독립 블라인드 테스트 재현</h2>
-      <p className={styles.sectionBody}>학습에 사용하지 않은 Blind D 데이터 5,000건을 배포 모델에 재입력하여 현재 예측, 프록시 기준값 및 저장 예측을 비교합니다.</p>
+      <h2 id="blind-test-title" className={styles.sectionTitle}>학습에 쓰지 않은 5,000건으로 정확도 다시 확인</h2>
+      <p className={styles.sectionBody}>목록에서 시험 사례를 선택하면 입력 조건, 모델의 현재 추천, 미리 정한 기준 추천을 나란히 비교할 수 있습니다. `5,000건 전체 다시 계산`을 누르면 전체 정확도를 즉시 재검사합니다.</p>
 
       <div className={styles.replaySummary}>
         <div><span>검증 대상</span><strong>{format(verified?.evaluated ?? result?.summary.evaluated ?? 5000)}건</strong></div>
@@ -176,7 +176,7 @@ export default function BlindTestExplorer() {
             <div className={styles.caseHeading}><div><span>{selected.caseId}</span><h3>{selected.archetypeId}</h3></div><b className={selected.exactMatch ? styles.pass : styles.fail}>{selected.exactMatch ? "정답과 완전 일치" : "불일치 발견"}</b></div>
             <dl className={styles.profileFacts}>{profileEntries.map(([key, value]) => <div key={key}><dt>{key}</dt><dd>{renderValue(value)}</dd></div>)}</dl>
             <div className={styles.answerCompare}>
-              <div><span>프록시 정답</span><strong>{selected.gold.length ? selected.gold.map(label).join(", ") : "추천 없음"}</strong></div>
+              <div><span>비교 기준 추천</span><strong>{selected.gold.length ? selected.gold.map(label).join(", ") : "추천 없음"}</strong></div>
               <div><span>현재 모델 재추론</span><strong>{selected.predicted.length ? selected.predicted.map(label).join(", ") : "추천 없음"}</strong></div>
             </div>
             <dl className={styles.caseAudit}>
@@ -187,7 +187,7 @@ export default function BlindTestExplorer() {
               <div><dt>위험 등급 / abstain</dt><dd>{selected.riskTier} / {String(selected.abstain)}</dd></div>
               <div><dt>Verifier</dt><dd>{selected.verifierDecision}</dd></div>
               <div><dt>Teacher session</dt><dd>{selected.teacherSession}</dd></div>
-              <div><dt>생성 seed</dt><dd>{selected.provenance.seed}</dd></div>
+              <div><dt>사례 재현 번호</dt><dd>{selected.provenance.seed}</dd></div>
             </dl>
           </> : <p>조건에 맞는 케이스가 없습니다.</p>}
         </article>

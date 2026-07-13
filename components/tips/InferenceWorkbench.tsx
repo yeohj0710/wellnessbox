@@ -23,17 +23,18 @@ export default function InferenceWorkbench({ inference }: { inference: Inference
 
   return (
     <section className={`${styles.section} ${styles.inferenceSection}`} aria-labelledby="inference-title">
-      <p className={styles.sectionLabel}>3. 모델 추론 분석</p>
-      <h2 id="inference-title" className={styles.sectionTitle}>{top ? `${top.label} 예측 확률 ${(top.score * 100).toFixed(1)}% 산출 근거` : "모델 추론 단계 및 산출 근거"}</h2>
+      <p className={styles.sectionLabel}>3. 계산 과정 확인</p>
+      <h2 id="inference-title" className={styles.sectionTitle}>{top ? `${top.label}이 ${((top.score) * 100).toFixed(1)}%로 계산된 이유` : "입력값이 추천 결과로 바뀌는 과정"}</h2>
+      <p className={styles.sectionBody}>시험자가 입력한 조건 중 실제 계산에 사용된 항목, 각 항목이 점수에 미친 영향, 안전 규칙 적용 전후 결과를 순서대로 보여줍니다.</p>
 
       <div className={styles.pipeline}>
-        <article><span>01</span><strong>입력 벡터화</strong><p>93개 vocabulary 중 {inference.activeFeatures.length}개 활성</p></article>
+        <article><span>01</span><strong>입력 조건 정리</strong><p>전체 93개 조건 중 입력된 {inference.activeFeatures.length}개 사용</p></article>
         <i aria-hidden="true">→</i>
         <article><span>02</span><strong>개수 결정</strong><p>{inference.countDecision.predictedCount}개 후보 선택</p></article>
         <i aria-hidden="true">→</i>
-        <article><span>03</span><strong>14개 성분 순위화</strong><p>OVR logistic 확률 비교</p></article>
+        <article><span>03</span><strong>14개 성분 비교</strong><p>성분별 적합도 점수 계산</p></article>
         <i aria-hidden="true">→</i>
-        <article><span>04</span><strong>안전 필터</strong><p>{inference.preSafetySelection.length}개 → {inference.postSafetySelection.length}개</p></article>
+        <article><span>04</span><strong>안전 조건 확인</strong><p>후보 {inference.preSafetySelection.length}개 중 {inference.postSafetySelection.length}개 통과</p></article>
       </div>
 
       <div className={styles.formulaCard}>
@@ -45,11 +46,11 @@ export default function InferenceWorkbench({ inference }: { inference: Inference
 
       <div className={styles.explainGrid}>
         <div className={styles.researchPanel}>
-          <div className={styles.panelHeading}><div><span>ACTIVE VECTOR</span><h3>현재 활성 특징</h3></div><p>입력값 1, 나머지 vocabulary는 0으로 계산됩니다.</p></div>
+          <div className={styles.panelHeading}><div><span>사용된 입력값</span><h3>이번 계산에 반영된 조건</h3></div><p>아래 항목만 이번 추천 점수 계산에 사용되었습니다.</p></div>
           <div className={styles.featureChips}>{inference.activeFeatures.map((item) => <span key={item.index}><b>#{item.index}</b>{featureLabel(item.token)}</span>)}</div>
         </div>
         <div className={styles.researchPanel}>
-          <div className={styles.panelHeading}><div><span>COUNT CLASSIFIER</span><h3>추천 개수 결정</h3></div><p>가장 큰 선형점수의 class가 선택됩니다.</p></div>
+          <div className={styles.panelHeading}><div><span>추천 개수</span><h3>몇 개를 추천할지 결정</h3></div><p>1개·2개·3개 중 계산 점수가 가장 높은 개수를 선택합니다.</p></div>
           <div className={styles.countScores}>{countScores.map((item) => {
             const range = Math.max(0.0001, maxCountScore - minCountScore);
             const width = 18 + ((item.linearScore - minCountScore) / range) * 82;
@@ -60,7 +61,7 @@ export default function InferenceWorkbench({ inference }: { inference: Inference
 
       {top && (
         <div className={styles.researchPanel}>
-          <div className={styles.panelHeading}><div><span>FEATURE CONTRIBUTION</span><h3>1위 {top.label} 점수 구성</h3></div><p>절편 {signed(top.intercept)}에 활성 특징 계수를 더한 값입니다.</p></div>
+          <div className={styles.panelHeading}><div><span>조건별 영향</span><h3>1위 {top.label} 점수가 만들어진 과정</h3></div><p>양수는 추천 점수를 높이고, 음수는 낮춘 항목입니다.</p></div>
           <div className={styles.tableScroll}><table className={styles.researchTable}><thead><tr><th>활성 특징</th><th>Index</th><th>계수</th><th>점수 기여</th><th>방향</th></tr></thead><tbody>
             {top.contributions.map((item) => <tr key={item.index}><td>{featureLabel(item.token)}</td><td>#{item.index}</td><td>{signed(item.weight)}</td><td>{signed(item.contribution)}</td><td><span className={item.contribution >= 0 ? styles.positive : styles.negative}>{item.contribution >= 0 ? "추천↑" : "추천↓"}</span></td></tr>)}
           </tbody><tfoot><tr><td>절편 포함 합계</td><td /><td>{signed(top.intercept)}</td><td>{top.linearScore.toFixed(4)}</td><td>{(top.score * 100).toFixed(2)}%</td></tr></tfoot></table></div>
@@ -68,7 +69,7 @@ export default function InferenceWorkbench({ inference }: { inference: Inference
       )}
 
       <div className={styles.researchPanel}>
-        <div className={styles.panelHeading}><div><span>FULL RANKING</span><h3>14개 전체 후보와 안전 필터 전후</h3></div><p>카드에 보이지 않던 전체 모델 출력을 순위대로 표시합니다.</p></div>
+        <div className={styles.panelHeading}><div><span>전체 비교 결과</span><h3>14개 성분의 계산 순위와 제외 여부</h3></div><p>모델이 선택한 후보가 안전 확인 단계에서 유지되거나 제외되는 과정을 보여줍니다.</p></div>
         <div className={styles.tableScroll}><table className={styles.researchTable}><thead><tr><th>순위</th><th>성분</th><th>선형점수 z</th><th>확률</th><th>모델 선택</th><th>안전 필터</th><th>최종</th></tr></thead><tbody>
           {inference.candidateScores.map((item) => {
             const final = inference.postSafetySelection.some((candidate) => candidate.ingredientId === item.ingredientId);

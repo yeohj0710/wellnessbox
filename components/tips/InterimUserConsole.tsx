@@ -259,8 +259,7 @@ export default function InterimUserConsole() {
             <p className={styles.eyebrow}>TIPS 연구개발 성과 검증 시스템</p>
             <h1 className={styles.title}>개인 맞춤형 건강기능식품<br />추천 모델 검증</h1>
             <p className={styles.lead}>
-              AI 생성 프록시 데이터로 학습한 추천 모델, 안전 규칙 엔진 및 폐쇄루프 Agent의
-              성능과 실행 결과를 검증합니다.
+              시험 대상의 조건을 입력하면 추천 결과, 제외 사유, 계산 과정과 후속 기록 기능을 한 화면에서 확인할 수 있습니다.
             </p>
           </div>
 
@@ -280,11 +279,12 @@ export default function InterimUserConsole() {
         <ProStudySimulation />
 
         <section className={styles.section}>
-          <p className={styles.sectionLabel}>1. 시험 입력</p>
-          <h2 className={styles.sectionTitle}>시험 대상 프로필 및 조건 설정</h2>
+          <p className={styles.sectionLabel}>1. 시험 조건 입력</p>
+          <h2 className={styles.sectionTitle}>시험할 사람의 조건을 선택하세요</h2>
+          <p className={styles.sectionBody}>직접 입력하거나 아래 예시를 선택할 수 있습니다. 조건에 따라 추천 성분과 제외 사유가 달라지는지 확인하는 단계입니다.</p>
           <div className={styles.demoPanel}>
-            <div><strong>대표 시나리오 원클릭 시연</strong><p>입력만 적용하거나 추천, 안전 판정, 근거 조회, 추적 PRO, 웨어러블 기록까지 자동 실행할 수 있습니다.</p></div>
-            <div className={styles.demoScenarios}>{DEMO_SCENARIOS.map(s=><article key={s.id}><h3>{s.title}</h3><p>{s.description}</p><div><button type="button" onClick={()=>applyScenario(s)} disabled={busyAction!==null}>입력만 적용</button><button type="button" className={styles.demoRun} onClick={()=>runScenario(s)} disabled={busyAction!==null}>전체 자동 시연</button></div></article>)}</div>
+            <div><strong>예시로 바로 시험하기</strong><p>세 가지 예시 중 하나를 선택하세요. 조건만 불러온 뒤 직접 실행하거나, 마지막 기록 단계까지 자동으로 확인할 수 있습니다.</p></div>
+            <div className={styles.demoScenarios}>{DEMO_SCENARIOS.map(s=><article key={s.id}><h3>{s.title}</h3><p>{s.description}</p><div><button type="button" onClick={()=>applyScenario(s)} disabled={busyAction!==null}>조건만 불러오기</button><button type="button" className={styles.demoRun} onClick={()=>runScenario(s)} disabled={busyAction!==null}>전체 과정 실행</button></div></article>)}</div>
             {demoProgress&&<div className={styles.demoProgress} aria-live="polite">{demoProgress}</div>}
           </div>
           <div className={styles.formGrid}>
@@ -350,14 +350,15 @@ export default function InterimUserConsole() {
         </section>
 
         <section ref={resultRef} className={`${styles.section} ${styles.softSection}`}>
-          <p className={styles.sectionLabel}>2. 판정 결과</p>
-          <h2 className={styles.sectionTitle}>추천 모델 및 안전 규칙 판정 결과</h2>
+          <p className={styles.sectionLabel}>2. 추천 결과 확인</p>
+          <h2 className={styles.sectionTitle}>무엇이 추천되었고, 무엇이 제외되었는가</h2>
+          <p className={styles.sectionBody}>입력 조건을 모델에 적용한 뒤 복용 약물·질환·알레르기 안전 규칙을 순서대로 확인한 결과입니다.</p>
           {safety ? (
             <div className={safety.decision === "STOP_AND_ESCALATE" ? styles.stopBanner : styles.safetyBanner}>
               <strong>{safety.decision}</strong>
               <p>{safety.reasons.length ? safety.reasons.join(" ") : "입력 조건에서 차단 규칙이 확인되지 않았습니다."}</p>
             </div>
-          ) : <p className={styles.empty}>실행 결과 없음</p>}
+          ) : <p className={styles.empty}>아직 실행하지 않았습니다. 위에서 조건을 선택하고 `안전 검사 후 추천 보기`를 누르세요.</p>}
 
           {feedback && recommendationResult && trace.action === "recommend" && (
             <div className={`${styles.feedback} ${styles[feedback.tone]}`} aria-live="polite">
@@ -388,23 +389,23 @@ export default function InterimUserConsole() {
         {inference && <InferenceWorkbench inference={inference} />}
 
         <section className={styles.section}>
-          <p className={styles.sectionLabel}>4. 폐쇄루프 Agent 시험</p>
-          <h2 className={styles.sectionTitle}>후속 평가 및 상태 전이 검증</h2>
-          <p className={styles.sectionBody}>동의 범위에 따라 후속 평가, PRO 및 웨어러블 기록을 처리합니다. 중대한 이상사례 입력 시 추천 절차를 중단하고 에스컬레이션 상태로 전환합니다.</p>
+          <p className={styles.sectionLabel}>4. 추천 이후 기록 기능 시험</p>
+          <h2 className={styles.sectionTitle}>추천 후 필요한 기록이 정상 처리되는지 확인하세요</h2>
+          <p className={styles.sectionBody}>먼저 저장을 허용할 항목을 선택한 다음 아래 버튼을 누르세요. `자가보고 결과`는 본인이 느낀 건강 변화를 뜻합니다. `중대한 이상사례`를 누르면 추가 추천이 중단되는지도 확인할 수 있습니다.</p>
           <div className={styles.consentGrid}>
             {CONSENTS.map(([scope, label]) => (
               <label key={scope} data-selected={consents.includes(scope)}>
                 <input type="checkbox" checked={consents.includes(scope)} onChange={() => setConsents((current) => toggle(current, scope))} />
-                <span><strong>{label}</strong><small>{scope}</small></span>
+                <span><strong>{label}</strong><small>{consents.includes(scope) ? "저장 허용됨" : "선택하면 저장 가능"}</small></span>
               </label>
             ))}
           </div>
           <div className={styles.actionGrid}>
-            <button onClick={() => execute("retrieve_evidence", { query: `${goal} 근거` })} disabled={busyAction !== null || terminalState}>{busyAction === "retrieve_evidence" ? "확인 중…" : "근거 상담"}</button>
-            <button onClick={() => execute("create_followup")} disabled={busyAction !== null || terminalState}>{busyAction === "create_followup" ? "생성 중…" : "2주 후속 확인"}</button>
-            <button onClick={() => execute("ingest_pro")} disabled={busyAction !== null || terminalState}>{busyAction === "ingest_pro" ? "기록 중…" : "PRO 기록"}</button>
-            <button onClick={() => execute("ingest_device", { source: "wearable" })} disabled={busyAction !== null || terminalState}>{busyAction === "ingest_device" ? "기록 중…" : "웨어러블 기록"}</button>
-            <button className={styles.dangerButton} onClick={() => execute("log_adverse_event", { serious: true })} disabled={busyAction !== null || terminalState}>{busyAction === "log_adverse_event" ? "중단 처리 중…" : "중대한 이상사례 시험"}</button>
+            <button onClick={() => execute("retrieve_evidence", { query: `${goal} 근거` })} disabled={busyAction !== null || terminalState}>{busyAction === "retrieve_evidence" ? "확인 중…" : "추천 근거 확인"}</button>
+            <button onClick={() => execute("create_followup")} disabled={busyAction !== null || terminalState}>{busyAction === "create_followup" ? "생성 중…" : "2주 후 확인 일정 만들기"}</button>
+            <button onClick={() => execute("ingest_pro")} disabled={busyAction !== null || terminalState}>{busyAction === "ingest_pro" ? "기록 중…" : "자가보고 결과 저장"}</button>
+            <button onClick={() => execute("ingest_device", { source: "wearable" })} disabled={busyAction !== null || terminalState}>{busyAction === "ingest_device" ? "기록 중…" : "스마트워치 측정값 저장"}</button>
+            <button className={styles.dangerButton} onClick={() => execute("log_adverse_event", { serious: true })} disabled={busyAction !== null || terminalState}>{busyAction === "log_adverse_event" ? "중단 처리 중…" : "중대한 이상사례 발생 처리"}</button>
             {terminalState && (
               <button className={styles.resetButton} onClick={resetLab} disabled={busyAction !== null}>새 시뮬레이션</button>
             )}
