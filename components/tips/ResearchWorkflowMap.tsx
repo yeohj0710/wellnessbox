@@ -27,22 +27,28 @@ export default function ResearchWorkflowMap(props: WorkflowMapProps) {
         <svg className={styles.archLinks} viewBox="0 0 1040 640" aria-label="기술 블록 연결 관계">
           <defs><marker id="arch-arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" /></marker></defs>
           <g className={styles.archSolid}>
-            <path d="M170 75 C240 75 245 175 285 195"/><path d="M210 330 C255 330 250 245 285 235"/><path d="M285 260 C250 275 250 300 210 310"/>
-            <path d="M455 190 C570 95 650 85 735 85"/><path d="M455 215 C565 215 650 215 735 215"/>
-            <path d="M455 230 C490 230 500 215 520 215"/><path d="M520 240 C495 250 480 250 455 250"/>
-            <path d="M670 215 L735 215"/><path d="M825 175 L825 130"/><path d="M920 105 C985 145 985 250 920 285"/><path d="M920 310 C965 285 965 230 920 230"/>
-            <path d="M810 260 C760 290 700 320 665 335"/><path d="M595 290 L595 315"/><path d="M665 350 C730 350 770 330 825 315"/>
-            <path d="M210 340 L285 365"/><path d="M455 365 L520 365"/><path d="M595 410 L595 475"/><path d="M520 520 C360 565 240 540 165 385"/>
-            <path d="M165 500 L165 385"/><path d="M210 505 C250 470 260 295 300 260"/>
+            <path d="M170 75 L225 75 L285 195"/>
+            <path d="M210 320 C250 305 255 255 285 235"/><path d="M285 255 C255 280 250 340 210 350"/>
+            <path d="M455 180 C545 95 650 85 735 85"/>
+            <path d="M455 205 L480 140 L700 140 L735 190"/>
+            <path className={styles.archBidirectional} d="M455 225 L520 225"/>
+            <path d="M670 220 L735 220"/>
+            <path d="M830 130 C850 175 875 235 900 285"/>
+            <path d="M825 285 C790 285 775 270 810 270"/>
+            <path className={styles.archBidirectional} d="M595 260 L595 315"/>
+            <path d="M670 360 C735 360 770 335 825 335"/>
+            <path d="M210 345 L285 365"/><path d="M455 365 L520 365"/><path d="M595 410 L595 475"/>
+            <path d="M300 530 C205 560 130 505 125 385"/>
+            <path d="M125 475 L125 385"/><path d="M210 510 C250 455 245 315 285 255"/>
           </g>
           <g className={styles.archDashed}>
-            <path d="M825 130 L825 175"/><path d="M665 335 C720 300 760 300 825 300"/>
+            <path d="M900 285 C970 250 970 135 925 105"/><path d="M670 345 C735 315 775 315 825 315"/>
           </g>
           <g className={styles.archLabels}>
-            <text x="205" y="105">주기적 재평가</text><text x="225" y="300">대화·피드백</text><text x="525" y="112">판단 후 호출</text>
-            <text x="480" y="202">RAG 저장·조회</text><text x="675" y="202">규칙 조회</text><text x="845" y="155">제약 강화</text>
-            <text x="935" y="205">최적해 탐색</text><text x="705" y="325">검토·보정</text><text x="220" y="355">주문</text>
-            <text x="470" y="355">중개</text><text x="610" y="455">소분·배송</text><text x="65" y="440">측정값</text><text x="225" y="455">정밀진단</text>
+            <text x="185" y="66">주기적 재평가</text><text x="220" y="295">대화·피드백</text><text x="545" y="102">판단 후 호출</text>
+            <text x="475" y="216">RAG 저장·조회</text><text x="675" y="210">규칙 조회</text><text x="840" y="205">제약 강화</text>
+            <text x="942" y="200">최적해 탐색</text><text x="705" y="350">검토·보정</text><text x="230" y="356">주문</text>
+            <text x="470" y="356">중개</text><text x="610" y="450">소분·배송</text><text x="65" y="435">측정값</text><text x="220" y="445">정밀진단</text>
           </g>
         </svg>
 
