@@ -1,19 +1,15 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { cohortKpis, participantResult, proScore, type ProAnswers, type StudyParticipant } from "@/lib/tips/pro-study-engine";
+import {
+  PRO_INSTRUMENTS, baselineReference, cohortKpis, emptyProAnswers, participantResult,
+  proScore, standardizedImprovement, type ProAnswers, type ProInstrumentId, type StudyParticipant,
+} from "@/lib/tips/pro-study-engine";
 import styles from "./interim.module.css";
 
-const STORAGE_KEY = "wellnessbox.tips.pro-study.v1";
+const STORAGE_KEY = "wellnessbox.tips.pro-study.v2";
 const GOALS: Record<string, string> = { sleep_quality: "수면의 질", stress_management: "스트레스 관리", energy: "활력", immune_support: "면역 건강" };
-const INITIAL: ProAnswers = { sleep: 5, fatigue: 5, stress: 5, wellbeing: 5 };
-const QUESTIONS: Array<[keyof ProAnswers, string, string]> = [
-  ["sleep", "수면 만족도", "0 매우 낮음 · 10 매우 높음"],
-  ["fatigue", "피로 수준", "0 피로 없음 · 10 매우 심함"],
-  ["stress", "스트레스 수준", "0 없음 · 10 매우 높음"],
-  ["wellbeing", "전반적 건강 상태", "0 매우 낮음 · 10 매우 높음"],
-];
-const INGREDIENTS: Record<string, string> = { "ING:MAGNESIUM": "마그네슘", "ING:VITAMIN_D": "비타민 D", "ING:VITAMIN_B12": "비타민 B12", "ING:ZINC": "아연", "ING:VITAMIN_C": "비타민 C", "ING:OMEGA3": "오메가3", "ING:PROBIOTIC": "프로바이오틱스" };
+const INGREDIENTS: Record<string, string> = { "ING:MAGNESIUM": "마그네슘", "ING:VITAMIN_D": "비타민 D", "ING:VITAMIN_B12": "비타민 B12", "ING:ZINC": "아연" };
 
 async function recommend(age: number, goal: string) {
   const profile = { age, sex: "unknown", pregnant: false, goals: [goal], conditions: [], medicationClasses: [], allergies: [], currentSupplements: [], riskFlags: [] };
@@ -27,45 +23,97 @@ async function recommend(age: number, goal: string) {
 }
 
 function csv(participants: StudyParticipant[]) {
-  const rows = [["tester_id","name","age","goal","timepoint","pro_score","sleep","fatigue","stress","wellbeing","adherence_percent","adverse_event","recommendation","recommendation_run_at","model_version","model_sha256"]];
-  for (const p of participants) {
-    const audit=[p.recommendationRun?.runAt??"",p.recommendationRun?.modelVersion??"",p.recommendationRun?.modelSha256??""];
-    rows.push([p.id,p.name,String(p.age),p.goal,"baseline",proScore(p.baseline).toFixed(2),String(p.baseline.sleep),String(p.baseline.fatigue),String(p.baseline.stress),String(p.baseline.wellbeing),"","",p.recommendation.join("|"),...audit]);
-    for (const f of p.followups) rows.push([p.id,p.name,String(p.age),p.goal,`week_${f.week}`,proScore(f.answers).toFixed(2),String(f.answers.sleep),String(f.answers.fatigue),String(f.answers.stress),String(f.answers.wellbeing),String(f.adherencePercent),String(f.adverseEvent),p.recommendation.join("|"),...audit]);
+  const rows = [["tester_id","name","age","goal","instrument","timepoint","raw_score","responses","adherence_percent","adverse_event","recommendation"]];
+  for (const participant of participants) {
+    rows.push([participant.id,participant.name,String(participant.age),participant.goal,participant.baseline.instrument,"baseline",proScore(participant.baseline).toFixed(2),participant.baseline.responses.join("|"),"","",participant.recommendation.join("|")]);
+    for (const row of participant.followups) rows.push([participant.id,participant.name,String(participant.age),participant.goal,row.answers.instrument,`week_${row.week}`,proScore(row.answers).toFixed(2),row.answers.responses.join("|"),String(row.adherencePercent),String(row.adverseEvent),participant.recommendation.join("|")]);
   }
   return rows.map(row => row.map(value => `"${value.replaceAll('"','""')}"`).join(",")).join("\r\n");
+}
+
+function demoParticipants(): StudyParticipant[] {
+  const instruments: ProInstrumentId[] = ["PSQI", "ISI", "PSS10"];
+  return Array.from({ length: 120 }, (_, index) => {
+    const instrument = instruments[index % instruments.length];
+    const definition = PRO_INSTRUMENTS[instrument];
+    const baselineResponses = Array.from({ length: definition.itemCount }, (_, item) => Math.min(definition.itemMax, 1 + ((index + item) % Math.max(2, definition.itemMax))));
+    const week2Responses = baselineResponses.map((value, item) => Math.max(definition.itemMin, value - (item % 3 === 0 ? 1 : 0)));
+    const week4Responses = baselineResponses.map((value, item) => Math.max(definition.itemMin, value - (item % 2 === 0 ? 1 : 0)));
+    return {
+      id: `DEMO-${String(index + 1).padStart(3, "0")}`, name: `평가 테스터 ${index + 1}`, age: 20 + (index % 55),
+      goal: instrument === "PSS10" ? "stress_management" : "sleep_quality", enrolledAt: new Date().toISOString(),
+      baseline: { instrument, responses: baselineResponses }, recommendation: [index % 2 ? "ING:MAGNESIUM" : "ING:VITAMIN_D"],
+      recommendationRun: { runAt: new Date().toISOString(), modelVersion: "2026-07-10.v1", modelSha256: "simulation" },
+      followups: [
+        { week: 2, answers: { instrument, responses: week2Responses }, adherencePercent: 75 + (index % 20), adverseEvent: false },
+        { week: 4, answers: { instrument, responses: week4Responses }, adherencePercent: 78 + (index % 18), adverseEvent: index === 119 },
+      ],
+    };
+  });
 }
 
 export default function ProStudySimulation() {
   const [participants, setParticipants] = useState<StudyParticipant[]>([]);
   const [selectedId, setSelectedId] = useState("");
   const [name, setName] = useState("테스터 01"); const [age, setAge] = useState(41); const [goal, setGoal] = useState("sleep_quality");
-  const [baseline, setBaseline] = useState<ProAnswers>(INITIAL); const [followup, setFollowup] = useState<ProAnswers>(INITIAL);
+  const [instrument, setInstrument] = useState<ProInstrumentId>("PSQI");
+  const [baseline, setBaseline] = useState<ProAnswers>(() => emptyProAnswers("PSQI"));
+  const [followup, setFollowup] = useState<ProAnswers>(() => emptyProAnswers("PSQI"));
   const [week, setWeek] = useState<2|4>(2); const [adherence, setAdherence] = useState(85); const [adverseEvent, setAdverseEvent] = useState(false); const [busy, setBusy] = useState(false);
-  const [error, setError] = useState("");
-  const resultRef = useRef<HTMLDivElement>(null);
+  const [error, setError] = useState(""); const resultRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => { try { const stored = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? "[]"); if (Array.isArray(stored)) { setParticipants(stored); setSelectedId(stored[0]?.id ?? ""); } } catch {} }, []);
   useEffect(() => { localStorage.setItem(STORAGE_KEY, JSON.stringify(participants)); }, [participants]);
-  const selected = participants.find(p => p.id === selectedId) ?? null; const result = selected ? participantResult(selected) : null; const kpi = useMemo(() => cohortKpis(participants), [participants]);
+  const selected = participants.find(participant => participant.id === selectedId) ?? null;
+  const reference = baselineReference(participants, selected?.baseline.instrument ?? instrument);
+  const result = selected ? participantResult(selected, reference) : null;
+  const kpi = useMemo(() => cohortKpis(participants), [participants]);
   const previewScore = selected ? proScore(followup) : null;
-  const previewChange = selected && previewScore !== null ? previewScore - proScore(selected.baseline) : null;
-  useEffect(() => { const participant=participants.find(p=>p.id===selectedId); if(!participant)return; const saved=participant.followups.find(f=>f.week===week); setFollowup(saved?.answers??{sleep:Math.min(10,participant.baseline.sleep+2),fatigue:Math.max(0,participant.baseline.fatigue-2),stress:Math.max(0,participant.baseline.stress-2),wellbeing:Math.min(10,participant.baseline.wellbeing+2)}); setAdherence(saved?.adherencePercent??85); setAdverseEvent(saved?.adverseEvent??false); },[participants,selectedId,week]);
-  const update = (setter: (value: ProAnswers) => void, current: ProAnswers, key: keyof ProAnswers, value: number) => setter({ ...current, [key]: value });
-  async function enroll() { setBusy(true); setError(""); try { const recommendation = await recommend(age, goal); const p: StudyParticipant = { id: `T-${String(Date.now()).slice(-8)}`, name: name.trim() || "테스터", age, goal, enrolledAt: new Date().toISOString(), baseline, recommendation: recommendation.ingredients, recommendationRun: recommendation.run, followups: [] }; setParticipants(v => [p,...v]); setSelectedId(p.id); } catch(cause) { setError(cause instanceof Error?cause.message:"추천 모델 실행 실패"); } finally { setBusy(false); } }
-  function saveFollowup() { if (!selected) return; setParticipants(list => list.map(p => p.id !== selected.id ? p : { ...p, followups: [...p.followups.filter(f => f.week !== week), { week, answers: followup, adherencePercent: adherence, adverseEvent }].sort((a,b)=>a.week-b.week) })); requestAnimationFrame(()=>resultRef.current?.scrollIntoView({behavior:"smooth",block:"center"})); }
-  function samples() { const sample = Array.from({length:8},(_,i):StudyParticipant => ({ id:`DEMO-${String(i+1).padStart(2,"0")}`, name:`시연 테스터 ${i+1}`, age:28+i*5, goal:i%2?"energy":"sleep_quality", enrolledAt:new Date().toISOString(), baseline:{sleep:4+i%2,fatigue:7-i%2,stress:6,wellbeing:4}, recommendation:[i%2?"ING:VITAMIN_B12":"ING:MAGNESIUM"], recommendationRun:{runAt:new Date().toISOString(),modelVersion:"2026-07-10.v1",modelSha256:"f6b053ee0eb39d16e12e102723f9435a03e71068b70502f6ca702c80e82a7612"}, followups:[{week:2,answers:{sleep:5+i%2,fatigue:5,stress:5,wellbeing:6},adherencePercent:75+i*2,adverseEvent:false},{week:4,answers:{sleep:6+i%2,fatigue:4,stress:4,wellbeing:7},adherencePercent:78+i*2,adverseEvent:i===7}] })); setParticipants(sample); setSelectedId(sample[0].id); setWeek(4); requestAnimationFrame(()=>requestAnimationFrame(()=>resultRef.current?.scrollIntoView({behavior:"smooth",block:"center"}))); }
-  function nextParticipant() { if (!selected || !participants.length) return; const index=participants.findIndex(p=>p.id===selected.id); const next=participants[(index+1)%participants.length]; setSelectedId(next.id); requestAnimationFrame(()=>resultRef.current?.scrollIntoView({behavior:"smooth",block:"center"})); }
-  function exportCsv() { const blob=new Blob(["\ufeff"+csv(participants)],{type:"text/csv;charset=utf-8"}); const url=URL.createObjectURL(blob); const a=document.createElement("a"); a.href=url;a.download="tips-pro-study.csv";a.click();URL.revokeObjectURL(url); }
+  const previewChange = selected && followup.instrument === selected.baseline.instrument ? standardizedImprovement(selected.baseline, followup, reference) : null;
+
+  useEffect(() => {
+    const participant = participants.find(item => item.id === selectedId); if (!participant) return;
+    const saved = participant.followups.find(item => item.week === week);
+    setInstrument(participant.baseline.instrument);
+    setFollowup(saved?.answers ?? { instrument: participant.baseline.instrument, responses: participant.baseline.responses.map(value => Math.max(0, value - 1)) });
+    setAdherence(saved?.adherencePercent ?? 85); setAdverseEvent(saved?.adverseEvent ?? false);
+  }, [participants, selectedId, week]);
+
+  function changeInstrument(next: ProInstrumentId) { setInstrument(next); setBaseline(emptyProAnswers(next)); setFollowup(emptyProAnswers(next)); }
+  function updateAnswers(setter: (value: ProAnswers) => void, current: ProAnswers, index: number, value: number) { setter({ ...current, responses: current.responses.map((item, currentIndex) => currentIndex === index ? value : item) }); }
+  async function enroll() {
+    setBusy(true); setError("");
+    try { const recommendation = await recommend(age, goal); const participant: StudyParticipant = { id: `T-${String(Date.now()).slice(-8)}`, name: name.trim() || "테스터", age, goal, enrolledAt: new Date().toISOString(), baseline, recommendation: recommendation.ingredients, recommendationRun: recommendation.run, followups: [] }; setParticipants(current => [participant, ...current]); setSelectedId(participant.id); }
+    catch (cause) { setError(cause instanceof Error ? cause.message : "추천 모델 실행 실패"); } finally { setBusy(false); }
+  }
+  function saveFollowup() { if (!selected) return; setParticipants(list => list.map(participant => participant.id !== selected.id ? participant : { ...participant, followups: [...participant.followups.filter(item => item.week !== week), { week, answers: followup, adherencePercent: adherence, adverseEvent }].sort((a,b)=>a.week-b.week) })); requestAnimationFrame(()=>resultRef.current?.scrollIntoView({behavior:"smooth",block:"center"})); }
+  function runDemo() { const sample = demoParticipants(); setParticipants(sample); setSelectedId(sample[0].id); setWeek(4); requestAnimationFrame(()=>requestAnimationFrame(()=>resultRef.current?.scrollIntoView({behavior:"smooth",block:"center"}))); }
+  function nextParticipant() { if (!selected || !participants.length) return; const index = participants.findIndex(participant => participant.id === selected.id); setSelectedId(participants[(index + 1) % participants.length].id); requestAnimationFrame(()=>resultRef.current?.scrollIntoView({behavior:"smooth",block:"center"})); }
+  function exportCsv() { const blob = new Blob(["\ufeff" + csv(participants)], { type: "text/csv;charset=utf-8" }); const url = URL.createObjectURL(blob); const anchor = document.createElement("a"); anchor.href = url; anchor.download = "tips-pro-study.csv"; anchor.click(); URL.revokeObjectURL(url); }
+
   return <section className={`${styles.section} ${styles.proStudy}`} aria-labelledby="pro-study-title">
-    <p className={styles.sectionLabel}>사용 전후 변화 시험</p><h2 id="pro-study-title" className={styles.sectionTitle}>테스터의 시작 점수와 2주·4주 후 점수를 비교하세요</h2>
-    <p className={styles.sectionBody}>테스터가 직접 답한 수면·피로·스트레스·전반적 건강 점수를 저장하고, 추천 전후 점수가 얼마나 달라졌는지 계산하는 화면입니다.</p>
-    <div className={styles.studyKpis}>{[["등록",kpi.enrolled,"명"],["추적 완료",kpi.completed,"명"],["평균 변화",kpi.meanChange.toFixed(1),"점"],["반응자율",kpi.responderPercent.toFixed(1),"%"],["평균 순응도",kpi.meanAdherencePercent.toFixed(1),"%"],["이상사례",kpi.adverseEventCount,"건"]].map(([l,v,u])=><div key={l}><span>{l}</span><strong>{v}{u}</strong></div>)}</div>
-    <div className={styles.studyActions}><button className={styles.demoRun} onClick={samples}>예시 데이터로 전체 평가 실행</button><button onClick={exportCsv} disabled={!participants.length}>평가 결과 CSV 저장</button><button disabled={!selected} onClick={()=>{setParticipants(list=>list.filter(p=>p.id!==selectedId));setSelectedId("");}}>선택 테스터 삭제</button><button onClick={()=>{setParticipants([]);setSelectedId("");}}>전체 초기화</button></div>
-    {error&&<p className={styles.testError} role="alert">{error}</p>}
-    <div className={styles.studyGrid}><div className={styles.studyPanel}><h3>1. 테스터 등록 및 기초 PRO</h3><div className={styles.formGrid}><label className={styles.control}><span>테스터명</span><input className={styles.field} value={name} onChange={e=>setName(e.target.value)}/></label><label className={styles.control}><span>나이</span><input className={styles.field} type="number" value={age} onChange={e=>setAge(+e.target.value)}/></label><label className={styles.control}><span>관리 목표</span><select className={styles.field} value={goal} onChange={e=>setGoal(e.target.value)}>{Object.entries(GOALS).map(([v,l])=><option key={v} value={v}>{l}</option>)}</select></label></div><Questionnaire value={baseline} onChange={(k,v)=>update(setBaseline,baseline,k,v)}/><button className={styles.primaryButton} onClick={enroll} disabled={busy}>{busy?"추천 모델 실행 중":"등록·기초평가·추천 실행"}</button></div>
-      <div className={styles.studyPanel}><h3>2. 추적 PRO 입력</h3><label className={styles.control}><span>테스터 선택</span><select className={styles.field} value={selectedId} onChange={e=>setSelectedId(e.target.value)}><option value="">선택</option>{participants.map(p=><option key={p.id} value={p.id}>{p.id} · {p.name}</option>)}</select></label>{selected&&<><div className={styles.studyMeta}><span>추천 성분</span><strong>{selected.recommendation.map(id=>INGREDIENTS[id]??id).join(", ")||"없음"}</strong></div><div className={styles.timepoint}><button className={week===2?styles.filterActive:""} onClick={()=>setWeek(2)}>2주</button><button className={week===4?styles.filterActive:""} onClick={()=>setWeek(4)}>4주</button></div><Questionnaire value={followup} onChange={(k,v)=>update(setFollowup,followup,k,v)}/><label className={styles.rangeRow}><span>복용 순응도</span><input type="range" min="0" max="100" value={adherence} onChange={e=>setAdherence(+e.target.value)}/><b>{adherence}%</b></label><label className={styles.aeCheck}><input type="checkbox" checked={adverseEvent} onChange={e=>setAdverseEvent(e.target.checked)}/> 이상사례 발생</label><button className={styles.primaryButton} onClick={saveFollowup}>추적 평가 저장</button></>}</div></div>
-    {selected&&result&&<div ref={resultRef} className={styles.studyResult} aria-live="polite"><h3>3. {selected.name}의 추천 전후 변화</h3><div><span>추천 전 시작 점수</span><strong>{result.baselineScore.toFixed(1)}점</strong></div><div><span>추천 후 {week}주 점수</span><strong>{previewScore?.toFixed(1)??"—"}점</strong></div><div><span>시작 대비 변화</span><strong>{previewChange===null?"—":`${previewChange>=0?"+":""}${previewChange.toFixed(1)}점`}</strong></div><div><span>평가 기준 충족 여부</span><strong>{previewChange===null?"미평가":previewChange>=10?"충족":"미충족"}</strong></div><button type="button" className={styles.nextParticipantButton} onClick={nextParticipant}>다음 테스터 평가</button></div>}
+    <p className={styles.sectionLabel}>계획서 19·25·26쪽 기준 PRO 평가</p>
+    <h2 id="pro-study-title" className={styles.sectionTitle}>공인 설문 점수로 복용 전후 개선도를 계산합니다</h2>
+    <p className={styles.sectionBody}>PSQI·ISI·PSS-10 승인본에서 산출한 응답 점수를 입력합니다. 시작 시점 분포로 Z-표준화한 뒤 복용 전후 건강 백분위 차이(pp)를 계산하며, 4주 평가 100명 이상과 평균 개선도 0pp 초과 여부를 판정합니다.</p>
+
+    <div className={styles.instrumentGuide}>{Object.values(PRO_INSTRUMENTS).map(item => <article key={item.id} data-active={instrument === item.id}><div><strong>{item.name}</strong><span>{item.recallPeriod} · 총점 {item.scoreMin}~{item.scoreMax}점 · 낮을수록 양호</span></div><p>{item.scoreDescription}</p><a href={item.sourceUrl} target="_blank" rel="noreferrer">공식 도구 정보</a></article>)}</div>
+
+    <div className={styles.studyKpis}>{[
+      ["등록",kpi.enrolled,"명"],["4주 평가 완료",kpi.completed,"명"],["평균 표준화 개선도",kpi.meanChange.toFixed(2),"pp"],["개선 사례",kpi.improvedPercent.toFixed(1),"%"],["평균 복용 순응도",kpi.meanAdherencePercent.toFixed(1),"%"],["이상사례",kpi.adverseEventCount,"건"],
+    ].map(([label,value,unit])=><div key={label}><span>{label}</span><strong>{value}{unit}</strong></div>)}</div>
+    <div className={kpi.kpiEffectPassed ? styles.kpiPassed : styles.kpiPending}><strong>계획서 성과기준</strong><span>4주 평가 100명 이상: {kpi.kpiSamplePassed ? "충족" : "미충족"} · 평균 개선도 0pp 초과: {kpi.kpiEffectPassed ? "충족" : "미충족"}</span></div>
+    <div className={styles.studyActions}><button className={styles.demoRun} onClick={runDemo}>120명 예시 데이터로 전체 평가 실행</button><button onClick={exportCsv} disabled={!participants.length}>평가 결과 CSV 저장</button><button onClick={()=>{setParticipants([]);setSelectedId("");}}>전체 초기화</button></div>
+    {error && <p className={styles.testError} role="alert">{error}</p>}
+
+    <div className={styles.studyGrid}>
+      <div className={styles.studyPanel}><h3>1. 테스터 등록 및 복용 전 평가</h3><div className={styles.formGrid}><label className={styles.control}><span>테스터명</span><input className={styles.field} value={name} onChange={event=>setName(event.target.value)}/></label><label className={styles.control}><span>나이</span><input className={styles.field} type="number" value={age} onChange={event=>setAge(+event.target.value)}/></label><label className={styles.control}><span>관리 목표</span><select className={styles.field} value={goal} onChange={event=>setGoal(event.target.value)}>{Object.entries(GOALS).map(([value,label])=><option key={value} value={value}>{label}</option>)}</select></label><label className={styles.control}><span>사용 설문</span><select className={styles.field} value={instrument} onChange={event=>changeInstrument(event.target.value as ProInstrumentId)}>{Object.values(PRO_INSTRUMENTS).map(item=><option key={item.id} value={item.id}>{item.name}</option>)}</select></label></div><Questionnaire value={baseline} onChange={(index,value)=>updateAnswers(setBaseline,baseline,index,value)}/><button className={styles.primaryButton} onClick={enroll} disabled={busy}>{busy ? "추천 모델 실행 중" : "등록·복용 전 평가·추천 실행"}</button></div>
+      <div className={styles.studyPanel}><h3>2. 같은 설문으로 복용 후 평가</h3><label className={styles.control}><span>테스터 선택</span><select className={styles.field} value={selectedId} onChange={event=>setSelectedId(event.target.value)}><option value="">선택</option>{participants.map(participant=><option key={participant.id} value={participant.id}>{participant.id} · {participant.name} · {participant.baseline.instrument}</option>)}</select></label>{selected&&<><div className={styles.studyMeta}><span>추천 성분</span><strong>{selected.recommendation.map(id=>INGREDIENTS[id]??id).join(", ")||"없음"}</strong></div><div className={styles.timepoint}><button className={week===2?styles.filterActive:""} onClick={()=>setWeek(2)}>2주</button><button className={week===4?styles.filterActive:""} onClick={()=>setWeek(4)}>4주</button></div><Questionnaire value={followup} onChange={(index,value)=>updateAnswers(setFollowup,followup,index,value)}/><label className={styles.rangeRow}><span>복용 순응도</span><input type="range" min="0" max="100" value={adherence} onChange={event=>setAdherence(+event.target.value)}/><b>{adherence}%</b></label><label className={styles.aeCheck}><input type="checkbox" checked={adverseEvent} onChange={event=>setAdverseEvent(event.target.checked)}/> 이상사례 발생</label><button className={styles.primaryButton} onClick={saveFollowup}>복용 후 평가 저장</button></>}</div>
+    </div>
+    {selected&&result&&<div ref={resultRef} className={styles.studyResult} aria-live="polite"><h3>3. {selected.name}의 {selected.baseline.instrument} 복용 전후 결과</h3><div><span>복용 전 원점수</span><strong>{result.baselineScore.toFixed(1)}점</strong></div><div><span>복용 후 {week}주 원점수</span><strong>{previewScore?.toFixed(1)??"—"}점</strong></div><div><span>표준화 건강 백분위 변화</span><strong>{previewChange===null?"—":`${previewChange>=0?"+":""}${previewChange.toFixed(2)}pp`}</strong></div><div><span>개선 여부</span><strong>{previewChange===null?"미평가":previewChange>0?"개선":"개선 없음"}</strong></div><button type="button" className={styles.nextParticipantButton} onClick={nextParticipant}>다음 테스터 평가</button></div>}
   </section>;
 }
 
-function Questionnaire({value,onChange}:{value:ProAnswers;onChange:(key:keyof ProAnswers,value:number)=>void}) { return <div className={styles.questionnaire}>{QUESTIONS.map(([key,label,help])=><label key={key} className={styles.rangeRow}><span><b>{label}</b><small>{help}</small></span><input type="range" min="0" max="10" value={value[key]} onChange={e=>onChange(key,+e.target.value)}/><strong>{value[key]}</strong></label>)}</div>; }
+function Questionnaire({ value, onChange }: { value: ProAnswers; onChange: (index: number, value: number) => void }) {
+  const instrument = PRO_INSTRUMENTS[value.instrument];
+  return <div className={styles.questionnaire}><div className={styles.questionnaireHeader}><strong>{instrument.name} 응답 점수</strong><span>{instrument.recallPeriod} 기준 · 승인된 설문지 채점값 입력</span></div>{instrument.fields.map((label,index)=><label key={label} className={styles.scoreInputRow}><span><b>{label}</b><small>{instrument.itemMin}~{instrument.itemMax}점</small></span><select value={value.responses[index] ?? instrument.itemMin} onChange={event=>onChange(index,+event.target.value)}>{Array.from({length:instrument.itemMax-instrument.itemMin+1},(_,offset)=>instrument.itemMin+offset).map(score=><option key={score} value={score}>{score}점</option>)}</select></label>)}</div>;
+}
