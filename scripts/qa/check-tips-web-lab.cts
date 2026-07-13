@@ -162,7 +162,7 @@ assert.match(consoleUi, /proStudyRef\.current\?\.next/);
 assert.match(consoleUi, /proStudyRef\.current\?\.previous/);
 assert.match(consoleUi, /PRO_STAGE_HELP/);
 assert.match(consoleUi, /ResearchWorkflowMap/);
-for (const token of ["데이터 레이크", "개인화 안전 검증 엔진", "개인화 효과 추론 모델", "다목적 조합 최적화 엔진", "자기적응형 AI", "바이오센서·유전 데이터 연동", "onNavigate"]) assert.match(workflowMapUi, new RegExp(token));
+for (const token of ["Data Lake", "개인화 안전 검증 엔진", "개인화 효과 추론 모델", "다목적 조합 최적화 엔진", "자기적응형 AI", "바이오센서·유전 데이터", "CronJob", "RAG 저장·조회", "제약 강화", "검토·보정", "소분·배송", "onNavigate"]) assert.match(workflowMapUi, new RegExp(token));
 assert.match(consoleUi, /aria-pressed=/);
 assert.match(consoleUi, /scrollIntoView/);
 assert.match(consoleUi, /blockedIngredients/);
