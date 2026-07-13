@@ -8,6 +8,7 @@ import AdvancedProfileFields, { DEFAULT_ADVANCED, type AdvancedProfile } from ".
 import InferenceWorkbench from "./InferenceWorkbench";
 import ResearchEvidencePanel from "./ResearchEvidencePanel";
 import ResearchWorkflowMap from "./ResearchWorkflowMap";
+import AgentDecisionWorkbench, { type AgentDecisionWorkbenchHandle } from "./AgentDecisionWorkbench";
 import type { InferenceExplanation } from "./research-types";
 import styles from "./interim.module.css";
 
@@ -126,6 +127,7 @@ export default function InterimUserConsole() {
   const [helpOpen, setHelpOpen] = useState(false);
   const stageRefs = useRef<Array<HTMLElement | null>>([]);
   const proStudyRef = useRef<ProStudySimulationHandle | null>(null);
+  const agentDecisionRef = useRef<AgentDecisionWorkbenchHandle | null>(null);
   const [age, setAge] = useState(41);
   const [goal, setGoal] = useState("sleep_quality");
   const [conditions, setConditions] = useState<string[]>([]);
@@ -210,6 +212,14 @@ export default function InterimUserConsole() {
       await runScenario(DEMO_SCENARIOS[0]);
       setActiveStage(4);
       requestAnimationFrame(() => stageRefs.current[4]?.scrollIntoView({ behavior: "smooth", block: "start" }));
+      return;
+    }
+    if (activeStage === 5) {
+      setProBusy(true);
+      try {
+        const completed = await agentDecisionRef.current?.evaluate();
+        if (completed) moveToStage(6);
+      } finally { setProBusy(false); }
       return;
     }
     moveToStage(activeStage + 1);
@@ -462,6 +472,7 @@ export default function InterimUserConsole() {
           <p className={styles.sectionLabel}>4. 추천 이후 기록 기능 시험</p>
           <h2 className={styles.sectionTitle}>추천 후 필요한 기록이 정상 처리되는지 확인하세요</h2>
           <p className={styles.sectionBody}>먼저 저장을 허용할 항목을 선택한 다음 아래 버튼을 누르세요. `자가보고 결과`는 본인이 느낀 건강 변화를 뜻합니다. `중대한 이상사례`를 누르면 추가 추천이 중단되는지도 확인할 수 있습니다.</p>
+          <AgentDecisionWorkbench ref={agentDecisionRef} />
           <div className={styles.consentGrid}>
             {CONSENTS.map(([scope, label]) => (
               <label key={scope} data-selected={consents.includes(scope)}>

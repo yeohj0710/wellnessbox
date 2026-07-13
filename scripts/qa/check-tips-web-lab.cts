@@ -10,6 +10,7 @@ const { blindProfileTokens, predictProxyTokens } = require("../../lib/tips/proxy
 const { checkTipsSafety } = require("../../lib/tips/safety-engine");
 const { proScore, participantResult, cohortKpis } = require("../../lib/tips/pro-study-engine");
 const { selectBlindTestRows, summarizeBlindTests } = require("../../lib/tips/blind-test-engine");
+const { decideNextAgentTask } = require("../../lib/tips/agent-decision-engine");
 
 const root = process.cwd();
 const read = (path: string) => readFileSync(join(root, path), "utf8");
@@ -274,6 +275,17 @@ assert.deepEqual(kidneySafety.blockedIngredients, ["ING:MAGNESIUM", "ING:POTASSI
 const emergencySafety = checkTipsSafety({ ...baseProfile, riskFlags: ["red_flag_chest_pain"] });
 assert.equal(emergencySafety.decision, "STOP_AND_ESCALATE");
 assert.deepEqual(emergencySafety.blockedIngredients, []);
+assert.equal(decideNextAgentTask({}).selectedTask, "check_safety");
+assert.equal(decideNextAgentTask({ safetyChecked: true }).selectedTask, "rank_ingredients");
+assert.equal(decideNextAgentTask({ safetyChecked: true, candidateCount: 2 }).selectedTask, "retrieve_evidence");
+assert.equal(decideNextAgentTask({ safetyChecked: true, candidateCount: 2, evidenceRetrieved: true }).selectedTask, "optimize_regimen");
+assert.equal(decideNextAgentTask({ safetyChecked: true, candidateCount: 2, evidenceRetrieved: true, planActive: true }).selectedTask, "create_followup");
+assert.equal(decideNextAgentTask({ safetyChecked: true, candidateCount: 2, evidenceRetrieved: true, planActive: true, followupScheduled: true, followupDue: true }).selectedTask, "ingest_pro");
+assert.equal(decideNextAgentTask({ urgentRedFlag: true, safetyChecked: true, candidateCount: 2 }).selectedTask, "escalate_pharmacist");
+assert.equal(decideNextAgentTask({ userMessage: "복용 후 흉통이 생겨 응급실에 가야 할 것 같습니다." }).selectedTask, "escalate_pharmacist");
+assert.equal(decideNextAgentTask({ safetyChecked: true, candidateCount: 2, evidenceRetrieved: true, planActive: true, followupScheduled: true, proRecorded: true, proChangePercentile: -4, adherencePercent: 55 }).selectedTask, "review_adjustment");
+const agentEvaluatorUi = read("components/tips/AgentDecisionWorkbench.tsx");
+for (const token of ["사용자가 에이전트에게 보낸 메시지", "현재 세션 상태", "계산된 추천 후보 수", "PRO 건강 백분위 변화", "복용 순응도", "다음 작업", "실행 도구", "다음 상태", "실행 성공 확인 기준"]) assert.match(agentEvaluatorUi, new RegExp(token));
 assert.equal(proScore({ instrument: "PSQI", responses: [1, 2, 1, 1, 1, 0, 1] }), 7);
 assert.equal(proScore({ instrument: "ISI", responses: [2, 2, 1, 2, 1, 1, 1] }), 10);
 assert.equal(proScore({ instrument: "PSS10", responses: [2, 2, 2, 3, 3, 2, 3, 3, 2, 2] }), 16);

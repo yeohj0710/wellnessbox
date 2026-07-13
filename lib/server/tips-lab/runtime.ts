@@ -9,6 +9,7 @@ import interimResearchSummaryJson from "@/data/tips/interim-research-summary.jso
 import { canRunTipsLabAction, type TipsLabState } from "@/lib/server/tips-lab/state";
 import { checkTipsSafety } from "@/lib/tips/safety-engine";
 import { listBlindTests, verifyBlindTests } from "@/lib/server/tips-lab/blind-tests";
+import { decideNextAgentTask } from "@/lib/tips/agent-decision-engine";
 
 export const TIPS_LAB_ACTIONS = [
   "initialize",
@@ -20,6 +21,7 @@ export const TIPS_LAB_ACTIONS = [
   "ingest_device",
   "list_blind_tests",
   "verify_blind_tests",
+  "decide_next_action",
 ] as const;
 
 export type TipsLabAction = (typeof TIPS_LAB_ACTIONS)[number];
@@ -141,6 +143,14 @@ export function runTipsLab(input: LabInput) {
         ...base(input.action, currentState),
         verification: verifyBlindTests(input.payload ?? {}),
       };
+    case "decide_next_action": {
+      const decision = decideNextAgentTask(input.payload ?? {});
+      return {
+        ...base(input.action, decision.targetState as TipsLabState),
+        decision,
+        next: decision.selectedTask,
+      };
+    }
     case "recommend": {
       if (!currentProfile.goals.length) throw new Error("goal_required");
       const safetyDecision = checkTipsSafety(currentProfile);
