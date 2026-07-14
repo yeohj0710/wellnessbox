@@ -262,10 +262,11 @@
 @media (max-width:680px) { .workflowDataGrid { grid-template-columns:1fr; }.workflowNodeModal footer { flex-direction:column-reverse; }.workflowNodeModal footer button { width:100%; } }
 .stageHidden { display:none !important; }
 .stageModalBackdrop { position:fixed; z-index:80; inset:0; background:rgba(15,23,42,.5); backdrop-filter:blur(3px); }
-.stageModalContent { position:fixed !important; z-index:90; inset:76px max(24px,calc((100vw - 1120px)/2)) auto; box-sizing:border-box; width:auto; max-height:calc(100vh - 100px); overflow-x:hidden; overflow-y:auto; overscroll-behavior:contain; scrollbar-gutter:stable; margin:0 !important; padding:28px 32px 112px !important; border:1px solid #e5e8eb; border-radius:24px; background:#fff; box-shadow:0 28px 90px rgba(15,23,42,.28); scroll-margin:0; }
-.stageModalContent.section,.stageModalContent>.section { box-sizing:border-box; width:100%; min-width:0; min-height:0; margin:0; padding:28px 0 40px; }
+.stageModalContent { position:fixed !important; z-index:90; top:76px; right:auto; bottom:auto; left:50%; box-sizing:border-box; width:min(1120px,calc(100vw - 48px)); max-height:calc(100vh - 100px); overflow-x:hidden; overflow-y:auto; overscroll-behavior:contain; scrollbar-gutter:stable; margin:0 !important; padding:28px 32px 112px !important; border:1px solid #e5e8eb; border-radius:24px; background:#fff; box-shadow:0 28px 90px rgba(15,23,42,.28); transform:translateX(-50%); scroll-margin:0; }
+.stageModalContent.section { width:min(1120px,calc(100vw - 48px)); min-width:0; min-height:0; }
+.stageModalContent>.section { box-sizing:border-box; width:100%; min-width:0; min-height:0; margin:0; padding:28px 0 40px; }
 .stageModalContent>.section:first-child { padding-top:0; }
 .stageModalContent>.section:last-child { padding-bottom:0; }
 .stageModalClose { position:fixed; z-index:112; top:88px; right:max(52px,calc((100vw - 1048px)/2)); display:grid; place-items:center; width:42px; height:42px; border:0; border-radius:50%; background:#f2f4f6; color:#4e5968; font-size:26px; cursor:pointer; }
 .evaluatorDockModal { z-index:110; }
-@media (max-width:680px) { .stageModalContent { inset:58px 8px auto; max-height:calc(100vh - 66px); padding:22px 16px 104px !important; border-radius:20px; }.stageModalClose { top:68px; right:24px; width:38px; height:38px; }.evaluatorDockModal { bottom:16px; } }
+@media (max-width:680px) { .stageModalContent,.stageModalContent.section { top:58px; width:calc(100vw - 16px); max-height:calc(100vh - 66px); padding:22px 16px 104px !important; border-radius:20px; }.stageModalClose { top:68px; right:24px; width:38px; height:38px; }.evaluatorDockModal { bottom:16px; } }

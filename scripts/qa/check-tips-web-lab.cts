@@ -122,6 +122,8 @@ const proStudyUi = read("components/tips/ProStudySimulation.tsx");
 assert.match(proStudyUi, /공인 설문 점수로 개선도를 계산합니다/);
 const blindTestBundle = JSON.parse(read("data/tips/blind-test-cases.json"));
 const tipsCss = read("components/tips/interim.module.css");
+assert.match(tipsCss, /\.stageModalContent\.section \{ width:min\(1120px,calc\(100vw - 48px\)\)/);
+assert.match(tipsCss, /\.stageModalContent>\.section \{ box-sizing:border-box; width:100%/);
 
 assert.match(modelModule, /predictProxyRecommendations/);
 assert.match(modelModule, /explainProxyRecommendations/);
