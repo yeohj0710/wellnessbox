@@ -1,7 +1,10 @@
+"use client";
+
 import researchJson from "@/data/tips/interim-research-summary.json";
 import type { ResearchSummary } from "./research-types";
 import styles from "./interim.module.css";
 import DatasetEvaluationWorkbench from "./DatasetEvaluationWorkbench";
+import { useState } from "react";
 
 const research = researchJson as ResearchSummary;
 const splits = [
@@ -26,6 +29,22 @@ const evaluationPaths: Record<string, { target: string; method: string; stage: n
 };
 
 export default function ResearchOverview({ onNavigate }: { onNavigate: (stage: number) => void }) {
+  const [currentResults,setCurrentResults]=useState<Record<string,{display:string;passed:boolean;evaluated:number;detail:string}>>({});
+  const [verifying,setVerifying]=useState(false);
+  const [verificationError,setVerificationError]=useState("");
+  async function verifyAll(){
+    setVerifying(true);setVerificationError("");
+    try{
+      const initialized=await fetch("/api/tips/lab",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"initialize"})});
+      if(!initialized.ok)throw new Error("평가 세션 초기화 실패");
+      const initial=await initialized.json();
+      const response=await fetch("/api/tips/lab",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"verify_all_kpis",stateToken:initial.stateToken})});
+      const payload=await response.json();
+      if(!response.ok)throw new Error(String(payload.error??"KPI 재평가 실패"));
+      setCurrentResults(Object.fromEntries(payload.kpiVerification.results.map((item:{id:string;display:string;passed:boolean;evaluated:number;detail:string})=>[item.id,item])));
+    }catch(error){setVerificationError(error instanceof Error?error.message:"KPI 재평가 실패");}
+    finally{setVerifying(false);}
+  }
   return (
     <section className={`${styles.section} ${styles.researchOverview}`} aria-labelledby="research-overview-title">
       <p className={styles.sectionLabel}>회로 연계 평가</p>
@@ -60,17 +79,19 @@ export default function ResearchOverview({ onNavigate }: { onNavigate: (stage: n
 
       <div className={styles.kpiHeading}>
         <div><span>KPI EVALUATION</span><h3>성과지표별 평가 실행</h3></div>
-        <p>측정 대상과 판정 기준을 확인한 뒤 각 평가를 직접 실행할 수 있습니다.</p>
+        <div className={styles.kpiHeadingAction}><p>직전 산출물과 현재 재실행 결과를 구분해 확인합니다.</p><button type="button" onClick={verifyAll} disabled={verifying}>{verifying?"전체 데이터 채점 중…":"7개 KPI 전체 데이터 재평가"}</button></div>
       </div>
+      {verificationError&&<p className={styles.datasetError}>{verificationError}</p>}
       <div className={styles.kpiEvaluationTable}>
-        <div className={styles.kpiEvaluationHead} aria-hidden="true"><span>성과지표</span><span>측정·평가 방법</span><span>판정 기준</span><span>저장 결과</span><span>직접 평가</span></div>
+        <div className={styles.kpiEvaluationHead} aria-hidden="true"><span>성과지표</span><span>측정·평가 방법</span><span>판정 기준</span><span>이번 실행 결과</span><span>직접 평가</span></div>
         {research.kpis.map((kpi) => {
           const path = evaluationPaths[kpi.id];
+          const current=currentResults[kpi.id];
           return <article key={kpi.id} className={styles.kpiEvaluationRow}>
             <div className={styles.kpiIdentity}><span>{kpi.id}</span><strong>{kpi.name}</strong><small>n={formatNumber(kpi.n)}</small></div>
             <div className={styles.kpiMethod}><strong>{path.target}</strong><span>{path.method}</span></div>
             <div className={styles.kpiCriterion}><small>계획 기준</small><strong>{kpi.threshold}</strong><span>평가 기준 {kpi.guardband}</span></div>
-            <div className={styles.kpiObserved}><small>저장 평가값</small><strong>{kpi.displayValue}</strong><span data-pass={kpi.proxyPass}>{kpi.proxyPass ? "기준 충족" : "기준 미충족"}</span></div>
+            <div className={styles.kpiObserved}><small>{current?`${formatNumber(current.evaluated)}건 현재 재계산`:`직전 산출물 ${kpi.displayValue}`}</small><strong>{current?current.display:"실행 전"}</strong><span data-pass={current?.passed??false} data-pending={!current}>{current?(current.passed?"기준 충족":"기준 미충족"):"재평가 필요"}</span>{current&&<small>{current.detail}</small>}</div>
             <button type="button" onClick={() => onNavigate(path.stage)}>{path.action}</button>
           </article>;
         })}

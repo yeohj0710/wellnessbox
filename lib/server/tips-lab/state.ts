@@ -6,8 +6,8 @@ export const TIPS_LAB_STATES = [
 export type TipsLabState = (typeof TIPS_LAB_STATES)[number];
 
 const STATE_ACTIONS: Record<TipsLabState, readonly string[]> = {
-  NEW: ["recommend", "decide_next_action", "execute_agent_task", "list_blind_tests", "verify_blind_tests", "recompute_blind_test", "dataset_registry", "list_dataset_cases", "verify_dataset_split"],
-  NEEDS_DATA: ["recommend", "decide_next_action", "execute_agent_task", "list_blind_tests", "verify_blind_tests", "recompute_blind_test", "dataset_registry", "list_dataset_cases", "verify_dataset_split"],
+  NEW: ["recommend", "decide_next_action", "execute_agent_task", "list_blind_tests", "verify_blind_tests", "recompute_blind_test", "dataset_registry", "list_dataset_cases", "verify_dataset_split", "verify_all_kpis"],
+  NEEDS_DATA: ["recommend", "decide_next_action", "execute_agent_task", "list_blind_tests", "verify_blind_tests", "recompute_blind_test", "dataset_registry", "list_dataset_cases", "verify_dataset_split", "verify_all_kpis"],
   SAFETY_REVIEW: ["recommend", "retrieve_evidence", "decide_next_action", "execute_agent_task"],
   CANDIDATES_READY: ["retrieve_evidence", "create_followup", "decide_next_action", "execute_agent_task"],
   ACTIVE_PLAN: ["create_followup", "ingest_pro", "ingest_device", "log_adverse_event", "decide_next_action", "execute_agent_task"],

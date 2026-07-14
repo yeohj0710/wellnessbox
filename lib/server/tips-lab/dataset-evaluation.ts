@@ -40,6 +40,11 @@ function rows(split: DatasetSplit) {
   return text.trim().split("\n").map((line) => JSON.parse(line) as DatasetRow);
 }
 
+function artifactRows<T>(fileName: string) {
+  const file = path.join(process.cwd(), "data", "tips", "datasets", fileName);
+  return gunzipSync(readFileSync(file)).toString("utf8").trim().split("\n").map((line) => JSON.parse(line) as T);
+}
+
 function score(row: DatasetRow) {
   const prediction = predictProxyTokens(model, blindProfileTokens(row.profile));
   const gold = [...row.proxy_gold_label.consider].sort();
@@ -103,5 +108,35 @@ export function verifyDatasetSplit(input: Record<string, unknown>) {
     exactMatchPercent: all.length ? exactMatches / all.length * 100 : 0,
     setPrecisionPercent: recommendationSlots ? correctSlots / recommendationSlots * 100 : 0,
     recomputedAt: new Date().toISOString(),
+  };
+}
+
+export function verifyAllKpis() {
+  const recommendation = verifyDatasetSplit({ split: "blind_test" });
+  const outcomes = artifactRows<{ percentile_point_change:number }>("outcomes.synthetic_proxy.jsonl.gz");
+  const agents = artifactRows<{ actual_action:string; expected_action:string; execution_success:boolean; postcondition_success:boolean; risk_tier:number }>("agent_action_evaluation.proxy.jsonl.gz");
+  const answers = artifactRows<{ acceptable:boolean; citation_valid:boolean; critical_safety_error:boolean }>("answer_evaluation.proxy.jsonl.gz");
+  const safety = artifactRows<{ engine_label:string; reference_label:string; exact:boolean; engine_evidence:string[]; reference_evidence:string[] }>("safety_evaluation.proxy.jsonl.gz");
+  const adr = artifactRows<{ related_to_recommendation:boolean; observation_month:number }>("adr.synthetic_proxy.jsonl.gz");
+  const linkage = artifactRows<{ success:boolean; source:string }>("linkage_sessions.synthetic_proxy.jsonl.gz");
+  const percent = (passed:number,total:number) => total ? passed / total * 100 : 0;
+  const meanChange = outcomes.reduce((sum,row)=>sum+row.percentile_point_change,0) / outcomes.length;
+  const agentPassed = agents.filter(row=>row.actual_action===row.expected_action&&row.execution_success&&row.postcondition_success).length;
+  const highRiskWrong = agents.filter(row=>row.risk_tier>=2&&row.actual_action!==row.expected_action).length;
+  const answerPassed = answers.filter(row=>row.acceptable&&row.citation_valid&&!row.critical_safety_error).length;
+  const safetyPassed = safety.filter(row=>row.exact&&JSON.stringify([...row.engine_evidence].sort())===JSON.stringify([...row.reference_evidence].sort())).length;
+  const hardFalseNegatives = safety.filter(row=>row.reference_label!=="ALLOW"&&row.engine_label==="ALLOW").length;
+  const linked = linkage.filter(row=>row.success).length;
+  return {
+    recomputedAt:new Date().toISOString(),
+    results:[
+      {id:"KPI-1",evaluated:recommendation.evaluated,value:recommendation.exactMatchPercent,display:`${recommendation.exactMatchPercent.toFixed(2)}%`,passed:recommendation.exactMatchPercent>=80,detail:`완전 일치 ${recommendation.exactMatches.toLocaleString("ko-KR")}건`},
+      {id:"KPI-2",evaluated:outcomes.length,value:meanChange,display:`+${meanChange.toFixed(2)}%p`,passed:meanChange>0,detail:"복용 전후 percentile point 변화 평균"},
+      {id:"KPI-3",evaluated:agents.length,value:percent(agentPassed,agents.length),display:`${percent(agentPassed,agents.length).toFixed(2)}%`,passed:percent(agentPassed,agents.length)>=80&&highRiskWrong===0,detail:`고위험 오동작 ${highRiskWrong}건`},
+      {id:"KPI-4",evaluated:answers.length,value:percent(answerPassed,answers.length),display:`${percent(answerPassed,answers.length).toFixed(2)}%`,passed:percent(answerPassed,answers.length)>=91,detail:`중대 안전 오류 ${answers.filter(row=>row.critical_safety_error).length}건`},
+      {id:"KPI-5",evaluated:safety.length,value:percent(safetyPassed,safety.length),display:`${percent(safetyPassed,safety.length).toFixed(2)}%`,passed:percent(safetyPassed,safety.length)>=95&&hardFalseNegatives===0,detail:`hard FN ${hardFalseNegatives}건`},
+      {id:"KPI-6",evaluated:1200,value:adr.filter(row=>row.related_to_recommendation).length,display:`${adr.filter(row=>row.related_to_recommendation).length}건/12개월`,passed:adr.filter(row=>row.related_to_recommendation).length<=5,detail:`관련 이상사례 원문 ${adr.length}건`},
+      {id:"KPI-7",evaluated:linkage.length,value:percent(linked,linkage.length),display:`${percent(linked,linkage.length).toFixed(2)}%`,passed:percent(linked,linkage.length)>=90,detail:`연결 성공 ${linked}/${linkage.length}건`},
+    ],
   };
 }
