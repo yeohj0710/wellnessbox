@@ -9,6 +9,7 @@ const nextConfig: NextConfig = {
   },
   outputFileTracingIncludes: {
     "/api/rag/**": ["data/**/*"],
+    "/api/tips/lab": ["data/tips/datasets/*.jsonl.gz"],
     "/api/admin/b2b/reports/[reportId]/export/pdf": [
       "node_modules/playwright/**/*",
       "node_modules/playwright-core/**/*",

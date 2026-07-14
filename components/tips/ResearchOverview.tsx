@@ -1,6 +1,7 @@
 import researchJson from "@/data/tips/interim-research-summary.json";
 import type { ResearchSummary } from "./research-types";
 import styles from "./interim.module.css";
+import DatasetEvaluationWorkbench from "./DatasetEvaluationWorkbench";
 
 const research = researchJson as ResearchSummary;
 const splits = [
@@ -54,6 +55,8 @@ export default function ResearchOverview({ onNavigate }: { onNavigate: (stage: n
           <span>A/B 생성</span><b>→</b><span>C 검증</span><b>→</b><span>C2 중재</span><b>→</b><span>D 독립 blind</span>
         </div>
       </div>
+
+      <DatasetEvaluationWorkbench />
 
       <div className={styles.kpiHeading}>
         <div><span>KPI EVALUATION</span><h3>성과지표별 평가 실행</h3></div>

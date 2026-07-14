@@ -9,6 +9,7 @@ import interimResearchSummaryJson from "@/data/tips/interim-research-summary.jso
 import { canRunTipsLabAction, isTipsLabTransitionAllowed, TIPS_LAB_STATES, type TipsLabState } from "@/lib/server/tips-lab/state";
 import { checkTipsSafety } from "@/lib/tips/safety-engine";
 import { listBlindTests, recomputeBlindTest, verifyBlindTests } from "@/lib/server/tips-lab/blind-tests";
+import { datasetRegistry, listDatasetCases, verifyDatasetSplit } from "@/lib/server/tips-lab/dataset-evaluation";
 import { decideNextAgentTask, normalizeAgentObservation, type AgentExecutionTrace, type AgentTask } from "@/lib/tips/agent-decision-engine";
 
 export const TIPS_LAB_ACTIONS = [
@@ -22,6 +23,9 @@ export const TIPS_LAB_ACTIONS = [
   "list_blind_tests",
   "verify_blind_tests",
   "recompute_blind_test",
+  "dataset_registry",
+  "list_dataset_cases",
+  "verify_dataset_split",
   "decide_next_action",
   "execute_agent_task",
 ] as const;
@@ -181,6 +185,12 @@ export function runTipsLab(input: LabInput) {
       };
     case "recompute_blind_test":
       return { ...base(input.action, currentState), recomputation: recomputeBlindTest(input.payload ?? {}) };
+    case "dataset_registry":
+      return { ...base(input.action, currentState), dataset: datasetRegistry() };
+    case "list_dataset_cases":
+      return { ...base(input.action, currentState), datasetCases: listDatasetCases(input.payload ?? {}) };
+    case "verify_dataset_split":
+      return { ...base(input.action, currentState), datasetVerification: verifyDatasetSplit(input.payload ?? {}) };
     case "decide_next_action": {
       const decision = decideNextAgentTask(input.payload ?? {});
       return {
