@@ -228,6 +228,7 @@ export default function InterimUserConsole() {
   function moveToStage(next: number) {
     const bounded = Math.max(0, Math.min(EVALUATION_STAGES.length - 1, next));
     const closingModal = activeStage > 0 && bounded === 0;
+    setHelpOpen(false);
     setActiveStage(bounded);
     if (bounded === 0 && !closingModal) requestAnimationFrame(() => stageRefs.current[0]?.scrollIntoView({ behavior: "smooth", block: "start" }));
   }
@@ -400,9 +401,9 @@ export default function InterimUserConsole() {
     try {
       setConsents(scopes); setDemoProgress("1/6 세션 초기화"); let r=await runLab({action:"initialize",profile:p,consentScopes:scopes}); let token=String(r.stateToken??"");
       setDemoProgress("2/6 추천·안전 판정"); r=await runLab({action:"recommend",stateToken:token,profile:p,consentScopes:scopes}); setRecommendationResult(r); setTrace(r); setFeedback(describeResult("recommend",r)); setState(String(r.state??"")); token=String(r.stateToken??token); setStateToken(token);
-      if (["ESCALATED","STOPPED","ADVERSE_EVENT"].includes(String(r.state))) { setDemoProgress("완료 · 안전 중단 경로 재현"); return; }
+      if (["ESCALATED","STOPPED","ADVERSE_EVENT"].includes(String(r.state))) { setDemoProgress("완료 · 안전 중단 경로 재현"); moveToStage(4); return; }
       for (const [i,action] of (["retrieve_evidence","create_followup","ingest_pro","ingest_device"] as LabAction[]).entries()) { setDemoProgress(`${i+3}/6 ${action}`); r=await runLab({action,stateToken:token,profile:p,consentScopes:scopes,payload:action==="retrieve_evidence"?{query:`${s.goal} 근거`}:action==="ingest_device"?{source:"wearable"}:{}}); token=String(r.stateToken??token); setTrace(r); setState(String(r.state??"")); setStateToken(token); }
-      setDemoProgress("완료 · 추천부터 추적 기록까지 자동 실행"); requestAnimationFrame(()=>resultRef.current?.scrollIntoView({behavior:"smooth",block:"start"}));
+      setDemoProgress("완료 · 추천부터 추적 기록까지 자동 실행"); moveToStage(4);
     } catch(error) { const message=error instanceof Error?error.message:"unknown_error"; setDemoProgress(`실패 · ${message}`); setTrace({error:message}); }
     finally { setBusyAction(null); }
   }
@@ -518,9 +519,14 @@ export default function InterimUserConsole() {
           <p className={styles.sectionLabel}>2. 추천 결과 확인</p>
           <h2 className={styles.sectionTitle}>무엇이 추천되었고, 무엇이 제외되었는가</h2>
           <p className={styles.sectionBody}>입력 조건을 모델에 적용한 뒤 복용 약물·질환·알레르기 안전 규칙을 순서대로 확인한 결과입니다.</p>
+          {safety && <div className={styles.resultSummaryBar} aria-label="추천 평가 결과 요약">
+            <div><span>안전 판정</span><strong>{safety.decision === "ALLOW" ? "추천 가능" : safety.decision === "REVIEW" ? "검토 필요" : "추천 중단"}</strong></div>
+            <div><span>최종 추천</span><strong>{recommendations.length}개</strong></div>
+            <div><span>안전 규칙 제외</span><strong>{safety.blockedIngredients.length}개</strong></div>
+          </div>}
           {safety ? (
             <div className={safety.decision === "STOP_AND_ESCALATE" ? styles.stopBanner : styles.safetyBanner}>
-              <strong>{safety.decision}</strong>
+              <strong>{safety.decision === "ALLOW" ? "안전 규칙 통과" : safety.decision === "REVIEW" ? "약사 검토 필요" : "추천 중단 및 검토 전환"}</strong>
               <p>{safety.reasons.length ? safety.reasons.join(" ") : "입력 조건에서 차단 규칙이 확인되지 않았습니다."}</p>
             </div>
           ) : <p className={styles.empty}>안전 판정 대기 상태입니다. 시험 조건을 입력한 뒤 안전 검사와 추천 계산을 실행할 수 있습니다.</p>}
@@ -601,7 +607,7 @@ export default function InterimUserConsole() {
         <button type="button" className={styles.helpButton} onClick={()=>setHelpOpen(true)}>자세히 설명</button>
         <button type="button" className={styles.dockNext} onClick={nextStage} disabled={activeStage===EVALUATION_STAGES.length-1||busyAction!==null||proBusy}>{busyAction!==null||proBusy?"실행 중…":"다음"}</button>
       </div>
-      {helpOpen&&<div className={`${styles.helpOverlay} ${styles.stageHelpOverlay}`} role="presentation" onMouseDown={(event)=>{if(event.target===event.currentTarget)setHelpOpen(false);}}><section className={`${styles.stageHelpModal} ${styles.stageHelpDrawer}`} role="dialog" aria-modal="true" aria-labelledby="stage-help-title"><header><div><span>단계 {activeStage+1}</span><h2 id="stage-help-title">{activeStageTitle}</h2></div><button type="button" aria-label="설명 닫기" onClick={()=>setHelpOpen(false)}>×</button></header><p className={styles.helpPurpose}>{activeHelp.purpose}</p><dl><div><dt>입력</dt><dd>{activeHelp.input}</dd></div><div><dt>계산</dt><dd>{activeHelp.process}</dd></div><div><dt>확인 항목</dt><dd>{activeHelp.output}</dd></div></dl></section></div>}
+      {helpOpen&&<aside className={styles.stageGuideBar} aria-labelledby="stage-help-title"><header><div><span>단계 {activeStage+1} 설명</span><h2 id="stage-help-title">{activeStageTitle}</h2></div><button type="button" aria-label="설명 닫기" onClick={()=>setHelpOpen(false)}>×</button></header><p>{activeHelp.purpose}</p><dl><div><dt>입력</dt><dd>{activeHelp.input}</dd></div><div><dt>계산</dt><dd>{activeHelp.process}</dd></div><div><dt>확인 항목</dt><dd>{activeHelp.output}</dd></div></dl></aside>}
     </main>
   );
 }

@@ -278,8 +278,7 @@ const BlindTestExplorer = forwardRef<BlindTestExplorerHandle>(function BlindTest
         </article>
       </div>
       {explanationOpen ? (
-        <div className={styles.explanationOverlay} role="presentation" onMouseDown={(event) => event.target === event.currentTarget && setExplanationOpen(false)}>
-          <section className={styles.explanationModal} role="dialog" aria-modal="true" aria-labelledby="blind-explanation-title">
+          <section className={styles.explanationInline} aria-labelledby="blind-explanation-title">
             <div className={styles.explanationModalHeader}>
               <div><span>시험 설명</span><h3 id="blind-explanation-title">추천 모델이 기준대로 작동하는지 확인하는 시험</h3></div>
               <button type="button" onClick={() => setExplanationOpen(false)} aria-label="설명 닫기">×</button>
@@ -298,7 +297,6 @@ const BlindTestExplorer = forwardRef<BlindTestExplorerHandle>(function BlindTest
             </div>
             <button type="button" className={styles.explanationClose} onClick={() => setExplanationOpen(false)}>설명 확인</button>
           </section>
-        </div>
       ) : null}
     </section>
   );
