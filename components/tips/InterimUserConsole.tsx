@@ -9,7 +9,6 @@ import InferenceWorkbench from "./InferenceWorkbench";
 import ResearchEvidencePanel from "./ResearchEvidencePanel";
 import ResearchWorkflowMap from "./ResearchWorkflowMap";
 import AgentDecisionWorkbench, { type AgentDecisionWorkbenchHandle } from "./AgentDecisionWorkbench";
-import HumanReviewCheckpoint, { type HumanReviewRecord } from "./HumanReviewCheckpoint";
 import type { InferenceExplanation } from "./research-types";
 import styles from "./interim.module.css";
 
@@ -96,29 +95,6 @@ const PRO_STAGE_HELP = [
   { purpose:"복용 전후 점수 차이가 건강 상태에서 어느 정도 변화인지 계산합니다.", input:"복용 전 점수, 4주 후 점수, 시작 시점 집단 분포", process:"두 점수를 Z-표준화한 뒤 건강 백분위 차이(pp)로 변환합니다.", output:"개인 개선도, 개선 여부와 집단 평균 성과" },
 ] as const;
 
-const HUMAN_REVIEW_ROLES: Record<number, { role:string; code:string }> = {
-  0: { role:"연구책임자", code:"TIPS-PI-001" },
-  1: { role:"독립평가 승인자", code:"TIPS-EVAL-001" },
-  2: { role:"연구책임자", code:"TIPS-PI-001" },
-  4: { role:"약사·약학 전문가", code:"TIPS-PHARM-001" },
-  5: { role:"약사·연구 승인권자", code:"TIPS-REVIEW-001" },
-  6: { role:"연구책임자", code:"TIPS-PI-001" },
-};
-
-function saveHumanReviewFile(records: HumanReviewRecord[]) {
-  const payload = {
-    schema: "tips-human-review-v1",
-    exportedAt: new Date().toISOString(),
-    records,
-  };
-  const url = URL.createObjectURL(new Blob([JSON.stringify(payload, null, 2)], { type:"application/json" }));
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = "tips-human-review.json";
-  link.click();
-  URL.revokeObjectURL(url);
-}
-
 function toggle(current: string[], value: string) {
   return current.includes(value)
     ? current.filter((item) => item !== value)
@@ -170,11 +146,6 @@ export default function InterimUserConsole() {
   const [feedback, setFeedback] = useState<Feedback | null>(null);
   const [demoProgress, setDemoProgress] = useState("");
   const [stageActivity, setStageActivity] = useState("단계 실행 대기");
-  const [approvalReady, setApprovalReady] = useState<Record<number,boolean>>({0:true,6:true});
-  const [humanReviews, setHumanReviews] = useState<HumanReviewRecord[]>([]);
-  const [revisionRequired, setRevisionRequired] = useState(false);
-  const [reviewRationale, setReviewRationale] = useState("");
-  const [reviewComplete, setReviewComplete] = useState(false);
   const resultRef = useRef<HTMLElement | null>(null);
   const actionFeedbackRef = useRef<HTMLDivElement>(null);
   const [trace, setTrace] = useState<JsonRecord>({
@@ -258,53 +229,11 @@ export default function InterimUserConsole() {
     const bounded = Math.max(0, Math.min(EVALUATION_STAGES.length - 1, next));
     const closingModal = activeStage > 0 && bounded === 0;
     setHelpOpen(false);
-    setRevisionRequired(false);
-    setReviewRationale("");
     setActiveStage(bounded);
     if (bounded === 0 && !closingModal) requestAnimationFrame(() => stageRefs.current[0]?.scrollIntoView({ behavior: "smooth", block: "start" }));
   }
 
   async function nextStage() {
-    if (approvalReady[activeStage] && HUMAN_REVIEW_ROLES[activeStage]) {
-      if (revisionRequired && !reviewRationale.trim()) {
-        setStageActivity("수정 필요 사유를 입력하십시오.");
-        return;
-      }
-      const reviewer = HUMAN_REVIEW_ROLES[activeStage];
-      const record: HumanReviewRecord = {
-        stage: activeStage,
-        stageTitle: activeStageTitle,
-        reviewerRole: reviewer.role,
-        reviewerCode: reviewer.code,
-        decision: revisionRequired ? "REVISION_REQUIRED" : "APPROVED",
-        rationale: reviewRationale.trim(),
-        reviewedAt: new Date().toISOString(),
-        sessionState: state,
-      };
-      const nextReviews = [...humanReviews.filter((item)=>item.stage!==activeStage), record].sort((a,b)=>a.stage-b.stage);
-      setHumanReviews(nextReviews);
-      localStorage.setItem("tips-human-review-session", JSON.stringify(nextReviews));
-      setApprovalReady((current)=>({...current,[activeStage]:false}));
-      if (revisionRequired) {
-        setStageActivity("수정 필요 기록 완료 · 현재 단계 보류");
-        setRevisionRequired(false);
-        setReviewRationale("");
-        return;
-      }
-      if (activeStage === 6) {
-        saveHumanReviewFile(nextReviews);
-        setReviewComplete(true);
-        setStageActivity("최종 사람 승인 기록 저장 완료");
-        return;
-      }
-      if (activeStage === 0) {
-        const initialized = await initializeEvaluationSession();
-        if (!initialized) return;
-      }
-      setStageActivity("사람 승인 기록 완료");
-      moveToStage(activeStage + 1);
-      return;
-    }
     if (activeStage === 0) {
       const completed = await initializeEvaluationSession();
       if (completed) moveToStage(1);
@@ -315,7 +244,7 @@ export default function InterimUserConsole() {
       setStageActivity("5,000건 독립 시험 재계산 중");
       try {
         const completed = await blindTestRef.current?.verifyAll();
-        if (completed) { setApprovalReady((current)=>({...current,1:true})); setStageActivity("계산 완료 · 독립평가 승인 대기"); }
+        if (completed) { setStageActivity("5,000건 독립 시험 재계산 완료"); moveToStage(2); }
       } finally { setProBusy(false); }
       return;
     }
@@ -325,7 +254,7 @@ export default function InterimUserConsole() {
       try {
         const completed = await proStudyRef.current?.next();
         setStageActivity(completed ? "PRO 복용 전후 변화 계산 완료" : `PRO ${PRO_STAGE_LABELS[Math.min(3, proStep + 1) as 0|1|2|3]} 단계 준비 완료`);
-        if (completed) { setApprovalReady((current)=>({...current,2:true})); setStageActivity("PRO 계산 완료 · 연구책임자 승인 대기"); }
+        if (completed) moveToStage(3);
       } finally { setProBusy(false); }
       return;
     }
@@ -344,7 +273,7 @@ export default function InterimUserConsole() {
     if (activeStage === 4) {
       setStageActivity("추천 결과의 연결 근거 조회 중");
       const completed = await execute("retrieve_evidence", { query: `${goal} 추천 근거` });
-      if (completed) { setApprovalReady((current)=>({...current,4:true})); setStageActivity("결과·근거 준비 완료 · 약사 승인 대기"); }
+      if (completed) { setStageActivity("추천 근거 조회 완료"); moveToStage(5); }
       return;
     }
     if (activeStage === 5) {
@@ -352,7 +281,7 @@ export default function InterimUserConsole() {
       setStageActivity("Agent 다음 작업 결정·실행·검증 중");
       try {
         const completed = await agentDecisionRef.current?.evaluate();
-        if (completed) { setApprovalReady((current)=>({...current,5:true})); setStageActivity("Agent 실행 검증 완료 · 승인권자 확인 대기"); }
+        if (completed) { setStageActivity("Agent 결정·실행·사후조건 검증 완료"); moveToStage(6); }
       } finally { setProBusy(false); }
       return;
     }
@@ -666,8 +595,6 @@ export default function InterimUserConsole() {
 
         <div ref={(node)=>{stageRefs.current[6]=node;}} className={`${styles.stageAnchor} ${activeStage===6?styles.stageModalContent:styles.stageHidden}`}><ResearchEvidencePanel /></div>
 
-        {reviewComplete&&<section className={styles.humanReviewComplete} aria-live="polite"><strong>사람 검토 기록 저장 완료</strong><p>자동 계산 결과와 분리된 승인자 직접 검토 기록 {humanReviews.length}건이 저장되었습니다.</p></section>}
-
         <details className={styles.trace}>
           <summary>연구용 실행 추적 보기</summary>
           <pre className={styles.output}>{JSON.stringify(trace, null, 2)}</pre>
@@ -678,9 +605,8 @@ export default function InterimUserConsole() {
         <div><span>{activeStage + 1} / {EVALUATION_STAGES.length}</span><strong>{activeStageTitle}</strong><small aria-live="polite">{stageActivity}</small></div>
         <button type="button" onClick={previousStage} disabled={activeStage===0||busyAction!==null||proBusy}>이전</button>
         <button type="button" className={styles.helpButton} onClick={()=>setHelpOpen(true)}>자세히 설명</button>
-        <button type="button" className={styles.dockNext} onClick={nextStage} disabled={reviewComplete||busyAction!==null||proBusy}>{busyAction!==null||proBusy?"실행 중…":approvalReady[activeStage]?activeStage===6?"최종 승인 저장":"승인하고 다음":"다음"}</button>
+        <button type="button" className={styles.dockNext} onClick={nextStage} disabled={activeStage===EVALUATION_STAGES.length-1||busyAction!==null||proBusy}>{busyAction!==null||proBusy?"실행 중…":"다음"}</button>
       </div>
-      {approvalReady[activeStage]&&HUMAN_REVIEW_ROLES[activeStage]&&!reviewComplete&&!helpOpen&&<HumanReviewCheckpoint role={HUMAN_REVIEW_ROLES[activeStage].role} reviewerCode={HUMAN_REVIEW_ROLES[activeStage].code} stageTitle={activeStageTitle} revisionRequired={revisionRequired} rationale={reviewRationale} onRevisionChange={setRevisionRequired} onRationaleChange={setReviewRationale} />}
       {helpOpen&&<aside className={styles.stageGuideBar} aria-labelledby="stage-help-title"><header><div><span>단계 {activeStage+1} 설명</span><h2 id="stage-help-title">{activeStageTitle}</h2></div><button type="button" aria-label="설명 닫기" onClick={()=>setHelpOpen(false)}>×</button></header><p>{activeHelp.purpose}</p><dl><div><dt>입력</dt><dd>{activeHelp.input}</dd></div><div><dt>계산</dt><dd>{activeHelp.process}</dd></div><div><dt>확인 항목</dt><dd>{activeHelp.output}</dd></div></dl></aside>}
     </main>
   );

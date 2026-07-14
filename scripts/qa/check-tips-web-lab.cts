@@ -183,8 +183,6 @@ assert.match(consoleUi, />확인 항목</);
 assert.match(consoleUi, /className=\{styles\.stageGuideBar\}/);
 assert.doesNotMatch(consoleUi, /stageHelpOverlay/);
 assert.match(consoleUi, /nextStage/);
-const humanReviewUi = read("components/tips/HumanReviewCheckpoint.tsx");
-for (const token of ["HumanReviewCheckpoint", "사람 승인 필수", "승인하고 다음", "최종 승인 저장", "REVISION_REQUIRED", "현재 단계 보류", "tips-human-review-session", "tips-human-review.json"]) assert.match(consoleUi + humanReviewUi, new RegExp(token));
 assert.match(consoleUi, /stageRefs/);
 assert.match(consoleUi, /proStudyRef\.current\?\.next/);
 assert.match(consoleUi, /proStudyRef\.current\?\.previous/);
