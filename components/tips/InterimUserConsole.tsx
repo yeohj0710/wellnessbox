@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import ResearchOverview from "./ResearchOverview";
-import BlindTestExplorer from "./BlindTestExplorer";
+import BlindTestExplorer, { type BlindTestExplorerHandle } from "./BlindTestExplorer";
 import ProStudySimulation, { type ProStudySimulationHandle } from "./ProStudySimulation";
 import AdvancedProfileFields, { DEFAULT_ADVANCED, type AdvancedProfile } from "./AdvancedProfileFields";
 import InferenceWorkbench from "./InferenceWorkbench";
@@ -127,6 +127,7 @@ export default function InterimUserConsole() {
   const [helpOpen, setHelpOpen] = useState(false);
   const stageRefs = useRef<Array<HTMLElement | null>>([]);
   const proStudyRef = useRef<ProStudySimulationHandle | null>(null);
+  const blindTestRef = useRef<BlindTestExplorerHandle | null>(null);
   const agentDecisionRef = useRef<AgentDecisionWorkbenchHandle | null>(null);
   const [age, setAge] = useState(41);
   const [goal, setGoal] = useState("sleep_quality");
@@ -142,6 +143,7 @@ export default function InterimUserConsole() {
   const [recommendationResult, setRecommendationResult] = useState<JsonRecord | null>(null);
   const [feedback, setFeedback] = useState<Feedback | null>(null);
   const [demoProgress, setDemoProgress] = useState("");
+  const [stageActivity, setStageActivity] = useState("단계 실행 대기");
   const resultRef = useRef<HTMLElement | null>(null);
   const actionFeedbackRef = useRef<HTMLDivElement>(null);
   const [trace, setTrace] = useState<JsonRecord>({
@@ -200,29 +202,77 @@ export default function InterimUserConsole() {
   }
 
   async function nextStage() {
+    if (activeStage === 0) {
+      const completed = await initializeEvaluationSession();
+      if (completed) moveToStage(1);
+      return;
+    }
+    if (activeStage === 1) {
+      setProBusy(true);
+      setStageActivity("5,000건 독립 시험 재계산 중");
+      try {
+        const completed = await blindTestRef.current?.verifyAll();
+        if (completed) { setStageActivity("5,000건 독립 시험 재계산 완료"); moveToStage(2); }
+      } finally { setProBusy(false); }
+      return;
+    }
     if (activeStage === 2) {
       setProBusy(true);
+      setStageActivity(`PRO ${PRO_STAGE_LABELS[proStep]} 계산·저장 중`);
       try {
         const completed = await proStudyRef.current?.next();
+        setStageActivity(completed ? "PRO 복용 전후 변화 계산 완료" : `PRO ${PRO_STAGE_LABELS[Math.min(3, proStep + 1) as 0|1|2|3]} 단계 준비 완료`);
         if (completed) moveToStage(3);
       } finally { setProBusy(false); }
       return;
     }
     if (activeStage === 3 && !recommendationResult) {
-      await runScenario(DEMO_SCENARIOS[0]);
-      setActiveStage(4);
-      requestAnimationFrame(() => stageRefs.current[4]?.scrollIntoView({ behavior: "smooth", block: "start" }));
+      setStageActivity("추천 모델·안전 규칙 계산 중");
+      const completed = await execute("recommend");
+      if (completed) { setStageActivity("추천 모델·안전 규칙 계산 완료"); moveToStage(4); }
+      return;
+    }
+    if (activeStage === 3) {
+      setStageActivity("변경된 입력으로 추천 재계산 중");
+      const completed = await execute("recommend");
+      if (completed) { setStageActivity("추천 재계산 완료"); moveToStage(4); }
+      return;
+    }
+    if (activeStage === 4) {
+      setStageActivity("추천 결과의 연결 근거 조회 중");
+      const completed = await execute("retrieve_evidence", { query: `${goal} 추천 근거` });
+      if (completed) { setStageActivity("추천 근거 조회 완료"); moveToStage(5); }
       return;
     }
     if (activeStage === 5) {
       setProBusy(true);
+      setStageActivity("Agent 다음 작업 결정·실행·검증 중");
       try {
         const completed = await agentDecisionRef.current?.evaluate();
-        if (completed) moveToStage(6);
+        if (completed) { setStageActivity("Agent 결정·실행·사후조건 검증 완료"); moveToStage(6); }
       } finally { setProBusy(false); }
       return;
     }
     moveToStage(activeStage + 1);
+  }
+
+  async function initializeEvaluationSession() {
+    setBusyAction("initialize");
+    setStageActivity("평가 세션과 입력 스냅샷 생성 중");
+    try {
+      const initialized = await runLab({ action: "initialize", profile, consentScopes: consents });
+      setTrace(initialized);
+      setState(String(initialized.state ?? "NEW"));
+      setStateToken(String(initialized.stateToken ?? ""));
+      setStageActivity("평가 세션과 입력 스냅샷 생성 완료");
+      return true;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "unknown_error";
+      setTrace({ error: message });
+      setFeedback({ tone: "error", title: "평가 세션 생성 실패", detail: message });
+      setStageActivity("평가 세션 생성 실패");
+      return false;
+    } finally { setBusyAction(null); }
   }
 
   function previousStage() {
@@ -280,6 +330,7 @@ export default function InterimUserConsole() {
         const target = action === "recommend" ? resultRef.current : actionFeedbackRef.current;
         target?.scrollIntoView({ behavior: "smooth", block: "start" });
       });
+      return true;
     } catch (error) {
       const message = error instanceof Error ? error.message : "unknown_error";
       setTrace({ error: message });
@@ -291,6 +342,7 @@ export default function InterimUserConsole() {
           : message,
       });
       requestAnimationFrame(() => actionFeedbackRef.current?.scrollIntoView({ behavior: "smooth", block: "center" }));
+      return false;
     } finally {
       setBusyAction(null);
     }
@@ -350,7 +402,7 @@ export default function InterimUserConsole() {
           <ResearchOverview />
         </div>
 
-        <div ref={(node)=>{stageRefs.current[1]=node;}} className={styles.stageAnchor}><BlindTestExplorer /></div>
+        <div ref={(node)=>{stageRefs.current[1]=node;}} className={styles.stageAnchor}><BlindTestExplorer ref={blindTestRef} /></div>
 
         <div ref={(node)=>{stageRefs.current[2]=node;}} className={styles.stageAnchor}><ProStudySimulation ref={proStudyRef} onStepChange={setProStep} /></div>
 
@@ -510,7 +562,7 @@ export default function InterimUserConsole() {
 
       </div>
       <div className={styles.evaluatorDock} aria-label="평가 단계 이동">
-        <div><span>{activeStage + 1} / {EVALUATION_STAGES.length}</span><strong>{activeStageTitle}</strong></div>
+        <div><span>{activeStage + 1} / {EVALUATION_STAGES.length}</span><strong>{activeStageTitle}</strong><small aria-live="polite">{stageActivity}</small></div>
         <button type="button" onClick={previousStage} disabled={activeStage===0||busyAction!==null||proBusy}>이전</button>
         <button type="button" className={styles.helpButton} onClick={()=>setHelpOpen(true)}>자세히 설명</button>
         <button type="button" className={styles.dockNext} onClick={nextStage} disabled={activeStage===EVALUATION_STAGES.length-1||busyAction!==null||proBusy}>{busyAction!==null||proBusy?"실행 중…":"다음"}</button>

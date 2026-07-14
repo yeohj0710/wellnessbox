@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from "react";
 import styles from "./interim.module.css";
 
 type Filter = "all" | "matched" | "mismatched" | "safety";
@@ -119,7 +119,11 @@ function renderValue(value: unknown): string {
   return VALUE_LABELS[text] ?? text;
 }
 
-export default function BlindTestExplorer() {
+export type BlindTestExplorerHandle = {
+  verifyAll: () => Promise<boolean>;
+};
+
+const BlindTestExplorer = forwardRef<BlindTestExplorerHandle>(function BlindTestExplorer(_, ref) {
   const [filter, setFilter] = useState<Filter>("all");
   const [queryInput, setQueryInput] = useState("");
   const [query, setQuery] = useState("");
@@ -162,9 +166,12 @@ export default function BlindTestExplorer() {
     try {
       const data = await callLab("verify_blind_tests", { filter: "all" });
       setVerified(data.verification.summary as Summary);
-    } catch (cause) { setError(cause instanceof Error ? cause.message : "전체 블라인드 테스트 재검증 실패"); }
+      return true;
+    } catch (cause) { setError(cause instanceof Error ? cause.message : "전체 블라인드 테스트 재검증 실패"); return false; }
     finally { setBusy(false); }
   }
+
+  useImperativeHandle(ref, () => ({ verifyAll }), []);
 
   function changeFilter(next: Filter) {
     setFilter(next); setQuery(""); setQueryInput(""); setVerified(null); void load(1, next, "");
@@ -295,4 +302,6 @@ export default function BlindTestExplorer() {
       ) : null}
     </section>
   );
-}
+});
+
+export default BlindTestExplorer;

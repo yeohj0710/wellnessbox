@@ -245,3 +245,4 @@
   .modelFacts { grid-template-columns: 1fr; }.hashList div { grid-template-columns: 1fr; gap: 6px; }.hashList code { white-space: normal; word-break: break-all; }
   .replacementPanel { grid-template-columns: 1fr; gap: 20px; padding: 24px; }.replacementPanel h3 { font-size: 23px; }
 }
+ .evaluatorDock > div small { color:#6b7684; font-size:11px; font-weight:650; }
