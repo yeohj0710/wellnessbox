@@ -52,9 +52,9 @@ export default function ResearchWorkflowMap(props: WorkflowMapProps) {
     wellness:{title:"웰니스박스",role:"추천을 구매·소분·배송 서비스로 연결합니다.",status:"서비스 경로 연결",receives:["추천 조합","소비자 주문"],sends:["약사 검토 요청","주문·배송 상태"],implementation:"추천·구매, 주문 조회, 대화 상담과 정밀진단 경로를 제공합니다.",stage:3},
     lake:{title:"Data Lake",role:"프로필, 근거, 안전 규칙과 후속 기록을 조회·저장합니다.",status:"데이터 준비 완료",receives:["프로필·대화 기록","PRO·웨어러블 기록","약사 보정"],sends:["RAG 근거","안전 규칙","추적 이력"],implementation:"평가 API의 입력 스냅샷과 실행 trace를 상태 토큰으로 연결합니다.",stage:1},
     pharmacy:{title:"약사",role:"추천과 사용자 데이터를 검토하고 조정합니다.",status:"검토 경로 연결",receives:["추천 조합","안전 판정","주문 정보"],sends:["검토·보정 결과","소분·배송 지시","에스컬레이션 처리"],implementation:"고위험·중대한 이상사례가 발생하면 추천을 중단하고 약사 검토 상태로 전환합니다.",stage:5},
-    optimizer:{title:"다목적 조합 최적화 엔진",role:"효능·안전·복용량·예산 제약을 함께 적용합니다.",status:`${props.recommendationCount}개 선택`,receives:["후보별 효과 점수","안전 제약","예산·복용 선호"],sends:["최종 추천 조합","최적화 선택 근거"],implementation:"모델 후보를 안전 규칙으로 제한한 뒤 허용된 조합을 산출합니다.",stage:4},
+    optimizer:{title:"다목적 조합 최적화 엔진",role:"효능·안전·복용량·예산 제약을 함께 적용합니다.",status:`${props.recommendationCount}개 선택`,receives:["후보별 효과 점수","안전 제약","예산·복용 선호"],sends:["최종 추천 조합","최적화 선택 근거"],implementation:"모델 후보를 안전 규칙으로 제한한 뒤 허용된 조합을 산출합니다.",stage:3},
     safety:{title:"개인화 안전 검증 엔진",role:"금기, 상호작용, 알레르기와 응급 신호를 판정합니다.",status:safety,receives:["사용자 질환·약물·알레르기","Data Lake 안전 규칙","ITE 제약 강화"],sends:["허용·제외 성분","추천 중단·약사 검토"],implementation:"결정적 안전 규칙을 적용하고 고위험 상태에서는 추가 추천을 차단합니다.",stage:3},
-    ite:{title:"개인화 효과 추론 모델(ITE)",role:"개인 조건별 성분 효과 점수를 계산합니다.",status:inference,receives:["93개 입력 특성","최적화 탐색 후보","후속평가 결과"],sends:["성분별 효과 점수","안전 제약 강화 신호"],implementation:"학습 모델의 성분별 점수와 특성 기여도를 재현 가능한 방식으로 계산합니다.",stage:4},
+    ite:{title:"개인화 효과 추론 모델(ITE)",role:"개인 조건별 성분 효과 점수를 계산합니다.",status:inference,receives:["93개 입력 특성","최적화 탐색 후보","후속평가 결과"],sends:["성분별 효과 점수","안전 제약 강화 신호"],implementation:"학습 모델의 성분별 점수와 특성 기여도를 재현 가능한 방식으로 계산합니다.",stage:3},
     sensor:{title:"바이오센서·유전 데이터",role:"웨어러블 측정값과 정밀진단 결과를 후속 판단에 제공합니다.",status:props.deviceConnected?"연동 확인":"연동 시험 전",receives:["기기 측정값","검사·유전 결과","사용자 동의 범위"],sends:["소비자 상태 표시","AI 재평가 입력","Data Lake 기록"],implementation:"동의 범위를 확인한 뒤 기기 입력을 활성 계획과 다음 행동 평가에 반영합니다.",stage:5},
   };
   return <section className={`${styles.section} ${styles.workflowHub}`} aria-labelledby="workflow-map-title">
@@ -81,7 +81,7 @@ export default function ResearchWorkflowMap(props: WorkflowMapProps) {
           </g>
           <g className={styles.archDashed}>
             <path className={styles.archBidirectional} d="M1012 85 H1028 V350 H1012"/>
-            <path d="M845 325 H840 V235 H836"/>
+            <path d="M900 300 V284 H752 V270"/>
           </g>
           <g className={styles.archLabels}>
             <text x="164" y="66">주기적 재평가</text><text x="180" y="315">대화·피드백</text>
@@ -89,7 +89,7 @@ export default function ResearchWorkflowMap(props: WorkflowMapProps) {
             <text x="602" y="196">규칙 조회</text><text x="520" y="305">검토·보정</text><text x="660" y="386">효과 추론 결과 보정</text>
             <text x="190" y="341">주문</text><text x="399" y="386">중개</text><text x="516" y="520">소분·배송</text>
             <text x="56" y="490">측정값</text><text x="182" y="570">정밀진단 입력</text><text x="108" y="724">복용·재검사 결과 환류</text>
-            <text x="968" y="218">최적해 탐색</text><text x="850" y="286">제약 강화</text>
+            <text x="968" y="218">최적해 탐색</text><text x="790" y="279">제약 강화</text>
           </g>
         </svg>
 

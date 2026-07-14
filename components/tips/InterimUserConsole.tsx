@@ -126,6 +126,8 @@ export default function InterimUserConsole() {
   const [proBusy, setProBusy] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
   const stageRefs = useRef<Array<HTMLElement | null>>([]);
+  const modalScrollPosition = useRef(0);
+  const modalScrollLocked = useRef(false);
   const proStudyRef = useRef<ProStudySimulationHandle | null>(null);
   const blindTestRef = useRef<BlindTestExplorerHandle | null>(null);
   const agentDecisionRef = useRef<AgentDecisionWorkbenchHandle | null>(null);
@@ -195,10 +197,39 @@ export default function InterimUserConsole() {
     return () => window.removeEventListener("keydown", close);
   }, [helpOpen]);
 
+  useEffect(() => {
+    if (activeStage > 0 && !modalScrollLocked.current) {
+      modalScrollPosition.current = window.scrollY;
+      document.body.style.position = "fixed";
+      document.body.style.top = `-${modalScrollPosition.current}px`;
+      document.body.style.width = "100%";
+      document.body.style.overflow = "hidden";
+      modalScrollLocked.current = true;
+      return;
+    }
+    if (activeStage === 0 && modalScrollLocked.current) {
+      document.body.style.position = "";
+      document.body.style.top = "";
+      document.body.style.width = "";
+      document.body.style.overflow = "";
+      window.scrollTo(0, modalScrollPosition.current);
+      modalScrollLocked.current = false;
+    }
+  }, [activeStage]);
+
+  useEffect(() => () => {
+    if (!modalScrollLocked.current) return;
+    document.body.style.position = "";
+    document.body.style.top = "";
+    document.body.style.width = "";
+    document.body.style.overflow = "";
+  }, []);
+
   function moveToStage(next: number) {
     const bounded = Math.max(0, Math.min(EVALUATION_STAGES.length - 1, next));
+    const closingModal = activeStage > 0 && bounded === 0;
     setActiveStage(bounded);
-    requestAnimationFrame(() => stageRefs.current[bounded]?.scrollIntoView({ behavior: "smooth", block: "start" }));
+    if (bounded === 0 && !closingModal) requestAnimationFrame(() => stageRefs.current[0]?.scrollIntoView({ behavior: "smooth", block: "start" }));
   }
 
   async function nextStage() {
@@ -378,6 +409,7 @@ export default function InterimUserConsole() {
 
   return (
     <main className={styles.page}>
+      {activeStage>0&&<><div className={styles.stageModalBackdrop} onMouseDown={()=>moveToStage(0)} aria-hidden="true"/><button type="button" className={styles.stageModalClose} aria-label="평가 단계 닫기" onClick={()=>moveToStage(0)}>×</button></>}
       <div className={styles.shell}>
         <header className={styles.hero}>
           <div>
@@ -402,11 +434,11 @@ export default function InterimUserConsole() {
           <ResearchOverview />
         </div>
 
-        <div ref={(node)=>{stageRefs.current[1]=node;}} className={styles.stageAnchor}><BlindTestExplorer ref={blindTestRef} /></div>
+        <div ref={(node)=>{stageRefs.current[1]=node;}} className={`${styles.stageAnchor} ${activeStage===1?styles.stageModalContent:styles.stageHidden}`}><BlindTestExplorer ref={blindTestRef} /></div>
 
-        <div ref={(node)=>{stageRefs.current[2]=node;}} className={styles.stageAnchor}><ProStudySimulation ref={proStudyRef} onStepChange={setProStep} /></div>
+        <div ref={(node)=>{stageRefs.current[2]=node;}} className={`${styles.stageAnchor} ${activeStage===2?styles.stageModalContent:styles.stageHidden}`}><ProStudySimulation ref={proStudyRef} onStepChange={setProStep} /></div>
 
-        <section ref={(node)=>{stageRefs.current[3]=node;}} className={styles.section}>
+        <section ref={(node)=>{stageRefs.current[3]=node;}} className={`${styles.section} ${activeStage===3?styles.stageModalContent:styles.stageHidden}`}>
           <p className={styles.sectionLabel}>1. 시험 조건 입력</p>
           <h2 className={styles.sectionTitle}>예시 조건으로 추천 모델을 실행합니다</h2>
           <p className={styles.sectionBody}>`다음`을 누르면 기본 예시의 추천, 안전 판정, 근거 확인과 후속 기록까지 자동으로 실행합니다.</p>
@@ -481,7 +513,8 @@ export default function InterimUserConsole() {
           </details>
         </section>
 
-        <section ref={(node)=>{resultRef.current=node;stageRefs.current[4]=node;}} className={`${styles.section} ${styles.softSection}`}>
+        <div ref={(node)=>{stageRefs.current[4]=node;}} className={activeStage===4?styles.stageModalContent:styles.stageHidden}>
+        <section ref={(node)=>{resultRef.current=node;}} className={`${styles.section} ${styles.softSection}`}>
           <p className={styles.sectionLabel}>2. 추천 결과 확인</p>
           <h2 className={styles.sectionTitle}>무엇이 추천되었고, 무엇이 제외되었는가</h2>
           <p className={styles.sectionBody}>입력 조건을 모델에 적용한 뒤 복용 약물·질환·알레르기 안전 규칙을 순서대로 확인한 결과입니다.</p>
@@ -519,8 +552,9 @@ export default function InterimUserConsole() {
         </section>
 
         {inference && <InferenceWorkbench inference={inference} />}
+        </div>
 
-        <section ref={(node)=>{stageRefs.current[5]=node;}} className={styles.section}>
+        <section ref={(node)=>{stageRefs.current[5]=node;}} className={`${styles.section} ${activeStage===5?styles.stageModalContent:styles.stageHidden}`}>
           <p className={styles.sectionLabel}>4. 추천 이후 기록 기능 시험</p>
           <h2 className={styles.sectionTitle}>추천 후 필요한 기록이 정상 처리되는지 확인하세요</h2>
           <p className={styles.sectionBody}>먼저 저장을 허용할 항목을 선택한 다음 아래 버튼을 누르세요. `자가보고 결과`는 본인이 느낀 건강 변화를 뜻합니다. `중대한 이상사례`를 누르면 추가 추천이 중단되는지도 확인할 수 있습니다.</p>
@@ -553,7 +587,7 @@ export default function InterimUserConsole() {
           </div>
         </section>
 
-        <div ref={(node)=>{stageRefs.current[6]=node;}} className={styles.stageAnchor}><ResearchEvidencePanel /></div>
+        <div ref={(node)=>{stageRefs.current[6]=node;}} className={`${styles.stageAnchor} ${activeStage===6?styles.stageModalContent:styles.stageHidden}`}><ResearchEvidencePanel /></div>
 
         <details className={styles.trace}>
           <summary>연구용 실행 추적 보기</summary>
@@ -561,7 +595,7 @@ export default function InterimUserConsole() {
         </details>
 
       </div>
-      <div className={styles.evaluatorDock} aria-label="평가 단계 이동">
+      <div className={`${styles.evaluatorDock} ${activeStage>0?styles.evaluatorDockModal:""}`} aria-label="평가 단계 이동">
         <div><span>{activeStage + 1} / {EVALUATION_STAGES.length}</span><strong>{activeStageTitle}</strong><small aria-live="polite">{stageActivity}</small></div>
         <button type="button" onClick={previousStage} disabled={activeStage===0||busyAction!==null||proBusy}>이전</button>
         <button type="button" className={styles.helpButton} onClick={()=>setHelpOpen(true)}>자세히 설명</button>
