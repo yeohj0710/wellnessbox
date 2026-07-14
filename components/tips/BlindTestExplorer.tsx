@@ -88,7 +88,7 @@ const ARCHETYPE_LABELS: Record<string, string> = {
   surgery_upcoming: "수술 예정인 사례",
 };
 
-async function callLab(action: "list_blind_tests" | "verify_blind_tests", payload: Record<string, unknown>) {
+async function callLab(action: "list_blind_tests" | "verify_blind_tests" | "recompute_blind_test", payload: Record<string, unknown>) {
   const initialized = await fetch("/api/tips/lab", {
     method: "POST", headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ action: "initialize" }),
@@ -130,6 +130,8 @@ export default function BlindTestExplorer() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [explanationOpen, setExplanationOpen] = useState(false);
+  const [editedProfile, setEditedProfile] = useState<Record<string, unknown> | null>(null);
+  const [editedPrediction, setEditedPrediction] = useState<string[] | null>(null);
   const requestSequence = useRef(0);
   const detailRef = useRef<HTMLElement>(null);
 
@@ -176,8 +178,19 @@ export default function BlindTestExplorer() {
   }
 
   function selectCase(row: BlindRow) {
-    setSelected(row);
+    setSelected(row); setEditedProfile(null); setEditedPrediction(null);
     requestAnimationFrame(() => detailRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }));
+  }
+
+  function beginEdit() { if (selected) { setEditedProfile(structuredClone(selected.profile)); setEditedPrediction(null); } }
+  function editField(key: string, value: unknown) { setEditedProfile(current => current ? { ...current, [key]: value } : current); }
+  const textList = (key: string) => Array.isArray(editedProfile?.[key]) ? (editedProfile?.[key] as unknown[]).join(", ") : "";
+  async function recomputeEdited() {
+    if (!editedProfile) return;
+    setBusy(true); setError("");
+    try { const data = await callLab("recompute_blind_test", { profile: editedProfile }); setEditedPrediction(data.recomputation.predicted as string[]); }
+    catch (cause) { setError(cause instanceof Error ? cause.message : "수정 입력 재추론 실패"); }
+    finally { setBusy(false); }
   }
 
   async function selectNextCase() {
@@ -235,9 +248,15 @@ export default function BlindTestExplorer() {
           {selected ? <>
             <div className={styles.caseHeading}><div><span>현재 평가 사례</span><h3>{ARCHETYPE_LABELS[selected.archetypeId] ?? selected.archetypeId}</h3></div><b className={selected.exactMatch ? styles.pass : styles.fail}>평가 결과: {selected.exactMatch ? "통과" : "확인 필요"}</b></div>
             <dl className={styles.profileFacts}>{profileEntries.map(([key, value]) => <div key={key}><dt>{PROFILE_LABELS[key] ?? key}</dt><dd>{renderValue(value)}</dd></div>)}</dl>
+            {!editedProfile?<button type="button" className={styles.explanationButton} onClick={beginEdit}>입력값 수정</button>:<details className={styles.secondaryOptions} open><summary>수정할 입력값</summary><div className={styles.agentInputGrid}>
+              <label><span>연령대</span><select value={String(editedProfile.age_band??"")} onChange={event=>editField("age_band",event.target.value)}>{["18-29","30-39","40-49","50-59","60-69","70+"].map(value=><option key={value}>{value}</option>)}</select></label>
+              {["goals","conditions","medication_classes","allergies","diet_patterns","risk_flags"].map(key=><label key={key}><span>{PROFILE_LABELS[key]}</span><input value={textList(key)} onChange={event=>editField(key,event.target.value.split(",").map(value=>value.trim()).filter(Boolean))}/></label>)}
+              <label className={styles.agentWideField}><span>검사 결과 (항목=값)</span><input value={Object.entries((editedProfile.labs as Record<string,unknown>)??{}).map(([key,value])=>`${key}=${value}`).join(", ")} onChange={event=>editField("labs",Object.fromEntries(event.target.value.split(",").map(value=>value.trim().split("=")).filter(parts=>parts.length===2&&parts[0]&&parts[1])))}/></label>
+            </div><div className={styles.agentActionRow}><button type="button" className={styles.primaryButton} disabled={busy} onClick={recomputeEdited}>수정 입력으로 재추론</button><button type="button" onClick={()=>{setEditedProfile(null);setEditedPrediction(null);}}>수정 취소</button></div></details>}
             <div className={styles.answerCompare}>
               <div><span>이 조건에서 나와야 하는 추천</span><strong>{selected.gold.length ? selected.gold.map(label).join(", ") : "추천 없음"}</strong></div>
-              <div><span>현재 모델이 계산한 추천</span><strong>{selected.predicted.length ? selected.predicted.map(label).join(", ") : "추천 없음"}</strong></div>
+              <div><span>수정 전 현재 모델이 계산한 추천</span><strong>{selected.predicted.length ? selected.predicted.map(label).join(", ") : "추천 없음"}</strong></div>
+              {editedPrediction&&<div><span>수정 후 모델 추천</span><strong>{editedPrediction.length ? editedPrediction.map(label).join(", ") : "추천 없음"}</strong></div>}
             </div>
             <dl className={styles.caseAudit}>
               <div><dt>추천 항목 비교</dt><dd>{selected.setPrecisionPercent.toFixed(2)}% 일치</dd></div>

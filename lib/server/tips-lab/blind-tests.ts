@@ -43,3 +43,11 @@ export function verifyBlindTests(input: Record<string, unknown>) {
     disclosure: "이 재실행은 배포 모델이 AI 생성 프록시 정답을 재현하는지 검증합니다. 실제 환자 대상 임상 효과를 검증하지 않습니다.",
   };
 }
+
+export function recomputeBlindTest(input: Record<string, unknown>) {
+  const raw = input.profile;
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) throw new Error("blind_profile_required");
+  const profile = raw as unknown as BlindProfile;
+  const inference = predictProxyTokens(modelSnapshot, blindProfileTokens(profile));
+  return { profile, predicted: inference.predicted, activeFeatureCount: inference.activeFeatureCount, predictedCount: inference.predictedCount };
+}

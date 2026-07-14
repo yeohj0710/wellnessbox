@@ -6,10 +6,10 @@ import {
   type TipsLabProfile,
 } from "@/lib/server/tips-lab/model";
 import interimResearchSummaryJson from "@/data/tips/interim-research-summary.json";
-import { canRunTipsLabAction, type TipsLabState } from "@/lib/server/tips-lab/state";
+import { canRunTipsLabAction, isTipsLabTransitionAllowed, TIPS_LAB_STATES, type TipsLabState } from "@/lib/server/tips-lab/state";
 import { checkTipsSafety } from "@/lib/tips/safety-engine";
-import { listBlindTests, verifyBlindTests } from "@/lib/server/tips-lab/blind-tests";
-import { decideNextAgentTask } from "@/lib/tips/agent-decision-engine";
+import { listBlindTests, recomputeBlindTest, verifyBlindTests } from "@/lib/server/tips-lab/blind-tests";
+import { decideNextAgentTask, normalizeAgentObservation, type AgentExecutionTrace, type AgentTask } from "@/lib/tips/agent-decision-engine";
 
 export const TIPS_LAB_ACTIONS = [
   "initialize",
@@ -21,7 +21,9 @@ export const TIPS_LAB_ACTIONS = [
   "ingest_device",
   "list_blind_tests",
   "verify_blind_tests",
+  "recompute_blind_test",
   "decide_next_action",
+  "execute_agent_task",
 ] as const;
 
 export type TipsLabAction = (typeof TIPS_LAB_ACTIONS)[number];
@@ -116,6 +118,40 @@ function base(action: TipsLabAction, state: TipsLabState) {
   };
 }
 
+const TASK_SCOPES: Partial<Record<AgentTask, string>> = {
+  create_followup: "followup:write", ingest_pro: "pro:write", ingest_wearable: "device:write",
+  escalate_pharmacist: "ae:write", review_adjustment: "plan:write", optimize_regimen: "plan:write",
+};
+
+function executeAgentTask(payload: Record<string, unknown>, currentState: TipsLabState): AgentExecutionTrace {
+  const observation = normalizeAgentObservation(payload);
+  const observedState = TIPS_LAB_STATES.includes(observation.sessionState as TipsLabState)
+    ? observation.sessionState as TipsLabState
+    : currentState;
+  const decision = decideNextAgentTask(observation);
+  const actionKey = `${decision.selectedTask}:${observedState}`;
+  const block = (blockedReason: AgentExecutionTrace["blockedReason"]): AgentExecutionTrace => ({
+    traceId: `trace-${Date.now().toString(36)}`, inputSnapshot: observation, decision,
+    previousState: observedState, nextState: observedState, tool: decision.tool, status: "BLOCKED",
+    result: {}, postconditions: [{ label: decision.expectedPostcondition, met: false }], postconditionsMet: false, blockedReason,
+  });
+  if (observation.previousActionKeys?.includes(actionKey)) return block("DUPLICATE_ACTION");
+  if ((observation.urgentRedFlag || observation.seriousAdverseEvent) && decision.selectedTask !== "escalate_pharmacist") return block("HIGH_RISK_RECOMMENDATION_BLOCKED");
+  const requiredScope = TASK_SCOPES[decision.selectedTask];
+  if (requiredScope && !observation.consentScopes?.includes(requiredScope)) return block("CONSENT_REQUIRED");
+  const targetState = TIPS_LAB_STATES.includes(decision.targetState as TipsLabState) ? decision.targetState as TipsLabState : currentState;
+  if (!isTipsLabTransitionAllowed(observedState, targetState)) return block("INVALID_TRANSITION");
+  if (observation.simulateTimeout) return {
+    ...block(undefined), status: "TIMED_OUT", blockedReason: undefined, result: { statePreserved: true },
+  };
+  const result = { actionKey, persisted: true, queueRecorded: decision.selectedTask === "escalate_pharmacist", recommendationBlocked: targetState === "ESCALATED" };
+  return {
+    traceId: `trace-${Date.now().toString(36)}`, inputSnapshot: observation, decision,
+    previousState: observedState, nextState: targetState, tool: decision.tool, status: "SUCCEEDED", result,
+    postconditions: [{ label: decision.expectedPostcondition, met: true }], postconditionsMet: true,
+  };
+}
+
 export function runTipsLab(input: LabInput) {
   if (!TIPS_LAB_ACTIONS.includes(input.action)) throw new Error("invalid_lab_action");
   const currentState = input.state ?? "NEW";
@@ -143,6 +179,8 @@ export function runTipsLab(input: LabInput) {
         ...base(input.action, currentState),
         verification: verifyBlindTests(input.payload ?? {}),
       };
+    case "recompute_blind_test":
+      return { ...base(input.action, currentState), recomputation: recomputeBlindTest(input.payload ?? {}) };
     case "decide_next_action": {
       const decision = decideNextAgentTask(input.payload ?? {});
       return {
@@ -150,6 +188,10 @@ export function runTipsLab(input: LabInput) {
         decision,
         next: decision.selectedTask,
       };
+    }
+    case "execute_agent_task": {
+      const trace = executeAgentTask(input.payload ?? {}, currentState);
+      return { ...base(input.action, trace.nextState as TipsLabState), trace, next: trace.decision.selectedTask };
     }
     case "recommend": {
       if (!currentProfile.goals.length) throw new Error("goal_required");

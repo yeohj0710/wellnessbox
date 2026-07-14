@@ -29,6 +29,10 @@ export type AgentObservation = {
   adherencePercent: number;
   wearableConnected: boolean;
   wearableAnomaly: boolean;
+  consentScopes?: string[];
+  simulateTimeout?: boolean;
+  evidenceStale?: boolean;
+  previousActionKeys?: string[];
 };
 
 export type AgentTaskCandidate = {
@@ -49,6 +53,20 @@ export type AgentDecision = {
   expectedPostcondition: string;
   candidates: AgentTaskCandidate[];
   evaluatedSignals: Array<{ label: string; value: string }>;
+};
+
+export type AgentExecutionTrace = {
+  traceId: string;
+  inputSnapshot: AgentObservation;
+  decision: AgentDecision;
+  previousState: string;
+  nextState: string;
+  tool: string;
+  status: "SUCCEEDED" | "BLOCKED" | "TIMED_OUT";
+  result: Record<string, unknown>;
+  postconditions: Array<{ label: string; met: boolean }>;
+  postconditionsMet: boolean;
+  blockedReason?: "DUPLICATE_ACTION" | "CONSENT_REQUIRED" | "INVALID_TRANSITION" | "HIGH_RISK_RECOMMENDATION_BLOCKED";
 };
 
 const DEFINITIONS: Record<AgentTask, { label: string; tool: string; targetState: string; postcondition: string }> = {
@@ -89,6 +107,10 @@ export function normalizeAgentObservation(value: Partial<AgentObservation>): Age
     adherencePercent: boundedNumber(value.adherencePercent, 0, 100, 100),
     wearableConnected: value.wearableConnected === true,
     wearableAnomaly: value.wearableAnomaly === true,
+    consentScopes: Array.isArray(value.consentScopes) ? value.consentScopes.filter((item): item is string => typeof item === "string").slice(0, 10) : [],
+    simulateTimeout: value.simulateTimeout === true,
+    evidenceStale: value.evidenceStale === true,
+    previousActionKeys: Array.isArray(value.previousActionKeys) ? value.previousActionKeys.filter((item): item is string => typeof item === "string").slice(0, 20) : [],
   };
 }
 
@@ -98,7 +120,7 @@ export function decideNextAgentTask(value: Partial<AgentObservation>): AgentDeci
     { task: "escalate_pharmacist", matched: observation.urgentRedFlag || observation.seriousAdverseEvent, reason: "응급 위험 신호 또는 중대한 이상사례가 입력됨" },
     { task: "check_safety", matched: !observation.safetyChecked, reason: "추천 전에 금기·상호작용 안전검사가 필요함" },
     { task: "rank_ingredients", matched: observation.safetyChecked && observation.candidateCount === 0, reason: "안전검사는 끝났지만 추천 후보가 아직 계산되지 않음" },
-    { task: "retrieve_evidence", matched: observation.candidateCount > 0 && !observation.evidenceRetrieved, reason: "추천 후보는 있으나 근거 문헌이 연결되지 않음" },
+    { task: "retrieve_evidence", matched: observation.candidateCount > 0 && (!observation.evidenceRetrieved || observation.evidenceStale === true), reason: observation.evidenceStale ? "연결된 근거의 유효기간이 지나 다시 조회해야 함" : "추천 후보는 있으나 근거 문헌이 연결되지 않음" },
     { task: "optimize_regimen", matched: observation.candidateCount > 0 && observation.evidenceRetrieved && !observation.planActive, reason: "근거가 확인된 후보를 복용 조합으로 확정해야 함" },
     { task: "create_followup", matched: observation.planActive && !observation.followupScheduled, reason: "활성 복용 계획의 후속평가 일정이 없음" },
     { task: "ingest_pro", matched: observation.planActive && observation.followupDue && !observation.proRecorded, reason: "후속평가 시점이 되었지만 자가보고 결과가 없음" },

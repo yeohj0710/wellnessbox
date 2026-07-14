@@ -23,6 +23,8 @@ import {
 } from "@/lib/site-identity";
 
 export const viewport = {
+  width: "device-width",
+  initialScale: 1,
   themeColor: "#ffffff",
 };
 

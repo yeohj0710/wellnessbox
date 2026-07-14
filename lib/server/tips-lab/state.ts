@@ -1,20 +1,37 @@
 export const TIPS_LAB_STATES = [
-  "NEW",
-  "NEEDS_DATA",
-  "SAFETY_REVIEW",
-  "CANDIDATES_READY",
-  "ACTIVE_PLAN",
-  "FOLLOWUP_DUE",
-  "ADJUSTMENT_REVIEW",
-  "STOPPED",
-  "ADVERSE_EVENT",
-  "ESCALATED",
+  "NEW", "NEEDS_DATA", "SAFETY_REVIEW", "CANDIDATES_READY", "ACTIVE_PLAN",
+  "FOLLOWUP_DUE", "ADJUSTMENT_REVIEW", "STOPPED", "ADVERSE_EVENT", "ESCALATED",
 ] as const;
 
 export type TipsLabState = (typeof TIPS_LAB_STATES)[number];
 
+const STATE_ACTIONS: Record<TipsLabState, readonly string[]> = {
+  NEW: ["recommend", "decide_next_action", "execute_agent_task", "list_blind_tests", "verify_blind_tests", "recompute_blind_test"],
+  NEEDS_DATA: ["recommend", "decide_next_action", "execute_agent_task", "list_blind_tests", "verify_blind_tests", "recompute_blind_test"],
+  SAFETY_REVIEW: ["recommend", "retrieve_evidence", "decide_next_action", "execute_agent_task"],
+  CANDIDATES_READY: ["retrieve_evidence", "create_followup", "decide_next_action", "execute_agent_task"],
+  ACTIVE_PLAN: ["create_followup", "ingest_pro", "ingest_device", "log_adverse_event", "decide_next_action", "execute_agent_task"],
+  FOLLOWUP_DUE: ["ingest_pro", "ingest_device", "log_adverse_event", "decide_next_action", "execute_agent_task"],
+  ADJUSTMENT_REVIEW: ["recommend", "create_followup", "ingest_device", "log_adverse_event", "decide_next_action", "execute_agent_task"],
+  STOPPED: [], ADVERSE_EVENT: [], ESCALATED: [],
+};
+
 export function canRunTipsLabAction(state: TipsLabState, action: string) {
   if (action === "initialize") return true;
-  return state !== "STOPPED" && state !== "ADVERSE_EVENT" && state !== "ESCALATED";
+  return STATE_ACTIONS[state].includes(action);
 }
 
+export function isTipsLabTransitionAllowed(from: TipsLabState, to: TipsLabState) {
+  if (from === to) return true;
+  const allowed: Record<TipsLabState, readonly TipsLabState[]> = {
+    NEW: ["NEEDS_DATA", "SAFETY_REVIEW", "CANDIDATES_READY", "ESCALATED"],
+    NEEDS_DATA: ["SAFETY_REVIEW", "CANDIDATES_READY", "ESCALATED"],
+    SAFETY_REVIEW: ["CANDIDATES_READY", "ESCALATED"],
+    CANDIDATES_READY: ["ACTIVE_PLAN", "FOLLOWUP_DUE", "ESCALATED"],
+    ACTIVE_PLAN: ["FOLLOWUP_DUE", "ADJUSTMENT_REVIEW", "ADVERSE_EVENT", "ESCALATED", "STOPPED"],
+    FOLLOWUP_DUE: ["ADJUSTMENT_REVIEW", "ADVERSE_EVENT", "ESCALATED", "STOPPED"],
+    ADJUSTMENT_REVIEW: ["ACTIVE_PLAN", "FOLLOWUP_DUE", "ADVERSE_EVENT", "ESCALATED", "STOPPED"],
+    STOPPED: [], ADVERSE_EVENT: ["ESCALATED"], ESCALATED: [],
+  };
+  return allowed[from].includes(to);
+}
