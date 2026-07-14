@@ -768,9 +768,41 @@ model TipsLabSession {
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @default(now()) @updatedAt
   events        TipsLabEvent[]
+  artifacts     TipsLabArtifact[]
+  workItems     TipsLabWorkItem[]
 
   @@index([createdAt])
   @@index([state, updatedAt])
+}
+
+model TipsLabArtifact {
+  id        String         @id @default(cuid())
+  sessionId String
+  nodeId    String
+  kind      String
+  status    String
+  payload   Json
+  createdAt DateTime       @default(now())
+  session   TipsLabSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId, createdAt])
+  @@index([nodeId, kind, createdAt])
+}
+
+model TipsLabWorkItem {
+  id          String         @id @default(cuid())
+  sessionId   String
+  nodeId      String
+  workType    String
+  status      String         @default("QUEUED")
+  dueAt       DateTime?
+  payload     Json
+  completedAt DateTime?
+  createdAt   DateTime       @default(now())
+  session     TipsLabSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId, status, createdAt])
+  @@index([workType, status, dueAt])
 }
 
 model TipsLabEvent {

@@ -44,7 +44,7 @@ export async function POST(req: Request) {
     }
     const token = record.action === "initialize" ? null : verifyTipsLabStateToken(record.stateToken);
     const state = token?.state ?? "NEW";
-    const result = runTipsLab({
+    const result = await runTipsLab({
         action: record.action as TipsLabAction,
         state,
         profile:
@@ -58,6 +58,7 @@ export async function POST(req: Request) {
           record.payload && typeof record.payload === "object"
             ? (record.payload as Record<string, unknown>)
             : {},
+        sessionId: token?.sessionId,
       });
     const resultRecord = result as Record<string, any>;
     const sessionId = token?.sessionId ?? (await createTipsLabSession({

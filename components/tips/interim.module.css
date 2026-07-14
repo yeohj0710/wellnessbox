@@ -302,6 +302,14 @@
 .workflowNodeModal footer { display:flex; justify-content:flex-end; gap:8px; margin-top:14px; }
 .workflowNodeModal footer button { min-height:44px; padding:0 16px; border:1px solid #d1d6db; border-radius:12px; background:#fff; color:#4e5968; font:inherit; font-weight:750; cursor:pointer; }
 .workflowNodeModal footer .primaryButton { border-color:#3182f6; background:#3182f6; color:#fff; }
+.workflowNodeExecution { margin-top:14px; padding:14px; border:1px solid #b7d4ff; border-radius:12px; background:#f3f8ff; }
+.workflowNodeExecution>div { display:flex; justify-content:space-between; gap:12px; margin-bottom:10px; }
+.workflowNodeExecution>div span { color:#6b7684; font-size:12px; font-weight:750; }
+.workflowNodeExecution>div strong { color:#087443; }
+.workflowNodeExecution dl { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px 16px; margin:0; }
+.workflowNodeExecution dl div { display:flex; justify-content:space-between; gap:10px; padding:7px 0; border-bottom:1px solid #dce9fb; }
+.workflowNodeExecution dt { color:#6b7684; font-size:12px; }.workflowNodeExecution dd { margin:0; color:#191f28; font-size:13px; font-weight:700; text-align:right; }
+.workflowNodeExecution ul { margin:10px 0 0; padding:0; list-style:none; color:#087443; font-size:12px; font-weight:700; }
 @media (max-width:680px) { .workflowDataGrid,.workflowNodeEvidence { grid-template-columns:1fr; }.workflowNodeModal footer { flex-direction:column-reverse; }.workflowNodeModal footer button { width:100%; } }
 .stageHidden { display:none !important; }
 .stageModalBackdrop { position:fixed; z-index:80; inset:0; background:rgba(15,23,42,.5); backdrop-filter:blur(3px); }

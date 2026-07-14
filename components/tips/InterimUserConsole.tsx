@@ -15,6 +15,7 @@ import styles from "./interim.module.css";
 type JsonRecord = Record<string, unknown>;
 type LabAction =
   | "initialize"
+  | "execute_workflow_node"
   | "recommend"
   | "retrieve_evidence"
   | "create_followup"
@@ -315,6 +316,7 @@ export default function InterimUserConsole() {
   }
 
   function describeResult(action: LabAction, result: JsonRecord): Feedback {
+    if (action === "execute_workflow_node") return { tone: "success", title: "기술 블록 실행 완료", detail: "실행 산출물과 사후조건을 데이터베이스에 저장했습니다." };
     if (action === "recommend") {
       const resultSafety = result.safety as Safety | undefined;
       const items = Array.isArray(result.recommendations) ? result.recommendations : [];
@@ -365,7 +367,7 @@ export default function InterimUserConsole() {
         const target = action === "recommend" ? resultRef.current : actionFeedbackRef.current;
         target?.scrollIntoView({ behavior: "smooth", block: "start" });
       });
-      return true;
+      return result;
     } catch (error) {
       const message = error instanceof Error ? error.message : "unknown_error";
       setTrace({ error: message });
@@ -377,7 +379,7 @@ export default function InterimUserConsole() {
           : message,
       });
       requestAnimationFrame(() => actionFeedbackRef.current?.scrollIntoView({ behavior: "smooth", block: "center" }));
-      return false;
+      return null;
     } finally {
       setBusyAction(null);
     }
@@ -435,7 +437,7 @@ export default function InterimUserConsole() {
         </header>
 
         <div ref={(node)=>{stageRefs.current[0]=node;}} className={styles.stageAnchor}>
-          <ResearchWorkflowMap activeStage={activeStage} agentState={state} safetyDecision={safety?.decision??""} recommendationCount={recommendations.length} consentCount={consents.length} deviceConnected={consents.includes("device:write")&&state!=="NEW"} dataLake={dataLake} onNavigate={moveToStage} />
+          <ResearchWorkflowMap activeStage={activeStage} agentState={state} safetyDecision={safety?.decision??""} recommendationCount={recommendations.length} consentCount={consents.length} deviceConnected={consents.includes("device:write")&&state!=="NEW"} dataLake={dataLake} onNavigate={moveToStage} onExecuteNode={async(nodeId)=>{const result=await execute("execute_workflow_node",{nodeId});return result?.nodeExecution&&typeof result.nodeExecution==="object"?result.nodeExecution as JsonRecord:null;}} />
           <ResearchOverview onNavigate={moveToStage} />
         </div>
 

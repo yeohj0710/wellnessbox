@@ -11,6 +11,7 @@ import { checkTipsSafety } from "@/lib/tips/safety-engine";
 import { listBlindTests, recomputeBlindTest, verifyBlindTests } from "@/lib/server/tips-lab/blind-tests";
 import { datasetRegistry, listDatasetCases, verifyAllKpis, verifyDatasetSplit } from "@/lib/server/tips-lab/dataset-evaluation";
 import { decideNextAgentTask, normalizeAgentObservation, type AgentExecutionTrace, type AgentTask } from "@/lib/tips/agent-decision-engine";
+import { executeWorkflowNode, WORKFLOW_NODE_IDS, type WorkflowNodeId } from "@/lib/server/tips-lab/workflow-node-executor";
 
 export const TIPS_LAB_ACTIONS = [
   "initialize",
@@ -29,6 +30,7 @@ export const TIPS_LAB_ACTIONS = [
   "verify_all_kpis",
   "decide_next_action",
   "execute_agent_task",
+  "execute_workflow_node",
 ] as const;
 
 export type TipsLabAction = (typeof TIPS_LAB_ACTIONS)[number];
@@ -39,6 +41,7 @@ type LabInput = {
   profile?: Partial<TipsLabProfile>;
   consentScopes?: string[];
   payload?: Record<string, unknown>;
+  sessionId?: string;
 };
 
 const DISCLOSURE =
@@ -157,7 +160,7 @@ function executeAgentTask(payload: Record<string, unknown>, currentState: TipsLa
   };
 }
 
-export function runTipsLab(input: LabInput) {
+export async function runTipsLab(input: LabInput) {
   if (!TIPS_LAB_ACTIONS.includes(input.action)) throw new Error("invalid_lab_action");
   const currentState = input.state ?? "NEW";
   if (!canRunTipsLabAction(currentState, input.action)) {
@@ -205,6 +208,13 @@ export function runTipsLab(input: LabInput) {
     case "execute_agent_task": {
       const trace = executeAgentTask(input.payload ?? {}, currentState);
       return { ...base(input.action, trace.nextState as TipsLabState), trace, next: trace.decision.selectedTask };
+    }
+    case "execute_workflow_node": {
+      if (!input.sessionId) throw new Error("tips_session_required");
+      const nodeId = String(input.payload?.nodeId ?? "");
+      if (!WORKFLOW_NODE_IDS.includes(nodeId as WorkflowNodeId)) throw new Error("invalid_workflow_node");
+      const nodeExecution = await executeWorkflowNode({ sessionId: input.sessionId, nodeId: nodeId as WorkflowNodeId, profile: currentProfile, state: currentState });
+      return { ...base(input.action, currentState), nodeExecution, next: currentState };
     }
     case "recommend": {
       if (!currentProfile.goals.length) throw new Error("goal_required");

@@ -9,6 +9,7 @@ type WorkflowMapProps = {
   recommendationCount: number; consentCount: number; deviceConnected: boolean;
   dataLake?: { connected?:boolean; storedEventCount?:number; evidenceQueryCount?:number; proRecordCount?:number; deviceRecordCount?:number; adverseEventCount?:number; lastAction?:string } | null;
   onNavigate: (stage: number) => void;
+  onExecuteNode: (nodeId:string) => Promise<Record<string,unknown>|null>;
 };
 
 type WorkflowNodeDetail = {
@@ -20,6 +21,9 @@ function Node({ className,title,subtitle,status,detail,onOpen }:NodeProps) {
   const content=<><strong>{title}</strong><span>{subtitle}</span>{status&&<em>{status}</em>}</>;
   return <button type="button" className={`${styles.archNode} ${className}`} onClick={()=>onOpen(detail)}>{content}<small>연결·상태 확인 →</small></button>;
 }
+
+const OUTPUT_LABELS:Record<string,string>={decision:"안전 판정",selectedTask:"선택 작업",targetState:"다음 상태",selectedCount:"선택 성분 수",evaluatedCandidates:"평가 후보 수",acceptedMeasurementCount:"수용 측정값 수",eventCount:"저장 작업 수",artifactCount:"노드 산출물 수",queuedWorkCount:"대기 작업 수",queued:"작업 큐 생성",workType:"작업 종류",dueAt:"실행 예정",connectionVerified:"서비스 경로 확인",inputFieldCount:"입력 묶음 수",status:"처리 상태",recommendationBlocked:"추천 차단"};
+function outputText(value:unknown){if(typeof value==="boolean")return value?"예":"아니오";if(Array.isArray(value))return `${value.length}건`;if(value&&typeof value==="object")return `${Object.keys(value as Record<string,unknown>).length}개 항목`;return String(value??"없음");}
 
 function ServiceFlowNode({ onNavigate }:{ onNavigate:(stage:number)=>void }) {
   return <div className={`${styles.archNode} ${styles.archFulfillment}`}>
@@ -37,6 +41,8 @@ function ServiceFlowNode({ onNavigate }:{ onNavigate:(stage:number)=>void }) {
 
 export default function ResearchWorkflowMap(props: WorkflowMapProps) {
   const [selectedNode,setSelectedNode]=useState<WorkflowNodeDetail|null>(null);
+  const [nodeExecution,setNodeExecution]=useState<Record<string,unknown>|null>(null);
+  const [nodeBusy,setNodeBusy]=useState(false);
   const safety=props.safetyDecision||"평가 전";
   const agent=props.agentState==="NEW"?"실행 전":props.agentState;
   const inference=props.recommendationCount>0?`${props.recommendationCount}개 계산`:"평가 전";
@@ -44,11 +50,13 @@ export default function ResearchWorkflowMap(props: WorkflowMapProps) {
   const lakeStatus=lakeConnected?`영속 저장 확인 · ${props.dataLake?.storedEventCount??0}건`:"영속 저장 미확인";
   useEffect(()=>{
     if(!selectedNode)return;
+    setNodeExecution(null);
     const close=(event:KeyboardEvent)=>{if(event.key==="Escape")setSelectedNode(null);};
     window.addEventListener("keydown",close);
     return()=>window.removeEventListener("keydown",close);
   },[selectedNode]);
   const openStage=(stage:number)=>{setSelectedNode(null);props.onNavigate(stage);};
+  const executeNode=async()=>{if(!selectedNode||nodeBusy)return;const nodeId=Object.entries(details).find(([,detail])=>detail===selectedNode)?.[0];if(!nodeId)return;setNodeBusy(true);setNodeExecution(null);try{setNodeExecution(await props.onExecuteNode(nodeId));}finally{setNodeBusy(false);}};
   const details:Record<string,WorkflowNodeDetail>={
     cron:{title:"CronJob",role:"정해진 주기에 평가 세션을 다시 호출합니다.",status:"주기 호출 경로 정의",receives:["평가 주기","활성 계획 식별자"],sends:["재평가 요청","후속평가 기한 신호"],implementation:"자기적응형 AI가 현재 상태를 다시 판단하도록 호출하는 운영 경로입니다.",evaluation:"후속평가 기한 도래 시 다음 작업 선택과 상태 전이를 재현합니다.",kpis:["KPI-3"],stage:5},
     consumer:{title:"소비자",role:"진단, 주문, 복용, 대화와 후속평가의 시작점입니다.",status:"서비스 입력 경로 연결",receives:["추천 결과","배송 상태","후속평가 요청"],sends:["건강 조건","대화·복용 피드백","재검사 결과"],implementation:"정밀진단·추천·주문·대화 상담 화면이 실제 서비스 경로로 연결되어 있습니다.",evaluation:"복용 전후 PRO 변화와 상담·후속 기록 경로를 확인합니다.",kpis:["KPI-2","KPI-4"],stage:2},
@@ -61,6 +69,8 @@ export default function ResearchWorkflowMap(props: WorkflowMapProps) {
     ite:{title:"개인화 효과 추론 모델(ITE)",role:"개인 조건별 성분 효과 점수를 계산합니다.",status:inference,receives:["93개 입력 특성","최적화 탐색 후보","후속평가 결과"],sends:["성분별 효과 점수","안전 제약 강화 신호"],implementation:"학습 모델의 성분별 점수와 특성 기여도를 재현 가능한 방식으로 계산합니다.",evaluation:"성분별 추론 점수와 입력 특성 기여도가 추천 결과에 반영되는지 확인합니다.",kpis:["KPI-1","KPI-2"],stage:4},
     sensor:{title:"바이오센서·유전 데이터",role:"웨어러블 측정값과 정밀진단 결과를 후속 판단에 제공합니다.",status:props.deviceConnected?"연동 확인":"연동 시험 전",receives:["기기 측정값","검사·유전 결과","사용자 동의 범위"],sends:["소비자 상태 표시","AI 재평가 입력","Data Lake 기록"],implementation:"동의 범위를 확인한 뒤 기기 입력을 활성 계획과 다음 행동 평가에 반영합니다.",evaluation:"동의 범위와 측정값이 세션 기록 및 다음 행동 판단에 연결되는지 확인합니다.",kpis:["KPI-7"],stage:5},
   };
+  const executionOutput=nodeExecution?.output&&typeof nodeExecution.output==="object"?nodeExecution.output as Record<string,unknown>:{};
+  const postconditions=Array.isArray(nodeExecution?.postconditions)?nodeExecution.postconditions as Array<{label?:string;met?:boolean}>:[];
   return <section className={`${styles.section} ${styles.workflowHub}`} aria-labelledby="workflow-map-title">
     <p className={styles.sectionLabel}>전체 서비스 아키텍처</p>
     <h2 id="workflow-map-title" className={styles.sectionTitle}>데이터·판단·주문·후속평가가 순환하는 폐쇄루프 구조</h2>
@@ -113,6 +123,6 @@ export default function ResearchWorkflowMap(props: WorkflowMapProps) {
     <div className={styles.archLegend}><span><i/>운영 데이터·업무 흐름</span><span><i/>반복 탐색·제약 강화</span><small>상태 표시는 구현 여부가 아니라 현재 평가 세션의 실행 결과입니다.</small></div>
 
     <div className={styles.workflowRuntime}><div><span>에이전트</span><strong>{agent}</strong></div><div><span>안전 판정</span><strong>{safety}</strong></div><div><span>추천 결과</span><strong>{props.recommendationCount}개</strong></div><div><span>저장 허용</span><strong>{props.consentCount}/4</strong></div></div>
-    {selectedNode&&<div className={styles.helpOverlay} role="presentation" onMouseDown={(event)=>{if(event.target===event.currentTarget)setSelectedNode(null);}}><section className={`${styles.stageHelpModal} ${styles.workflowNodeModal}`} role="dialog" aria-modal="true" aria-labelledby="workflow-node-title"><header><div><span>기술 블록 연결 상태</span><h2 id="workflow-node-title">{selectedNode.title}</h2></div><button type="button" aria-label="모달 닫기" onClick={()=>setSelectedNode(null)}>×</button></header><p className={styles.helpPurpose}>{selectedNode.role}</p><div className={styles.workflowNodeStatus}><span>현재 실행 상태</span><strong>{selectedNode.status}</strong></div><div className={styles.workflowDataGrid}><section><h3>받는 데이터</h3><ul>{selectedNode.receives.map(item=><li key={item}>{item}</li>)}</ul></section><section><h3>보내는 데이터</h3><ul>{selectedNode.sends.map(item=><li key={item}>{item}</li>)}</ul></section></div><div className={styles.workflowNodeEvidence}><div className={styles.workflowImplementation}><span>현재 구현</span><p>{selectedNode.implementation}</p></div><div className={styles.workflowEvaluationLink}><div><span>연결된 성과지표</span><p>{selectedNode.kpis.map(kpi=><b key={kpi}>{kpi}</b>)}</p></div><strong>{selectedNode.evaluation}</strong></div></div><footer><button type="button" onClick={()=>setSelectedNode(null)}>회로로 돌아가기</button>{selectedNode.stage!==undefined&&<button type="button" className={styles.primaryButton} onClick={()=>openStage(selectedNode.stage!)}>{selectedNode.kpis.join(" · ")} 평가 열기</button>}</footer></section></div>}
+    {selectedNode&&<div className={styles.helpOverlay} role="presentation" onMouseDown={(event)=>{if(event.target===event.currentTarget)setSelectedNode(null);}}><section className={`${styles.stageHelpModal} ${styles.workflowNodeModal}`} role="dialog" aria-modal="true" aria-labelledby="workflow-node-title"><header><div><span>기술 블록 실행</span><h2 id="workflow-node-title">{selectedNode.title}</h2></div><button type="button" aria-label="모달 닫기" onClick={()=>setSelectedNode(null)}>×</button></header><p className={styles.helpPurpose}>{selectedNode.role}</p><div className={styles.workflowNodeStatus}><span>현재 실행 상태</span><strong>{selectedNode.status}</strong></div><div className={styles.workflowDataGrid}><section><h3>받는 데이터</h3><ul>{selectedNode.receives.map(item=><li key={item}>{item}</li>)}</ul></section><section><h3>보내는 데이터</h3><ul>{selectedNode.sends.map(item=><li key={item}>{item}</li>)}</ul></section></div><div className={styles.workflowNodeEvidence}><div className={styles.workflowImplementation}><span>현재 구현</span><p>{selectedNode.implementation}</p></div><div className={styles.workflowEvaluationLink}><div><span>연결된 성과지표</span><p>{selectedNode.kpis.map(kpi=><b key={kpi}>{kpi}</b>)}</p></div><strong>{selectedNode.evaluation}</strong></div></div>{nodeExecution&&<div className={styles.workflowNodeExecution} aria-live="polite"><div><span>실행 결과</span><strong>{String(nodeExecution.status??"확인 필요")}</strong></div><dl>{Object.entries(executionOutput).slice(0,8).map(([key,value])=><div key={key}><dt>{OUTPUT_LABELS[key]??key}</dt><dd>{outputText(value)}</dd></div>)}</dl><ul>{postconditions.map((item,index)=><li key={`${item.label}-${index}`}>{item.met?"충족":"미충족"} · {item.label}</li>)}</ul></div>}<footer><button type="button" onClick={()=>setSelectedNode(null)}>회로로 돌아가기</button><button type="button" className={styles.primaryButton} onClick={executeNode} disabled={nodeBusy}>{nodeBusy?"실행 중":"노드 실행"}</button>{selectedNode.stage!==undefined&&<button type="button" onClick={()=>openStage(selectedNode.stage!)}>{selectedNode.kpis.join(" · ")} 평가 열기</button>}</footer></section></div>}
   </section>;
 }
