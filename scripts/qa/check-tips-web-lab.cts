@@ -183,7 +183,7 @@ assert.match(consoleUi, />계산</);
 assert.match(consoleUi, />확인 항목</);
 assert.match(consoleUi, /className=\{styles\.stageGuideBar\}/);
 assert.doesNotMatch(consoleUi, /stageHelpOverlay/);
-for (const token of [".evaluatorDockModal", "box-shadow:none", "border-radius:0 0 18px 18px"]) assert.match(stylesUi, new RegExp(token.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
+for (const token of [".evaluatorDockModal", "box-shadow:none", "border-radius:0 0 18px 18px", "minmax(140px,1.05fr)", "minmax(280px,2.25fr)", "128px", ".kpiEvaluationRow>button { width:100%"] ) assert.match(stylesUi, new RegExp(token.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
 assert.match(consoleUi, /nextStage/);
 assert.match(consoleUi, /stageRefs/);
 assert.match(consoleUi, /proStudyRef\.current\?\.next/);
