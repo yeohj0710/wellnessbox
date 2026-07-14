@@ -121,6 +121,11 @@ assert.match(read("prisma/schema.prisma"), /model TipsLabEvent/);
 assert.match(read("prisma/schema.prisma"), /model TipsLabArtifact/);
 assert.match(read("prisma/schema.prisma"), /model TipsLabWorkItem/);
 assert.match(workflowMapUi, /노드 실행/);
+for (const nodeId of ["cron", "consumer", "agent", "wellness", "lake", "pharmacy", "optimizer", "safety", "ite", "sensor"]) {
+  assert.match(workflowMapUi, new RegExp(`nodeId="${nodeId}"`));
+}
+assert.match(workflowMapUi, /setNodeExecutionError/);
+assert.doesNotMatch(workflowMapUi, /detail===selectedNode/);
 assert.match(runtimeModule, /execute_workflow_node/);
 assert.match(workflowMapUi, /받는 데이터/);
 assert.match(workflowMapUi, /보내는 데이터/);
