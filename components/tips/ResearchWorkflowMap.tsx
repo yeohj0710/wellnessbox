@@ -7,6 +7,7 @@ import styles from "./interim.module.css";
 type WorkflowMapProps = {
   activeStage: number; agentState: string; safetyDecision: string;
   recommendationCount: number; consentCount: number; deviceConnected: boolean;
+  dataLake?: { connected?:boolean; storedEventCount?:number; evidenceQueryCount?:number; proRecordCount?:number; deviceRecordCount?:number; adverseEventCount?:number; lastAction?:string } | null;
   onNavigate: (stage: number) => void;
 };
 
@@ -39,6 +40,8 @@ export default function ResearchWorkflowMap(props: WorkflowMapProps) {
   const safety=props.safetyDecision||"평가 전";
   const agent=props.agentState==="NEW"?"실행 전":props.agentState;
   const inference=props.recommendationCount>0?`${props.recommendationCount}개 계산`:"평가 전";
+  const lakeConnected=props.dataLake?.connected===true;
+  const lakeStatus=lakeConnected?`영속 저장 확인 · ${props.dataLake?.storedEventCount??0}건`:"영속 저장 미확인";
   useEffect(()=>{
     if(!selectedNode)return;
     const close=(event:KeyboardEvent)=>{if(event.key==="Escape")setSelectedNode(null);};
@@ -51,7 +54,7 @@ export default function ResearchWorkflowMap(props: WorkflowMapProps) {
     consumer:{title:"소비자",role:"진단, 주문, 복용, 대화와 후속평가의 시작점입니다.",status:"서비스 입력 경로 연결",receives:["추천 결과","배송 상태","후속평가 요청"],sends:["건강 조건","대화·복용 피드백","재검사 결과"],implementation:"정밀진단·추천·주문·대화 상담 화면이 실제 서비스 경로로 연결되어 있습니다.",evaluation:"복용 전후 PRO 변화와 상담·후속 기록 경로를 확인합니다.",kpis:["KPI-2","KPI-4"],stage:2},
     agent:{title:"자기적응형 AI",role:"상태에 따라 다음 작업과 호출 도구를 결정합니다.",status:agent,receives:["사용자 요청","프로필·근거","PRO·웨어러블·이상사례"],sends:["안전검사 요청","추천·최적화 요청","후속 작업"],implementation:"다음 작업 결정, 허용 상태전이, 중복 방지와 사후조건 검증을 실행합니다.",evaluation:"시나리오별 다음 작업, 상태 전이와 실행 사후조건을 평가합니다.",kpis:["KPI-3"],stage:5},
     wellness:{title:"웰니스박스",role:"추천을 구매·소분·배송 서비스로 연결합니다.",status:"서비스 경로 연결",receives:["추천 조합","소비자 주문"],sends:["약사 검토 요청","주문·배송 상태"],implementation:"추천·구매, 주문 조회, 대화 상담과 정밀진단 경로를 제공합니다.",evaluation:"상담 응답과 추천 이후 이상사례 기록 경로를 확인합니다.",kpis:["KPI-4","KPI-6"],stage:6},
-    lake:{title:"Data Lake",role:"프로필, 근거, 안전 규칙과 후속 기록을 조회·저장합니다.",status:"데이터 준비 완료",receives:["프로필·대화 기록","PRO·웨어러블 기록","약사 보정"],sends:["RAG 근거","안전 규칙","추적 이력"],implementation:"평가 API의 입력 스냅샷과 실행 trace를 상태 토큰으로 연결합니다.",evaluation:"독립 시험 사례의 입력·기준 추천·재계산 결과가 연결되는지 확인합니다.",kpis:["KPI-1"],stage:1},
+    lake:{title:"Data Lake",role:"프로필과 평가 작업의 입력·출력·상태 전이를 PostgreSQL에 순서대로 저장합니다.",status:lakeStatus,receives:["정규화 프로필·동의 범위",`평가 작업 ${props.dataLake?.storedEventCount??0}건`,`PRO ${props.dataLake?.proRecordCount??0}건 · 웨어러블 ${props.dataLake?.deviceRecordCount??0}건`],sends:[`근거 조회 이력 ${props.dataLake?.evidenceQueryCount??0}건`,"작업별 이전·다음 상태","실행 결과·사후조건"],implementation:lakeConnected?`현재 세션의 프로필과 ${props.dataLake?.storedEventCount??0}개 작업 기록이 DB에 저장되었습니다. 마지막 저장 작업은 ${props.dataLake?.lastAction??"없음"}입니다.`:"현재 브라우저 세션에서 DB 저장 성공 응답을 아직 받지 않았습니다. ‘다음’을 눌러 평가 세션을 생성하면 저장 결과를 확인합니다.",evaluation:"DB에 저장된 입력, 실행 결과, 상태 전이와 사후조건 건수를 현재 세션 기준으로 확인합니다.",kpis:["KPI-1","KPI-3"],stage:1},
     pharmacy:{title:"약사",role:"추천과 사용자 데이터를 검토하고 조정합니다.",status:"검토 경로 연결",receives:["추천 조합","안전 판정","주문 정보"],sends:["검토·보정 결과","소분·배송 지시","에스컬레이션 처리"],implementation:"고위험·중대한 이상사례가 발생하면 추천을 중단하고 약사 검토 상태로 전환합니다.",evaluation:"안전 판정 근거와 중대한 이상사례의 추천 중단 전이를 평가합니다.",kpis:["KPI-5","KPI-6"],stage:5},
     optimizer:{title:"다목적 조합 최적화 엔진",role:"효능·안전·복용량·예산 제약을 함께 적용합니다.",status:`${props.recommendationCount}개 선택`,receives:["후보별 효과 점수","안전 제약","예산·복용 선호"],sends:["최종 추천 조합","최적화 선택 근거"],implementation:"모델 후보를 안전 규칙으로 제한한 뒤 허용된 조합을 산출합니다.",evaluation:"입력 조건을 바꿔 최종 추천 조합과 제외 결과를 재계산합니다.",kpis:["KPI-1","KPI-3"],stage:3},
     safety:{title:"개인화 안전 검증 엔진",role:"금기, 상호작용, 알레르기와 응급 신호를 판정합니다.",status:safety,receives:["사용자 질환·약물·알레르기","Data Lake 안전 규칙","ITE 제약 강화"],sends:["허용·제외 성분","추천 중단·약사 검토"],implementation:"결정적 안전 규칙을 적용하고 고위험 상태에서는 추가 추천을 차단합니다.",evaluation:"질환·약물·알레르기·위험 신호별 안전 label과 근거를 재현합니다.",kpis:["KPI-5","KPI-6"],stage:3},
@@ -98,7 +101,7 @@ export default function ResearchWorkflowMap(props: WorkflowMapProps) {
         <Node className={styles.archConsumer} title="소비자" subtitle="대화·주문·복용·피드백" status={details.consumer.status} detail={details.consumer} onOpen={setSelectedNode}/>
         <Node className={styles.archAgent} title="자기적응형 AI" subtitle="상태 판단과 폐쇄루프 제어" status={agent} detail={details.agent} onOpen={setSelectedNode}/>
         <Node className={styles.archWellness} title="웰니스박스" subtitle="추천·주문·소분 서비스" status={details.wellness.status} detail={details.wellness} onOpen={setSelectedNode}/>
-        <Node className={styles.archLake} title="Data Lake" subtitle="프로필·근거·규칙·후속기록" status="데이터 준비 완료" detail={details.lake} onOpen={setSelectedNode}/>
+        <Node className={styles.archLake} title="Data Lake" subtitle="프로필·작업·상태전이 영속 저장" status={lakeStatus} detail={details.lake} onOpen={setSelectedNode}/>
         <Node className={styles.archPharmacy} title="약사" subtitle="데이터 검토·보정·중개" status={details.pharmacy.status} detail={details.pharmacy} onOpen={setSelectedNode}/>
         <Node className={styles.archOptimizer} title="다목적 조합 최적화 엔진" subtitle="효능·안전·복용·예산 균형" status={`${props.recommendationCount}개 선택`} detail={details.optimizer} onOpen={setSelectedNode}/>
         <Node className={styles.archSafety} title="개인화 안전 검증 엔진" subtitle="금기·상호작용·알레르기" status={safety} detail={details.safety} onOpen={setSelectedNode}/>

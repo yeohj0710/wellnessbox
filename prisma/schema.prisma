@@ -760,6 +760,37 @@ model rag_chunks {
   embedding Unsupported("vector")?
 }
 
+model TipsLabSession {
+  id            String         @id @default(cuid())
+  state         String
+  profile       Json
+  consentScopes String[]       @default([])
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @default(now()) @updatedAt
+  events        TipsLabEvent[]
+
+  @@index([createdAt])
+  @@index([state, updatedAt])
+}
+
+model TipsLabEvent {
+  id                String         @id @default(cuid())
+  sessionId         String
+  sequence          Int
+  action            String
+  previousState     String
+  nextState         String
+  input             Json
+  output            Json
+  postconditionsMet Boolean?
+  createdAt         DateTime       @default(now())
+  session           TipsLabSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@unique([sessionId, sequence])
+  @@index([sessionId, createdAt])
+  @@index([action, createdAt])
+}
+
 enum ChatRole {
   system
   user

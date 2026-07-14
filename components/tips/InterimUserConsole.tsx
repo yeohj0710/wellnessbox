@@ -142,6 +142,7 @@ export default function InterimUserConsole() {
   const [busyAction, setBusyAction] = useState<LabAction | null>(null);
   const [state, setState] = useState("NEW");
   const [stateToken, setStateToken] = useState("");
+  const [dataLake, setDataLake] = useState<JsonRecord | null>(null);
   const [recommendationResult, setRecommendationResult] = useState<JsonRecord | null>(null);
   const [feedback, setFeedback] = useState<Feedback | null>(null);
   const [demoProgress, setDemoProgress] = useState("");
@@ -296,6 +297,7 @@ export default function InterimUserConsole() {
       setTrace(initialized);
       setState(String(initialized.state ?? "NEW"));
       setStateToken(String(initialized.stateToken ?? ""));
+      setDataLake(initialized.dataLake && typeof initialized.dataLake === "object" ? initialized.dataLake as JsonRecord : null);
       setStageActivity("평가 세션과 입력 스냅샷 생성 완료");
       return true;
     } catch (error) {
@@ -358,6 +360,7 @@ export default function InterimUserConsole() {
       setFeedback(describeResult(action, result));
       if (typeof result.state === "string") setState(result.state);
       if (typeof result.stateToken === "string") setStateToken(result.stateToken);
+      if (result.dataLake && typeof result.dataLake === "object") setDataLake(result.dataLake as JsonRecord);
       requestAnimationFrame(() => {
         const target = action === "recommend" ? resultRef.current : actionFeedbackRef.current;
         target?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -383,6 +386,7 @@ export default function InterimUserConsole() {
   function resetLab() {
     setState("NEW");
     setStateToken("");
+    setDataLake(null);
     setRecommendationResult(null);
     setFeedback(null);
     setTrace({ 안내: "새 시험 세션이 초기화되었습니다." });
@@ -431,7 +435,7 @@ export default function InterimUserConsole() {
         </header>
 
         <div ref={(node)=>{stageRefs.current[0]=node;}} className={styles.stageAnchor}>
-          <ResearchWorkflowMap activeStage={activeStage} agentState={state} safetyDecision={safety?.decision??""} recommendationCount={recommendations.length} consentCount={consents.length} deviceConnected={consents.includes("device:write")&&state!=="NEW"} onNavigate={moveToStage} />
+          <ResearchWorkflowMap activeStage={activeStage} agentState={state} safetyDecision={safety?.decision??""} recommendationCount={recommendations.length} consentCount={consents.length} deviceConnected={consents.includes("device:write")&&state!=="NEW"} dataLake={dataLake} onNavigate={moveToStage} />
           <ResearchOverview onNavigate={moveToStage} />
         </div>
 

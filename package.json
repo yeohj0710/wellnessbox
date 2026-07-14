@@ -40,6 +40,7 @@
     "qa:rnd:preview-route": "ts-node scripts/qa/check-rnd-recommend-preview.cts",
     "qa:tips:interim": "ts-node scripts/qa/check-tips-interim-modules.cts",
     "qa:tips:web-lab": "ts-node scripts/qa/check-tips-web-lab.cts",
+    "qa:tips:data-lake": "node scripts/qa/check-tips-data-lake.cjs",
     "qa:my-data:copy-localization": "ts-node scripts/qa/check-my-data-copy-localization.cts",
     "qa:my-data:section-modules": "ts-node scripts/qa/check-my-data-section-modules.cts",
     "qa:chat:command-layer": "ts-node scripts/qa/check-chat-command-layer-extraction.cts",

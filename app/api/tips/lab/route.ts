@@ -9,6 +9,7 @@ import {
   createTipsLabStateToken,
   verifyTipsLabStateToken,
 } from "@/lib/server/tips-lab/state-token";
+import { appendTipsLabEvent, createTipsLabSession } from "@/lib/server/tips-lab/data-lake";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -41,8 +42,8 @@ export async function POST(req: Request) {
     ) {
       return json({ error: "invalid_lab_action" }, 400);
     }
-    const state =
-      record.action === "initialize" ? "NEW" : verifyTipsLabStateToken(record.stateToken);
+    const token = record.action === "initialize" ? null : verifyTipsLabStateToken(record.stateToken);
+    const state = token?.state ?? "NEW";
     const result = runTipsLab({
         action: record.action as TipsLabAction,
         state,
@@ -58,7 +59,24 @@ export async function POST(req: Request) {
             ? (record.payload as Record<string, unknown>)
             : {},
       });
-    return json({ ...result, stateToken: createTipsLabStateToken(result.state) });
+    const resultRecord = result as Record<string, any>;
+    const sessionId = token?.sessionId ?? (await createTipsLabSession({
+      state: result.state,
+      profile: resultRecord.profile ?? record.profile ?? {},
+      consentScopes: Array.isArray(record.consentScopes) ? record.consentScopes as string[] : [],
+    })).id;
+    const dataLake = await appendTipsLabEvent({
+      sessionId,
+      action: record.action as TipsLabAction,
+      previousState: state,
+      nextState: result.state,
+      request: { profile: record.profile ?? {}, consentScopes: record.consentScopes ?? [], payload: record.payload ?? {} },
+      result,
+      profile: resultRecord.profile ?? record.profile,
+      consentScopes: Array.isArray(record.consentScopes) ? record.consentScopes as string[] : [],
+      postconditionsMet: typeof resultRecord.trace?.postconditionsMet === "boolean" ? resultRecord.trace.postconditionsMet : undefined,
+    });
+    return json({ ...result, dataLake, stateToken: createTipsLabStateToken(result.state, dataLake.sessionId) });
   } catch (error) {
     const message = error instanceof Error ? error.message : "unknown_error";
     const status = message.startsWith("consent_scope_required") ? 403 : 400;
