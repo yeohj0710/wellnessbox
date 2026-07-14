@@ -27,8 +27,9 @@ const evaluationPaths: Record<string, { target: string; method: string; stage: n
 export default function ResearchOverview({ onNavigate }: { onNavigate: (stage: number) => void }) {
   return (
     <section className={`${styles.section} ${styles.researchOverview}`} aria-labelledby="research-overview-title">
-      <p className={styles.sectionLabel}>연구 개요</p>
-      <h2 id="research-overview-title" className={styles.sectionTitle}>연구 데이터 구성 및 성능 평가 결과</h2>
+      <p className={styles.sectionLabel}>회로 연계 평가</p>
+      <h2 id="research-overview-title" className={styles.sectionTitle}>기술 블록과 연결된 연구 데이터·성과지표</h2>
+      <p className={styles.sectionBody}>위 회로의 기술 블록에서 확인한 데이터 흐름을 독립 시험, 효과 변화, 안전 판정과 후속 기록 평가로 검증합니다.</p>
       <div className={styles.researchStats}>
         <article><strong>{formatNumber(research.dataset.total)}</strong><span>Proxy gold 전체 데이터</span></article>
         <article><strong>7개</strong><span>평가 대상 KPI</span></article>
