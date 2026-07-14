@@ -101,7 +101,7 @@ const AgentDecisionWorkbench = forwardRef<AgentDecisionWorkbenchHandle>(function
   return <section className={styles.agentEvaluator} aria-labelledby="agent-evaluator-title">
     <div className={styles.panelHeading}>
       <div><span>자기적응형 AI 평가</span><h3 id="agent-evaluator-title">현재 상태에서 에이전트가 어떤 작업을 다음으로 선택하는지 평가합니다</h3></div>
-      <p>아래 관측값을 바꾸고 다시 실행하면 다음 작업, 호출 도구와 상태 전이가 함께 바뀝니다.</p>
+      <p>관측값에 따라 다음 작업, 호출 도구, 상태 전이와 사후조건 충족 여부를 산출합니다.</p>
     </div>
 
     <div className={styles.agentInputGrid}>

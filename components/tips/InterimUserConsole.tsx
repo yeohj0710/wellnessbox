@@ -78,7 +78,7 @@ const CONSENTS = [
 ] as const;
 
 const EVALUATION_STAGES = [
-  { title: "연구 개요", purpose: "개발한 추천 모델과 검증 범위를 먼저 확인합니다.", input: "학습 데이터 규모, 입력 변수, 추천 성분 분류기, 독립 시험 데이터", process: "연구 산출물과 성능지표를 항목별로 요약합니다.", output: "평가자가 뒤에서 직접 재현할 검증 항목 목록" },
+  { title: "연구 개요", purpose: "추천 모델과 검증 범위의 구성입니다.", input: "학습 데이터 규모, 입력 변수, 추천 성분 분류기, 독립 시험 데이터", process: "연구 산출물과 성능지표를 항목별로 집계합니다.", output: "KPI별 측정 대상, 판정 기준, 저장 결과와 실행 경로" },
   { title: "독립 시험 데이터", purpose: "학습에 사용하지 않은 5,000건에서 추천 결과가 정답 기준과 일치하는지 확인합니다.", input: "나이·질환·약물·영양 상태 등이 포함된 독립 시험 사례", process: "저장된 모델이 각 사례를 다시 계산하고 기준 추천과 비교합니다.", output: "사례별 일치 여부와 전체 정확도" },
   { title: "복용 전후 건강 변화", purpose: "같은 공인 설문을 복용 전과 4주 후에 측정해 건강 변화량을 계산합니다.", input: "PSQI·ISI·PSS-10 승인본에서 산출한 복용 전후 점수", process: "원점수를 시작 시점 분포로 표준화하고 건강 백분위 차이로 변환합니다.", output: "개인별 개선도와 100명 이상 집단의 평균 개선도" },
   { title: "추천 모델 실행", purpose: "한 사람의 조건이 실제 추천 결과로 변환되는 전체 과정을 실행합니다.", input: "나이, 관리 목표, 질환, 복용 약물, 검사 결과 등 최대 93개 특성", process: "학습 모델이 14개 성분 점수를 계산한 뒤 안전 규칙이 금기·상호작용 후보를 제외합니다.", output: "최종 추천 성분, 제외 성분과 제외 사유" },
@@ -431,7 +431,7 @@ export default function InterimUserConsole() {
 
         <div ref={(node)=>{stageRefs.current[0]=node;}} className={styles.stageAnchor}>
           <ResearchWorkflowMap activeStage={activeStage} agentState={state} safetyDecision={safety?.decision??""} recommendationCount={recommendations.length} consentCount={consents.length} deviceConnected={consents.includes("device:write")&&state!=="NEW"} onNavigate={moveToStage} />
-          <ResearchOverview />
+          <ResearchOverview onNavigate={moveToStage} />
         </div>
 
         <div ref={(node)=>{stageRefs.current[1]=node;}} className={`${styles.stageAnchor} ${activeStage===1?styles.stageModalContent:styles.stageHidden}`}><BlindTestExplorer ref={blindTestRef} /></div>
@@ -441,12 +441,12 @@ export default function InterimUserConsole() {
         <section ref={(node)=>{stageRefs.current[3]=node;}} className={`${styles.section} ${activeStage===3?styles.stageModalContent:styles.stageHidden}`}>
           <p className={styles.sectionLabel}>1. 시험 조건 입력</p>
           <h2 className={styles.sectionTitle}>예시 조건으로 추천 모델을 실행합니다</h2>
-          <p className={styles.sectionBody}>`다음`을 누르면 기본 예시의 추천, 안전 판정, 근거 확인과 후속 기록까지 자동으로 실행합니다.</p>
+          <p className={styles.sectionBody}>기본 예시를 기준으로 추천 계산, 안전 판정, 근거 연결과 후속 기록을 연속 실행합니다.</p>
           <div className={styles.quickScenarioSummary}><span>실행 예시</span><strong>{DEMO_SCENARIOS[0].title}</strong><small>{DEMO_SCENARIOS[0].description}</small></div>
           <details className={styles.secondaryOptions}>
             <summary>다른 예시 선택 또는 입력값 수정</summary>
           <div className={styles.demoPanel}>
-            <div><strong>예시로 바로 시험하기</strong><p>세 가지 예시 중 하나를 선택하세요. 조건만 불러온 뒤 직접 실행하거나, 마지막 기록 단계까지 자동으로 확인할 수 있습니다.</p></div>
+            <div><strong>평가 시나리오</strong><p>일반 추천, 상호작용 차단, 응급 중단 조건을 불러와 단계별 또는 전체 경로로 실행할 수 있습니다.</p></div>
             <div className={styles.demoScenarios}>{DEMO_SCENARIOS.map(s=><article key={s.id}><h3>{s.title}</h3><p>{s.description}</p><div><button type="button" onClick={()=>applyScenario(s)} disabled={busyAction!==null}>조건만 불러오기</button><button type="button" className={styles.demoRun} onClick={()=>runScenario(s)} disabled={busyAction!==null}>전체 과정 실행</button></div></article>)}</div>
             {demoProgress&&<div className={styles.demoProgress} aria-live="polite">{demoProgress}</div>}
           </div>
@@ -523,7 +523,7 @@ export default function InterimUserConsole() {
               <strong>{safety.decision}</strong>
               <p>{safety.reasons.length ? safety.reasons.join(" ") : "입력 조건에서 차단 규칙이 확인되지 않았습니다."}</p>
             </div>
-          ) : <p className={styles.empty}>아직 실행하지 않았습니다. 위에서 조건을 선택하고 `안전 검사 후 추천 보기`를 누르세요.</p>}
+          ) : <p className={styles.empty}>안전 판정 대기 상태입니다. 시험 조건을 입력한 뒤 안전 검사와 추천 계산을 실행할 수 있습니다.</p>}
 
           {feedback && recommendationResult && trace.action === "recommend" && (
             <div className={`${styles.feedback} ${styles[feedback.tone]}`} aria-live="polite">
@@ -556,8 +556,8 @@ export default function InterimUserConsole() {
 
         <section ref={(node)=>{stageRefs.current[5]=node;}} className={`${styles.section} ${activeStage===5?styles.stageModalContent:styles.stageHidden}`}>
           <p className={styles.sectionLabel}>4. 추천 이후 기록 기능 시험</p>
-          <h2 className={styles.sectionTitle}>추천 후 필요한 기록이 정상 처리되는지 확인하세요</h2>
-          <p className={styles.sectionBody}>먼저 저장을 허용할 항목을 선택한 다음 아래 버튼을 누르세요. `자가보고 결과`는 본인이 느낀 건강 변화를 뜻합니다. `중대한 이상사례`를 누르면 추가 추천이 중단되는지도 확인할 수 있습니다.</p>
+          <h2 className={styles.sectionTitle}>추천 이후 기록과 상태 전이 평가</h2>
+          <p className={styles.sectionBody}>저장 동의 범위에 따라 근거, 후속 일정, 자가보고 결과와 기기 데이터를 세션에 연결합니다. 중대한 이상사례 입력 시 추가 추천 차단과 약사 검토 전환을 평가합니다.</p>
           <AgentDecisionWorkbench ref={agentDecisionRef} />
           <div className={styles.consentGrid}>
             {CONSENTS.map(([scope, label]) => (
@@ -601,7 +601,7 @@ export default function InterimUserConsole() {
         <button type="button" className={styles.helpButton} onClick={()=>setHelpOpen(true)}>자세히 설명</button>
         <button type="button" className={styles.dockNext} onClick={nextStage} disabled={activeStage===EVALUATION_STAGES.length-1||busyAction!==null||proBusy}>{busyAction!==null||proBusy?"실행 중…":"다음"}</button>
       </div>
-      {helpOpen&&<div className={styles.helpOverlay} role="presentation" onMouseDown={(event)=>{if(event.target===event.currentTarget)setHelpOpen(false);}}><section className={styles.stageHelpModal} role="dialog" aria-modal="true" aria-labelledby="stage-help-title"><header><div><span>단계 {activeStage+1}</span><h2 id="stage-help-title">{activeStageTitle}</h2></div><button type="button" aria-label="설명 닫기" onClick={()=>setHelpOpen(false)}>×</button></header><p className={styles.helpPurpose}>{activeHelp.purpose}</p><dl><div><dt>무엇을 입력하나</dt><dd>{activeHelp.input}</dd></div><div><dt>어떻게 계산하나</dt><dd>{activeHelp.process}</dd></div><div><dt>무엇을 확인하나</dt><dd>{activeHelp.output}</dd></div></dl><button type="button" className={styles.primaryButton} onClick={()=>setHelpOpen(false)}>설명 닫기</button></section></div>}
+      {helpOpen&&<div className={`${styles.helpOverlay} ${styles.stageHelpOverlay}`} role="presentation" onMouseDown={(event)=>{if(event.target===event.currentTarget)setHelpOpen(false);}}><section className={`${styles.stageHelpModal} ${styles.stageHelpDrawer}`} role="dialog" aria-modal="true" aria-labelledby="stage-help-title"><header><div><span>단계 {activeStage+1}</span><h2 id="stage-help-title">{activeStageTitle}</h2></div><button type="button" aria-label="설명 닫기" onClick={()=>setHelpOpen(false)}>×</button></header><p className={styles.helpPurpose}>{activeHelp.purpose}</p><dl><div><dt>입력</dt><dd>{activeHelp.input}</dd></div><div><dt>계산</dt><dd>{activeHelp.process}</dd></div><div><dt>확인 항목</dt><dd>{activeHelp.output}</dd></div></dl></section></div>}
     </main>
   );
 }

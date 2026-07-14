@@ -118,7 +118,7 @@ const ProStudySimulation = forwardRef<ProStudySimulationHandle, ProStudySimulati
   return <section className={`${styles.section} ${styles.proStudy}`} aria-labelledby="pro-study-title">
     <p className={styles.sectionLabel}>복용 전후 건강 변화 평가</p>
     <h2 id="pro-study-title" className={styles.sectionTitle}>공인 설문 점수로 개선도를 계산합니다</h2>
-    <p className={styles.sectionBody}>평가자는 아래 `다음` 버튼만 눌러 전체 과정을 확인할 수 있습니다. 필요한 경우에만 `입력값 수정`을 열어 값을 바꾸세요.</p>
+    <p className={styles.sectionBody}>기본 점수로 복용 전 측정, 추천 실행, 4주 후 측정과 개선도 계산을 순서대로 수행합니다. 입력값을 수정하면 변경된 점수로 즉시 다시 계산합니다.</p>
 
     <nav className={styles.studyProgress} aria-label="평가 진행 단계">{["안내","복용 전","복용 후","결과"].map((label,index)=><span key={label} data-active={step===index} data-complete={step>index}>{index+1}. {label}</span>)}</nav>
     {error && <p className={styles.testError} role="alert">{error}</p>}

@@ -7,7 +7,7 @@ const research = researchJson as ResearchSummary;
 export default function ResearchEvidencePanel() {
   return <section className={`${styles.section} ${styles.evidenceSection}`} aria-labelledby="evidence-title">
     <p className={styles.sectionLabel}>모델·에이전트 검증 결과</p>
-    <h2 id="evidence-title" className={styles.sectionTitle}>추천 모델의 재현 성능과 에이전트의 작업 수행 성능을 구분해 확인합니다</h2>
+    <h2 id="evidence-title" className={styles.sectionTitle}>추천 모델과 Agent 평가 산출물</h2>
     <p className={styles.sectionBody}>5,000건의 100%는 저장된 프록시 기준 추천을 현재 모델이 다시 계산했을 때의 일치율입니다. 대화형 에이전트 평가는 다음 작업 선택 정확도, 고위험 오동작 수와 작업 완료 여부로 별도 평가합니다.</p>
     <div className={styles.researchPanel}>
       <span className={styles.panelKicker}>학습 모델 요약 · 추천 모델 재현 평가</span><h3>학습에 사용하지 않은 프록시 시험 데이터 5,000건</h3>
@@ -27,8 +27,8 @@ export default function ResearchEvidencePanel() {
         <div><dt>허용 작업</dt><dd>10개 typed tool</dd></div>
         <div><dt>안전 우선순위</dt><dd>응급 전환 → 안전검사 → 추천·추적</dd></div>
         <div><dt>성공 기준</dt><dd>선택 작업의 사후조건 충족</dd></div>
-        <div><dt>직접 재현</dt><dd>앞 단계에서 모든 관측값 수정 가능</dd></div>
-        <div><dt>결과 해석</dt><dd>추천 모델의 100% 지표와 별도</dd></div>
+        <div><dt>입력 조건</dt><dd>관측값과 위험 신호 수정 가능</dd></div>
+        <div><dt>산출 지표</dt><dd>추천 모델 일치율과 별도 집계</dd></div>
       </dl>
     </div>
   </section>;

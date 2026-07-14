@@ -271,7 +271,7 @@ const BlindTestExplorer = forwardRef<BlindTestExplorerHandle>(function BlindTest
               <div><dt>모델 처리 결과</dt><dd>{VALUE_LABELS[selected.nextAction] ?? selected.nextAction}</dd></div>
             </dl>
             <div className={styles.caseNextAction}>
-              <p><strong>{selected.exactMatch ? "이 사례는 통과했습니다." : "추천 결과가 기준과 다릅니다."}</strong><span>{selected.exactMatch ? "다음 사례를 같은 방식으로 평가할 수 있습니다." : "입력 조건과 안전 규칙 적용 결과를 확인하세요."}</span></p>
+              <p><strong>{selected.exactMatch ? "이 사례는 통과했습니다." : "추천 결과가 기준과 다릅니다."}</strong><span>{selected.exactMatch ? "현재 모델 결과와 저장 기준이 일치합니다." : "입력 조건과 안전 규칙 적용 결과에 차이가 있습니다."}</span></p>
               <button type="button" onClick={selectNextCase} disabled={busy || (page >= (result?.pages ?? 1) && result?.rows.at(-1)?.caseId === selected.caseId)}>다음 사례 평가</button>
             </div>
           </> : <p>조건에 맞는 케이스가 없습니다.</p>}

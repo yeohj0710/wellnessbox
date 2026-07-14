@@ -46,7 +46,7 @@ export default function InferenceWorkbench({ inference }: { inference: Inference
 
       <div className={styles.explainGrid}>
         <div className={styles.researchPanel}>
-          <div className={styles.panelHeading}><div><span>사용된 입력값</span><h3>이번 계산에 반영된 조건</h3></div><p>아래 항목만 이번 추천 점수 계산에 사용되었습니다.</p></div>
+          <div className={styles.panelHeading}><div><span>사용된 입력값</span><h3>이번 계산에 반영된 조건</h3></div><p>추천 점수 계산에 실제 반영된 입력 특성입니다.</p></div>
           <div className={styles.featureChips}>{inference.activeFeatures.map((item) => <span key={item.index}><b>#{item.index}</b>{featureLabel(item.token)}</span>)}</div>
         </div>
         <div className={styles.researchPanel}>

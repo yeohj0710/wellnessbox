@@ -60,7 +60,7 @@ export default function ResearchWorkflowMap(props: WorkflowMapProps) {
   return <section className={`${styles.section} ${styles.workflowHub}`} aria-labelledby="workflow-map-title">
     <p className={styles.sectionLabel}>전체 서비스 아키텍처</p>
     <h2 id="workflow-map-title" className={styles.sectionTitle}>데이터·판단·주문·후속평가가 순환하는 폐쇄루프 구조</h2>
-    <p className={styles.sectionBody}>번호 순서대로 한 번씩 실행되는 구조가 아닙니다. 자기적응형 AI가 상황에 따라 각 엔진과 데이터를 반복 호출합니다. 기술 블록을 누르면 현재 상태와 연결 데이터를 확인할 수 있습니다.</p>
+    <p className={styles.sectionBody}>기술 블록을 선택하면 입력 데이터, 처리 결과, 현재 실행 상태와 연결된 평가 항목을 확인할 수 있습니다.</p>
 
     <div className={styles.archScroll}>
       <div className={styles.archCanvas}>
