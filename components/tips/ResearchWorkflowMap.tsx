@@ -15,8 +15,9 @@ function Node({ className,title,subtitle,status,stage,onNavigate }:NodeProps) {
 }
 
 export default function ResearchWorkflowMap(props: WorkflowMapProps) {
-  const safety=props.safetyDecision||"미실행";
+  const safety=props.safetyDecision||"평가 전";
   const agent=props.agentState==="NEW"?"실행 전":props.agentState;
+  const inference=props.recommendationCount>0?`${props.recommendationCount}개 계산`:"평가 전";
   return <section className={`${styles.section} ${styles.workflowHub}`} aria-labelledby="workflow-map-title">
     <p className={styles.sectionLabel}>전체 서비스 아키텍처</p>
     <h2 id="workflow-map-title" className={styles.sectionTitle}>데이터·판단·주문·후속평가가 순환하는 폐쇄루프 구조</h2>
@@ -24,31 +25,32 @@ export default function ResearchWorkflowMap(props: WorkflowMapProps) {
 
     <div className={styles.archScroll}>
       <div className={styles.archCanvas}>
-        <svg className={styles.archLinks} viewBox="0 0 1040 640" aria-label="기술 블록 연결 관계">
+        <svg className={styles.archLinks} viewBox="0 0 1040 760" aria-label="기술 블록 연결 관계">
           <defs><marker id="arch-arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" /></marker></defs>
-          <g className={styles.archSolid}>
-            <path d="M170 75 L225 75 L285 195"/>
-            <path d="M210 320 C250 305 255 255 285 235"/><path d="M285 255 C255 280 250 340 210 350"/>
-            <path d="M455 180 C545 95 650 85 735 85"/>
-            <path d="M455 205 L480 140 L700 140 L735 190"/>
-            <path className={styles.archBidirectional} d="M455 225 L520 225"/>
-            <path d="M670 220 L735 220"/>
-            <path d="M830 130 C850 175 875 235 900 285"/>
-            <path d="M825 285 C790 285 775 270 810 270"/>
-            <path className={styles.archBidirectional} d="M595 260 L595 315"/>
-            <path d="M670 360 C735 360 770 335 825 335"/>
-            <path d="M210 345 L285 365"/><path d="M455 365 L520 365"/><path d="M595 410 L595 475"/>
-            <path d="M300 530 C205 560 130 505 125 385"/>
-            <path d="M125 475 L125 385"/><path d="M210 510 C250 455 245 315 285 255"/>
+          <g className={styles.archSolid} transform="scale(.88 1)">
+            <path d="M180 75 H220 V185 H270"/>
+            <path d="M200 310 H225 V210 H270"/><path d="M270 235 H240 V345 H200"/>
+            <path d="M440 185 H490" className={styles.archBidirectional}/>
+            <path d="M440 170 V120 H760 V175"/>
+            <path d="M440 155 V80 H960"/>
+            <path d="M660 205 H760"/>
+            <path className={styles.archBidirectional} d="M575 250 V350"/>
+            <path d="M650 395 H875 V350 H960"/>
+            <path d="M200 350 H270"/><path d="M440 395 H500"/><path d="M575 440 V580"/>
+            <path d="M115 580 V390"/><path d="M200 625 H300"/><path d="M200 600 H225 V250 H270"/>
+            <path d="M300 685 H230 V735 H115 V390"/>
           </g>
-          <g className={styles.archDashed}>
-            <path d="M900 285 C970 250 970 135 925 105"/><path d="M670 345 C735 315 775 315 825 315"/>
+          <g className={styles.archDashed} transform="scale(.88 1)">
+            <path className={styles.archBidirectional} d="M1050 130 H1135 V300 H1150"/>
+            <path d="M960 325 H915 V235 H950"/>
           </g>
-          <g className={styles.archLabels}>
-            <text x="185" y="66">주기적 재평가</text><text x="220" y="295">대화·피드백</text><text x="545" y="102">판단 후 호출</text>
-            <text x="475" y="216">RAG 저장·조회</text><text x="675" y="210">규칙 조회</text><text x="840" y="205">제약 강화</text>
-            <text x="942" y="200">최적해 탐색</text><text x="705" y="350">검토·보정</text><text x="230" y="356">주문</text>
-            <text x="470" y="356">중개</text><text x="610" y="450">소분·배송</text><text x="65" y="435">측정값</text><text x="220" y="445">정밀진단</text>
+          <g className={styles.archLabels} transform="scale(.88 1)">
+            <text x="188" y="66">주기적 재평가</text><text x="205" y="296">대화·피드백</text>
+            <text x="455" y="176">RAG 저장·조회</text><text x="570" y="111">안전 조건부 호출</text><text x="610" y="70">판단 후 최적화 호출</text>
+            <text x="680" y="196">규칙 조회</text><text x="585" y="304">검토·보정</text><text x="735" y="385">효과 추론 결과 보정</text>
+            <text x="220" y="341">주문</text><text x="458" y="386">중개</text><text x="585" y="520">소분·배송</text>
+            <text x="55" y="490">측정값</text><text x="212" y="570">정밀진단 입력</text><text x="155" y="725">복용·재검사 결과 환류</text>
+            <text x="1070" y="218">최적해 탐색</text><text x="905" y="275">제약 강화</text>
           </g>
         </svg>
 
@@ -60,11 +62,12 @@ export default function ResearchWorkflowMap(props: WorkflowMapProps) {
         <Node className={styles.archPharmacy} title="약사" subtitle="데이터 검토·보정·중개" stage={5} onNavigate={props.onNavigate}/>
         <Node className={styles.archOptimizer} title="다목적 조합 최적화 엔진" subtitle="효능·안전·복용·예산 균형" status={`${props.recommendationCount}개 선택`} stage={4} onNavigate={props.onNavigate}/>
         <Node className={styles.archSafety} title="개인화 안전 검증 엔진" subtitle="금기·상호작용·알레르기" status={safety} stage={3} onNavigate={props.onNavigate}/>
-        <Node className={styles.archIte} title="개인화 효과 추론 모델(ITE)" subtitle="개인별 성분 효과 추론" status={`${props.recommendationCount}개 계산`} stage={4} onNavigate={props.onNavigate}/>
-        <Node className={styles.archSensor} title="바이오센서·유전 데이터" subtitle="웨어러블·검사·유전 입력" status={props.deviceConnected?"연결됨":"미연결"} stage={5} onNavigate={props.onNavigate}/>
+        <Node className={styles.archIte} title="개인화 효과 추론 모델(ITE)" subtitle="개인별 성분 효과 추론" status={inference} stage={4} onNavigate={props.onNavigate}/>
+        <Node className={styles.archSensor} title="바이오센서·유전 데이터" subtitle="웨어러블·검사·유전 입력" status={props.deviceConnected?"연동 확인":"연동 시험 전"} stage={5} onNavigate={props.onNavigate}/>
         <Node className={styles.archFulfillment} title="정밀진단 → 영양제 소분·배송 → 대화·재검사·배합 조정" subtitle="결과가 다시 소비자와 자기적응형 AI로 환류" onNavigate={props.onNavigate}/>
       </div>
     </div>
+    <div className={styles.archLegend}><span><i/>운영 데이터·업무 흐름</span><span><i/>반복 탐색·제약 강화</span><small>상태 표시는 구현 여부가 아니라 현재 평가 세션의 실행 결과입니다.</small></div>
 
     <div className={styles.workflowRuntime}><div><span>에이전트</span><strong>{agent}</strong></div><div><span>안전 판정</span><strong>{safety}</strong></div><div><span>추천 결과</span><strong>{props.recommendationCount}개</strong></div><div><span>저장 허용</span><strong>{props.consentCount}/4</strong></div></div>
   </section>;
