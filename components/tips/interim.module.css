@@ -246,3 +246,17 @@
   .replacementPanel { grid-template-columns: 1fr; gap: 20px; padding: 24px; }.replacementPanel h3 { font-size: 23px; }
 }
  .evaluatorDock > div small { color:#6b7684; font-size:11px; font-weight:650; }
+.workflowNodeModal { width:min(760px,100%); }
+.workflowNodeStatus { display:flex; align-items:center; justify-content:space-between; gap:16px; margin:0 0 20px; padding:16px 18px; border:1px solid #e5e8eb; border-radius:14px; background:#f9fafb; }
+.workflowNodeStatus span,.workflowImplementation span { color:#6b7684; font-size:12px; font-weight:750; }
+.workflowNodeStatus strong { color:#087443; font-size:15px; }
+.workflowDataGrid { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+.workflowDataGrid section { padding:18px; border:1px solid #e5e8eb; border-radius:16px; background:#fff; }
+.workflowDataGrid h3 { margin:0 0 12px; color:#333d4b; font-size:15px; }
+.workflowDataGrid ul { display:grid; gap:9px; margin:0; padding-left:18px; color:#4e5968; font-size:13px; line-height:1.5; }
+.workflowImplementation { margin-top:14px; padding:18px; border-radius:16px; background:#f2f7ff; }
+.workflowImplementation p { margin:7px 0 0; color:#333d4b; font-size:14px; line-height:1.65; }
+.workflowNodeModal footer { display:flex; justify-content:flex-end; gap:8px; margin-top:22px; }
+.workflowNodeModal footer button { min-height:44px; padding:0 16px; border:1px solid #d1d6db; border-radius:12px; background:#fff; color:#4e5968; font:inherit; font-weight:750; cursor:pointer; }
+.workflowNodeModal footer .primaryButton { border-color:#3182f6; background:#3182f6; color:#fff; }
+@media (max-width:680px) { .workflowDataGrid { grid-template-columns:1fr; }.workflowNodeModal footer { flex-direction:column-reverse; }.workflowNodeModal footer button { width:100%; } }
