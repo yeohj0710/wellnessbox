@@ -24,7 +24,7 @@ function ServiceFlowNode({ onNavigate }:{ onNavigate:(stage:number)=>void }) {
     <strong>정밀진단 → 영양제 소분·배송 → 대화·재검사·배합 조정</strong>
     <span>결과가 다시 소비자와 자기적응형 AI로 환류</span>
     <nav aria-label="실제 웰니스박스 서비스 연결">
-      <Link href="/survey">정밀진단</Link>
+      <Link href="/assess">정밀진단</Link>
       <Link href="/explore">추천·구매</Link>
       <Link href="/my-orders">주문·배송</Link>
       <Link href="/chat">대화 상담</Link>

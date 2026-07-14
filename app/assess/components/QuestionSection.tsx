@@ -76,17 +76,17 @@ export default function QuestionSection({
           </button>
         </div>
 
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:gap-6">
-          <div className="min-w-0 sm:flex-none">
-            <p className="text-xs font-medium tracking-[0.08em] text-slate-500">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div className="min-w-0">
+            <p className="text-sm font-semibold tracking-[0.14em] text-sky-600">
               AI ASSESSMENT
             </p>
-            <h1 className="mt-2 break-keep text-2xl font-extrabold text-gray-900 sm:text-3xl sm:whitespace-nowrap">
+            <h1 className="mt-2 break-keep text-2xl font-extrabold text-gray-900 sm:text-3xl">
               {sectionTitle}
             </h1>
           </div>
 
-          <div className="w-full max-w-[22rem] sm:min-w-0 sm:flex-none">
+          <div className="w-full max-w-[220px] sm:min-w-[120px] sm:max-w-none">
             <div className="flex items-center justify-between text-sm text-gray-600">
               <span>진행도</span>
             </div>
