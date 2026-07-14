@@ -171,6 +171,8 @@ assert.match(consoleUi, /PRO_STAGE_HELP/);
 assert.match(consoleUi, /ResearchWorkflowMap/);
 for (const token of ["Data Lake", "개인화 안전 검증 엔진", "개인화 효과 추론 모델", "다목적 조합 최적화 엔진", "자기적응형 AI", "바이오센서·유전 데이터", "CronJob", "RAG 저장·조회", "제약 강화", "검토·보정", "소분·배송", "onNavigate"]) assert.match(workflowMapUi, new RegExp(token));
 for (const token of ["주기적 재평가", "대화·피드백", "안전 조건부 호출", "판단 후 최적화 호출", "규칙 조회", "효과 추론 결과 보정", "최적해 탐색", "정밀진단 입력", "복용·재검사 결과 환류", "상태 표시는 구현 여부가 아니라 현재 평가 세션의 실행 결과"]) assert.match(workflowMapUi, new RegExp(token));
+for (const token of ['href="/survey"', 'href="/explore"', 'href="/my-orders"', 'href="/chat"', "후속평가·배합 조정"]) assert.match(workflowMapUi, new RegExp(token));
+assert.match(workflowMapUi, /onNavigate\(5\)/);
 assert.doesNotMatch(workflowMapUi, /미실행|미연결/);
 assert.match(tipsCss, /\.archCanvas \{[^}]*width:1040px/);
 assert.match(consoleUi, /aria-pressed=/);

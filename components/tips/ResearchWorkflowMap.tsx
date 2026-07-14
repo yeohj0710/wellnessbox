@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import styles from "./interim.module.css";
 
 type WorkflowMapProps = {
@@ -12,6 +13,20 @@ type NodeProps = { className:string; title:string; subtitle:string; status?:stri
 function Node({ className,title,subtitle,status,stage,onNavigate }:NodeProps) {
   const content=<><strong>{title}</strong><span>{subtitle}</span>{status&&<em>{status}</em>}</>;
   return stage===undefined?<div className={`${styles.archNode} ${className}`}>{content}</div>:<button type="button" className={`${styles.archNode} ${className}`} onClick={()=>onNavigate(stage)}>{content}<small>관련 화면 열기 →</small></button>;
+}
+
+function ServiceFlowNode({ onNavigate }:{ onNavigate:(stage:number)=>void }) {
+  return <div className={`${styles.archNode} ${styles.archFulfillment}`}>
+    <strong>정밀진단 → 영양제 소분·배송 → 대화·재검사·배합 조정</strong>
+    <span>결과가 다시 소비자와 자기적응형 AI로 환류</span>
+    <nav aria-label="실제 웰니스박스 서비스 연결">
+      <Link href="/survey">정밀진단</Link>
+      <Link href="/explore">추천·구매</Link>
+      <Link href="/my-orders">주문·배송</Link>
+      <Link href="/chat">대화 상담</Link>
+      <button type="button" onClick={()=>onNavigate(5)}>후속평가·배합 조정</button>
+    </nav>
+  </div>;
 }
 
 export default function ResearchWorkflowMap(props: WorkflowMapProps) {
@@ -64,7 +79,7 @@ export default function ResearchWorkflowMap(props: WorkflowMapProps) {
         <Node className={styles.archSafety} title="개인화 안전 검증 엔진" subtitle="금기·상호작용·알레르기" status={safety} stage={3} onNavigate={props.onNavigate}/>
         <Node className={styles.archIte} title="개인화 효과 추론 모델(ITE)" subtitle="개인별 성분 효과 추론" status={inference} stage={4} onNavigate={props.onNavigate}/>
         <Node className={styles.archSensor} title="바이오센서·유전 데이터" subtitle="웨어러블·검사·유전 입력" status={props.deviceConnected?"연동 확인":"연동 시험 전"} stage={5} onNavigate={props.onNavigate}/>
-        <Node className={styles.archFulfillment} title="정밀진단 → 영양제 소분·배송 → 대화·재검사·배합 조정" subtitle="결과가 다시 소비자와 자기적응형 AI로 환류" onNavigate={props.onNavigate}/>
+        <ServiceFlowNode onNavigate={props.onNavigate}/>
       </div>
     </div>
     <div className={styles.archLegend}><span><i/>운영 데이터·업무 흐름</span><span><i/>반복 탐색·제약 강화</span><small>상태 표시는 구현 여부가 아니라 현재 평가 세션의 실행 결과입니다.</small></div>
