@@ -98,6 +98,11 @@ async function run() {
   }
 
   assert.deepEqual(request, contract.expected_request);
+  assert.equal(
+    request.source_profile?.subject_id,
+    contract.adapter_options.subjectId,
+    "stable pseudonymous subject id must survive the adapter"
+  );
   assert.deepEqual(contract.source_profile, originalProfile, "adapter must not mutate source");
   assert.deepEqual(
     resolveWbRndRecommendPreviewPayload({
@@ -277,6 +282,7 @@ async function run() {
         ok: true,
         checks: [
           "versioned_contract_snapshot",
+          "stable_pseudonymous_subject_id",
           "all_profile_fields_preserved",
           "operational_fields_mapped",
           "shared_source_validation_cases",

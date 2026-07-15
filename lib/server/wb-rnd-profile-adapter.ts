@@ -38,6 +38,7 @@ const sourceProfileSchema = z
 const adapterOptionsSchema = z
   .object({
     requestId: nonBlankName.optional(),
+    subjectId: z.string().regex(/^usr_[a-f0-9]{16,64}$/).optional(),
     surveyConsent: z
       .object({
         useForRecommendation: z.boolean(),
@@ -231,6 +232,9 @@ export function mapWellnessBoxProfileToWbRndRequest(
     request_id: options.requestId ?? randomUUID(),
     source_profile: {
       schema_version: SOURCE_PROFILE_SCHEMA_VERSION,
+      ...(options.subjectId === undefined
+        ? {}
+        : { subject_id: options.subjectId as `usr_${string}` }),
       profile: sourceProfile,
     },
     user_profile: {

@@ -23,6 +23,7 @@ export function resolveWbRndRecommendPreviewPayload(
   if (Object.prototype.hasOwnProperty.call(value, "profile")) {
     return mapWellnessBoxProfileToWbRndRequest(value.profile, {
       requestId: value.requestId,
+      subjectId: value.subjectId,
       surveyConsent: value.surveyConsent,
     });
   }

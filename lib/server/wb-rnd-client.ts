@@ -30,6 +30,7 @@ export type WbRndRecommendRequest = {
   request_id?: string;
   source_profile?: {
     schema_version: "wellnessbox.chat.UserProfile.v1";
+    subject_id?: `usr_${string}`;
     profile: UserProfile;
   };
   user_profile: {
