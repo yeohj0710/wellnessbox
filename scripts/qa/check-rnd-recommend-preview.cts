@@ -34,6 +34,28 @@ async function run() {
       "timeout env should be respected"
     );
 
+    let forwardedBody: Record<string, unknown> = {};
+    const remoteResult = await callWbRndRecommendPreview(
+      {
+        ...WB_RND_RECOMMEND_PREVIEW_SAMPLE,
+        allergies: ["fish"],
+        risk_flags: ["red_flag_chest_pain"],
+      },
+      {
+        fetchImpl: async (_input, init) => {
+          forwardedBody = JSON.parse(String(init?.body)) as Record<string, unknown>;
+          return new Response(JSON.stringify({ status: "blocked" }), {
+            status: 200,
+            headers: { "Content-Type": "application/json" },
+          });
+        },
+      }
+    );
+
+    assert.equal(remoteResult.source, "rnd");
+    assert.deepEqual(forwardedBody?.allergies, ["fish"]);
+    assert.deepEqual(forwardedBody?.risk_flags, ["red_flag_chest_pain"]);
+
     const fallbackResult = await callWbRndRecommendPreview(
       WB_RND_RECOMMEND_PREVIEW_SAMPLE,
       {
@@ -67,6 +89,7 @@ async function run() {
           checks: [
             "preview_flag_gate",
             "timeout_env_resolution",
+            "structured_safety_input_forwarding",
             "fallback_response_on_network_error",
           ],
         },

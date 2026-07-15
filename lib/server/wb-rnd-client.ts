@@ -30,6 +30,8 @@ export type WbRndRecommendRequest = {
   goals: RecommendationGoal[];
   symptoms?: string[];
   conditions?: string[];
+  allergies?: string[];
+  risk_flags?: string[];
   medications?: Array<{ name: string; dose?: string | null }>;
   current_supplements?: Array<{ name: string; ingredients?: string[] }>;
   lifestyle?: {
@@ -84,6 +86,8 @@ export const WB_RND_RECOMMEND_PREVIEW_SAMPLE: WbRndRecommendRequest = {
   goals: ["stress_support", "sleep_support"],
   symptoms: ["late_sleep", "fatigue"],
   conditions: [],
+  allergies: [],
+  risk_flags: [],
   medications: [{ name: "magnesium", dose: "200mg" }],
   current_supplements: [{ name: "multivitamin", ingredients: ["vitamin_b_complex"] }],
   lifestyle: {
