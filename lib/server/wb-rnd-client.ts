@@ -1,3 +1,5 @@
+import type { UserProfile } from "@/types/chat";
+
 const DEFAULT_RND_RECOMMEND_TIMEOUT_MS = 4_000;
 const MIN_RND_RECOMMEND_TIMEOUT_MS = 500;
 const MAX_RND_RECOMMEND_TIMEOUT_MS = 15_000;
@@ -19,13 +21,23 @@ type ActivityLevel =
   | "moderately_active"
   | "very_active";
 type BudgetLevel = "low" | "medium" | "high";
+type WbRndDataSourceConsent = {
+  use_for_recommendation: boolean;
+  allow_persistent_storage: boolean;
+};
 
 export type WbRndRecommendRequest = {
   request_id?: string;
+  source_profile?: {
+    schema_version: "wellnessbox.chat.UserProfile.v1";
+    profile: UserProfile;
+  };
   user_profile: {
     age: number;
     biological_sex: BiologicalSex;
     pregnant?: boolean;
+    height_cm?: number;
+    weight_kg?: number;
   };
   goals: RecommendationGoal[];
   symptoms?: string[];
@@ -34,6 +46,8 @@ export type WbRndRecommendRequest = {
   risk_flags?: string[];
   medications?: Array<{ name: string; dose?: string | null }>;
   current_supplements?: Array<{ name: string; ingredients?: string[] }>;
+  dietary_patterns?: string[];
+  laboratory_observations?: unknown[];
   lifestyle?: {
     sleep_hours?: number | null;
     stress_level?: number | null;
@@ -47,6 +61,13 @@ export type WbRndRecommendRequest = {
     wearable?: boolean;
     cgm?: boolean;
     genetic?: boolean;
+  };
+  data_source_consents?: {
+    survey: WbRndDataSourceConsent;
+    nhis: WbRndDataSourceConsent;
+    wearable: WbRndDataSourceConsent;
+    cgm: WbRndDataSourceConsent;
+    genetic: WbRndDataSourceConsent;
   };
   preferences?: {
     budget_level?: BudgetLevel;

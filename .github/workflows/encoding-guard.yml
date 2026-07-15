@@ -28,3 +28,6 @@ jobs:
 
       - name: Run encoding audit
         run: npm run audit:encoding
+
+      - name: Verify R&D profile adapter contract
+        run: npm run qa:rnd:profile-adapter
