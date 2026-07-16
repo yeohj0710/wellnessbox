@@ -40,6 +40,7 @@
     "qa:rnd:preview-route": "ts-node scripts/qa/check-rnd-recommend-preview.cts",
     "qa:rnd:final-safety-authority": "node --conditions=react-server --import tsx scripts/qa/check-rnd-final-safety-authority.cts",
     "qa:rnd:interim-safety-authority": "node --conditions=react-server --import tsx scripts/qa/check-rnd-interim-safety-authority.cts",
+    "qa:rnd:ingredient-map": "node --conditions=react-server --import tsx scripts/qa/check-rnd-ingredient-map.cts",
     "qa:rnd:profile-adapter": "node --conditions=react-server --import tsx scripts/qa/check-rnd-profile-adapter.cts",
     "qa:tips:interim": "ts-node scripts/qa/check-tips-interim-modules.cts",
     "qa:tips:rnd-session-replay": "node --conditions=react-server --import tsx scripts/qa/check-tips-rnd-session-replay.cts",

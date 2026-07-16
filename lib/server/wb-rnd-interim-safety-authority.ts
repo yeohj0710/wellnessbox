@@ -1,5 +1,7 @@
 import "server-only";
 
+import { enrichWbRndRecommendationIdentifiers } from "@/lib/server/wb-rnd-ingredient-map";
+
 type JsonRecord = Record<string, unknown>;
 
 const SAFETY_ACTION_RANK = {
@@ -136,6 +138,13 @@ export function enforceWbRndInterimSafetyAuthority(value: unknown) {
       ),
     };
   }
+  const mapped = enrichWbRndRecommendationIdentifiers(value);
+  if (!mapped.ok) {
+    return {
+      ok: false as const,
+      response: buildWbRndInterimFailClosedResponse(mapped.reason),
+    };
+  }
   const safetyAuthority: WbRndInterimSafetyAuthority = {
     final: true,
     mode: "rnd_final",
@@ -144,7 +153,7 @@ export function enforceWbRndInterimSafetyAuthority(value: unknown) {
   return {
     ok: true as const,
     response: {
-      ...value,
+      ...mapped.response,
       safety_authority: safetyAuthority,
     },
   };

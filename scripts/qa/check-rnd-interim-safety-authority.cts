@@ -29,11 +29,55 @@ function blockedResponse(overrides: Record<string, unknown> = {}) {
   };
 }
 
+function readyResponse(ingredient: string) {
+  return {
+    run_id: "rec_contract_ready",
+    status: "READY",
+    mode: "PROXY_GOLD_SIMULATION",
+    simulation: true,
+    model_id: "model_contract",
+    safety_action: "PASS",
+    findings: [],
+    recommendations: [
+      {
+        ingredient,
+        rank: 1,
+        score: 0.8,
+        evidence_ids: ["EV-1"],
+      },
+    ],
+    uncertainty: "independent contract fixture",
+  };
+}
+
 const valid = enforceWbRndInterimSafetyAuthority(blockedResponse());
 assert.equal(valid.ok, true);
 assert.equal(valid.response.status, "BLOCKED");
 assert.deepEqual(valid.response.recommendations, []);
 assert.equal(valid.response.safety_authority.mode, "rnd_final");
+assert.equal(
+  valid.response.ingredient_identifier_mapping.mapping_version,
+  "2026-07-16.1"
+);
+
+const mappedReady = enforceWbRndInterimSafetyAuthority(
+  readyResponse("magnesium_glycinate")
+);
+assert.equal(mappedReady.ok, true);
+assert.equal(
+  mappedReady.response.recommendations[0].service_ingredient_id,
+  "ING:MAGNESIUM"
+);
+
+const unmappedReady = enforceWbRndInterimSafetyAuthority(
+  readyResponse("l_theanine")
+);
+assert.equal(unmappedReady.ok, false);
+assert.equal(
+  unmappedReady.response.safety_authority.reason,
+  "unmapped_rnd_ingredient_identifier"
+);
+assert.deepEqual(unmappedReady.response.recommendations, []);
 
 for (const invalid of [
   blockedResponse({ recommendations: [{ ingredient: "unsafe" }] }),
@@ -60,6 +104,8 @@ console.log(
       ok: true,
       checks: [
         "valid_block_preserved",
+        "mapped_ready_identifier_enriched",
+        "unmapped_ready_identifier_blocked",
         "recommendation_under_block_rejected",
         "status_action_mismatch_rejected",
         "prototype_action_rejected",

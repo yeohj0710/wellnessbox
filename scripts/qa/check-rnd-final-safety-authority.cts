@@ -78,6 +78,87 @@ async function run() {
   assert.equal(response.safety_authority?.final, true);
   assert.equal(response.safety_authority?.mode, "rnd_final");
 
+  const readyFixture = {
+    run_id: "rec_mapping_ready",
+    status: "READY",
+    mode: "PROXY_GOLD_SIMULATION",
+    simulation: true,
+    model_id: "mapping-fixture",
+    safety_action: "PASS",
+    findings: [],
+    recommendations: [
+      {
+        ingredient: "magnesium_glycinate",
+        rank: 1,
+        score: 0.8,
+        evidence_ids: ["EV-1"],
+      },
+    ],
+    uncertainty: "mapping fixture",
+  };
+  const readyUpstream = (async () => readyFixture) as typeof callWbRndInterim;
+  const readyRequest = new Request("http://wellnessbox.local/api/tips", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ goals: ["sleep_support"] }),
+  });
+  setTipsPostTestDependencies(readyRequest, {
+    requireUserSessionImpl,
+    callWbRndInterimImpl: readyUpstream,
+  });
+  const readyRouteResponse = await postTipsRecommendation(readyRequest);
+  const ready = (await readyRouteResponse.json()) as {
+    status?: string;
+    recommendations?: Array<{
+      ingredient?: string;
+      service_ingredient_id?: string;
+    }>;
+    ingredient_identifier_mapping?: { mapping_version?: string };
+  };
+  assert.equal(readyRouteResponse.status, 200);
+  assert.equal(ready.status, "READY");
+  assert.equal(ready.recommendations?.[0]?.ingredient, "magnesium_glycinate");
+  assert.equal(ready.recommendations?.[0]?.service_ingredient_id, "ING:MAGNESIUM");
+  assert.equal(
+    ready.ingredient_identifier_mapping?.mapping_version,
+    "2026-07-16.1"
+  );
+
+  const unmappedUpstream = (async () => ({
+    ...readyFixture,
+    run_id: "rec_mapping_unmapped",
+    recommendations: [
+      {
+        ingredient: "l_theanine",
+        rank: 1,
+        score: 0.8,
+        evidence_ids: ["EV-1"],
+      },
+    ],
+  })) as typeof callWbRndInterim;
+  const unmappedRequest = new Request("http://wellnessbox.local/api/tips", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ goals: ["stress_support"] }),
+  });
+  setTipsPostTestDependencies(unmappedRequest, {
+    requireUserSessionImpl,
+    callWbRndInterimImpl: unmappedUpstream,
+  });
+  const unmappedRouteResponse = await postTipsRecommendation(unmappedRequest);
+  const unmapped = (await unmappedRouteResponse.json()) as {
+    status?: string;
+    recommendations?: unknown[];
+    safety_authority?: { reason?: string | null };
+  };
+  assert.equal(unmappedRouteResponse.status, 502);
+  assert.equal(unmapped.status, "BLOCKED");
+  assert.deepEqual(unmapped.recommendations, []);
+  assert.equal(
+    unmapped.safety_authority?.reason,
+    "unmapped_rnd_ingredient_identifier"
+  );
+
   const invalidUpstream = (async () => ({
     run_id: "rec_invalid",
     status: "BLOCKED",
@@ -134,6 +215,8 @@ async function run() {
       "rnd_final_authority",
       "top_level_blocked",
       "zero_recommendations",
+      "mapped_ready_identifier_enriched",
+      "unmapped_ready_identifier_fail_closed",
       "invalid_upstream_contract_fail_closed",
     ],
     observed: {
@@ -145,6 +228,10 @@ async function run() {
       safety_action: response.safety_action,
       matched_rule_id: "SAFE-EMERGENCY-001",
       recommendation_count: response.recommendations?.length,
+      mapping_version: ready.ingredient_identifier_mapping?.mapping_version,
+      mapped_service_ingredient_id:
+        ready.recommendations?.[0]?.service_ingredient_id,
+      unmapped_identifier_http_status: unmappedRouteResponse.status,
       invalid_contract_http_status: failClosedRouteResponse.status,
       invalid_contract_authority_mode: failClosed.safety_authority?.mode,
     },

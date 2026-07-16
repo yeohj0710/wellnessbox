@@ -40,3 +40,6 @@ jobs:
 
       - name: Verify TIPS final safety authority behavior
         run: npm run qa:rnd:interim-safety-authority
+
+      - name: Verify R&D ingredient identifier map
+        run: npm run qa:rnd:ingredient-map
