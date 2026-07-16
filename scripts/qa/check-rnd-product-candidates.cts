@@ -19,6 +19,7 @@ const productContract = JSON.parse(
 ) as {
   schema_version: string;
   mapping_version: string;
+  ingredient_mapping_version: string;
   mappings: Array<{ service_ingredient_id: string; match_terms: string[] }>;
 };
 const ingredientContract = JSON.parse(
@@ -27,7 +28,11 @@ const ingredientContract = JSON.parse(
     "utf8"
   )
 ) as {
-  mappings: Array<{ service_ingredient_id: string }>;
+  mapping_version: string;
+  mappings: Array<{
+    service_ingredient_id: string;
+    rnd_ingredient_key: string;
+  }>;
 };
 const catalogSnapshot = JSON.parse(
   readFileSync(
@@ -50,24 +55,26 @@ const readyFixture = {
   model_id: "op050-route-fixture",
   safety_action: "PASS",
   findings: [],
-  recommendations: [
-    {
-      ingredient: "magnesium_glycinate",
-      rank: 1,
-      score: 0.91,
-      evidence_ids: ["EV-OP050-1"],
-    },
-    {
-      ingredient: "vitamin_d3",
-      rank: 2,
-      score: 0.84,
-      evidence_ids: ["EV-OP050-2"],
-    },
-  ],
+  recommendations: ingredientContract.mappings.map((mapping, index) => ({
+    ingredient: mapping.rnd_ingredient_key,
+    rank: index + 1,
+    score: 0.91 - index * 0.01,
+    evidence_ids: [`EV-OP050-${index + 1}`],
+  })),
   uncertainty: "op050 route fixture",
 };
 
 const productCatalog = catalogSnapshot.products;
+const expectedPrimaryProductIdByServiceIngredient = {
+  "ING:CALCIUM": 29,
+  "ING:COQ10": 44,
+  "ING:MAGNESIUM": 29,
+  "ING:OMEGA3": 31,
+  "ING:PROBIOTIC": 35,
+  "ING:VITAMIN_C": 30,
+  "ING:VITAMIN_D": 29,
+  "ING:ZINC": 29,
+} as const;
 
 async function routeWithCatalog(catalog: unknown) {
   const requireUserSessionImpl = (async () => ({
@@ -102,6 +109,10 @@ async function run() {
   );
   assert.equal(catalogSnapshot.production_operation_proven, false);
   assert.ok(productContract.mapping_version);
+  assert.equal(
+    productContract.ingredient_mapping_version,
+    ingredientContract.mapping_version
+  );
   assert.deepEqual(
     new Set(productContract.mappings.map((item) => item.service_ingredient_id)),
     new Set(
@@ -127,6 +138,7 @@ async function run() {
     }>;
     product_candidate_resolution?: {
       mapping_version?: string;
+      ingredient_mapping_version?: string;
       complete?: boolean;
       matched_recommendation_count?: number;
     };
@@ -135,18 +147,23 @@ async function run() {
   assert.equal(matched.status, "READY");
   assert.deepEqual(
     matched.recommendations?.map((item) => item.service_ingredient_id),
-    ["ING:MAGNESIUM", "ING:VITAMIN_D"]
+    ingredientContract.mappings.map((item) => item.service_ingredient_id)
   );
   assert.deepEqual(
     matched.recommendations?.map(
       (item) => item.product_candidates?.[0]?.product_id
     ),
-    [29, 29]
+    ingredientContract.mappings.map(
+      (item) =>
+        expectedPrimaryProductIdByServiceIngredient[
+          item.service_ingredient_id as keyof typeof expectedPrimaryProductIdByServiceIngredient
+        ]
+    )
   );
   assert.ok(
-    matched.recommendations?.[1]?.product_candidates?.some(
-      (item) => item.product_id === 33
-    )
+    matched.recommendations
+      ?.find((item) => item.service_ingredient_id === "ING:VITAMIN_D")
+      ?.product_candidates?.some((item) => item.product_id === 33)
   );
   assert.ok(
     matched.recommendations?.every(
@@ -157,13 +174,15 @@ async function run() {
   );
   assert.equal(matched.product_candidate_resolution?.complete, true);
   assert.equal(
+    matched.product_candidate_resolution?.ingredient_mapping_version,
+    ingredientContract.mapping_version
+  );
+  assert.equal(
     matched.product_candidate_resolution?.matched_recommendation_count,
-    2
+    ingredientContract.mappings.length
   );
 
-  const noMatchResponse = await routeWithCatalog([
-    productCatalog.find((item) => item.id === 30),
-  ]);
+  const noMatchResponse = await routeWithCatalog([]);
   const noMatch = (await noMatchResponse.json()) as {
     status?: string;
     recommendations?: Array<{
@@ -217,6 +236,11 @@ async function run() {
         matched.product_candidate_resolution?.mapping_version,
       catalog_fixture_source: `${catalogSnapshot.source}; captured ${catalogSnapshot.captured_on}`,
       production_operation_proven: catalogSnapshot.production_operation_proven,
+      mapping_coverage_count: matched.recommendations?.length,
+      unmatched_service_ingredient_ids:
+        matched.recommendations
+          ?.filter((item) => item.product_candidate_status !== "MATCHED")
+          .map((item) => item.service_ingredient_id) ?? [],
       service_ingredient_ids: matched.recommendations?.map(
         (item) => item.service_ingredient_id
       ),

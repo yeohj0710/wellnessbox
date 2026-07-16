@@ -2,6 +2,7 @@ import "server-only";
 
 import contractJson from "@/contracts/wb-rnd/product-candidate-match-v1.json";
 import { getProductCandidateCatalog } from "@/lib/product/product.catalog";
+import { WB_RND_INGREDIENT_MAPPING_VERSION } from "@/lib/server/wb-rnd-ingredient-map";
 
 type JsonRecord = Record<string, unknown>;
 
@@ -19,6 +20,7 @@ type ProductMatchMapping = {
 type ProductCandidateContract = {
   schemaVersion: "wb_rnd_product_candidate_match_v1";
   mappingVersion: string;
+  ingredientMappingVersion: string;
   productCatalogSource: string;
   maxCandidatesPerIngredient: number;
   mappings: ProductMatchMapping[];
@@ -45,6 +47,7 @@ function loadContract(value: unknown): ProductCandidateContract {
   if (
     value.schema_version !== "wb_rnd_product_candidate_match_v1" ||
     !nonEmptyString(value.mapping_version) ||
+    value.ingredient_mapping_version !== WB_RND_INGREDIENT_MAPPING_VERSION ||
     !nonEmptyString(value.product_catalog_source) ||
     !Number.isInteger(value.max_candidates_per_ingredient) ||
     Number(value.max_candidates_per_ingredient) < 1 ||
@@ -83,6 +86,7 @@ function loadContract(value: unknown): ProductCandidateContract {
   return {
     schemaVersion: value.schema_version,
     mappingVersion: value.mapping_version,
+    ingredientMappingVersion: value.ingredient_mapping_version,
     productCatalogSource: value.product_catalog_source,
     maxCandidatesPerIngredient: Number(value.max_candidates_per_ingredient),
     mappings,
@@ -217,6 +221,7 @@ export function attachWbRndProductCandidates(
     product_candidate_resolution: {
       schema_version: contract.schemaVersion,
       mapping_version: contract.mappingVersion,
+      ingredient_mapping_version: contract.ingredientMappingVersion,
       product_catalog_source: contract.productCatalogSource,
       catalog_product_count: catalog.length,
       recommendation_count: recommendations.length,
