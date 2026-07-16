@@ -18,6 +18,7 @@ const STATE_ACTIONS: Record<TipsLabState, readonly string[]> = {
 
 export function canRunTipsLabAction(state: TipsLabState, action: string) {
   if (action === "initialize") return true;
+  if (action === "list_rnd_sessions" || action === "replay_rnd_session") return true;
   return STATE_ACTIONS[state].includes(action);
 }
 

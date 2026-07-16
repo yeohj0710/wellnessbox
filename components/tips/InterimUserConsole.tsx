@@ -21,11 +21,17 @@ type LabAction =
   | "create_followup"
   | "ingest_pro"
   | "log_adverse_event"
-  | "ingest_device";
+  | "ingest_device"
+  | "list_rnd_sessions"
+  | "replay_rnd_session";
 
 type Candidate = { ingredientId: string; label: string; score: number };
 type Safety = { decision: string; reasons: string[]; blockedIngredients: string[] };
 type Feedback = { tone: "success" | "warning" | "error"; title: string; detail: string };
+type RndReplayStatus = "MATCH" | "MISMATCH" | "VERSION_MISMATCH";
+type RndSavedSession = { executionId:string; createdAt:string; replayAvailable:boolean; lastReplayStatus:RndReplayStatus|null; lastReplayedAt:string|null };
+type RndSessionSummary = { connected:boolean; availability:"CONNECTED"|"DISABLED"|"UNAVAILABLE"; totalSavedSessions:number; replayableSessions:number; unavailableSessions:number; replayRunCount:number; recentSessions:RndSavedSession[] };
+type RndReplayResult = { connected:boolean; availability:"CONNECTED"|"DISABLED"|"UNAVAILABLE"; executionId:string|null; status:RndReplayStatus|null; inputMatch:boolean|null; versionMatch:boolean|null; outputMatch:boolean|null; replayedAt:string|null };
 type DemoScenario = { id:string; title:string; description:string; age:number; goal:string; conditions:string[]; medications:string[]; fishAllergy:boolean; redFlag:boolean; advanced:AdvancedProfile };
 const DEMO_SCENARIOS: DemoScenario[] = [
   {id:"standard",title:"일반 추천",description:"비타민 D 저하와 수면 목표의 정상 추천 경로",age:41,goal:"sleep_quality",conditions:[],medications:[],fishAllergy:false,redFlag:false,advanced:{...DEFAULT_ADVANCED,sex:"female",monthlyBudgetKrw:70000,maxDailyPills:4,preferredForm:"powder",dietPatterns:["low_fortified_food"],wearableFeatures:["low_hrv"],symptoms:[{code:"fatigue",severity:"moderate"}],labs:{vitamin_d:"low"}}},
@@ -102,6 +108,51 @@ function toggle(current: string[], value: string) {
     : [...current, value];
 }
 
+function object(value: unknown): JsonRecord | null {
+  return value && typeof value === "object" && !Array.isArray(value) ? value as JsonRecord : null;
+}
+
+function parseRndSessions(value: unknown): RndSessionSummary | null {
+  const item = object(value);
+  if (!item || typeof item.connected !== "boolean" || !["CONNECTED","DISABLED","UNAVAILABLE"].includes(String(item.availability))) return null;
+  const recentSessions = Array.isArray(item.recentSessions) ? item.recentSessions.flatMap((entry):RndSavedSession[]=>{
+    const session=object(entry);
+    if (!session || typeof session.executionId!=="string" || typeof session.createdAt!=="string" || typeof session.replayAvailable!=="boolean") return [];
+    const lastReplayStatus=["MATCH","MISMATCH","VERSION_MISMATCH"].includes(String(session.lastReplayStatus))?session.lastReplayStatus as RndReplayStatus:null;
+    return [{executionId:session.executionId,createdAt:session.createdAt,replayAvailable:session.replayAvailable,lastReplayStatus,lastReplayedAt:typeof session.lastReplayedAt==="string"?session.lastReplayedAt:null}];
+  }):[];
+  return {
+    connected:item.connected,
+    availability:item.availability as RndSessionSummary["availability"],
+    totalSavedSessions:Number(item.totalSavedSessions)||0,
+    replayableSessions:Number(item.replayableSessions)||0,
+    unavailableSessions:Number(item.unavailableSessions)||0,
+    replayRunCount:Number(item.replayRunCount)||0,
+    recentSessions,
+  };
+}
+
+function parseRndReplay(value: unknown): RndReplayResult | null {
+  const item=object(value);
+  if (!item || typeof item.connected!=="boolean" || !["CONNECTED","DISABLED","UNAVAILABLE"].includes(String(item.availability))) return null;
+  const status=["MATCH","MISMATCH","VERSION_MISMATCH"].includes(String(item.status))?item.status as RndReplayStatus:null;
+  const nullableBoolean=(entry:unknown)=>typeof entry==="boolean"?entry:null;
+  return {connected:item.connected,availability:item.availability as RndReplayResult["availability"],executionId:typeof item.executionId==="string"?item.executionId:null,status,inputMatch:nullableBoolean(item.inputMatch),versionMatch:nullableBoolean(item.versionMatch),outputMatch:nullableBoolean(item.outputMatch),replayedAt:typeof item.replayedAt==="string"?item.replayedAt:null};
+}
+
+function formatRndSessionTime(value: string | null) {
+  if (!value) return "기록 없음";
+  const time=new Date(value);
+  return Number.isNaN(time.getTime())?"시간 확인 불가":new Intl.DateTimeFormat("ko-KR",{month:"numeric",day:"numeric",hour:"2-digit",minute:"2-digit",hour12:false}).format(time);
+}
+
+function rndReplayLabel(status: RndReplayStatus | null) {
+  if (status==="MATCH") return "동일 결과 확인";
+  if (status==="MISMATCH") return "결과 차이 확인";
+  if (status==="VERSION_MISMATCH") return "버전 불일치로 재생 중단";
+  return "재생 기록 없음";
+}
+
 async function runLab(body: JsonRecord) {
   const response = await fetch("/api/tips/lab", {
     method: "POST",
@@ -144,6 +195,9 @@ export default function InterimUserConsole() {
   const [state, setState] = useState("NEW");
   const [stateToken, setStateToken] = useState("");
   const [dataLake, setDataLake] = useState<JsonRecord | null>(null);
+  const [rndSessions, setRndSessions] = useState<RndSessionSummary | null>(null);
+  const [rndReplay, setRndReplay] = useState<RndReplayResult | null>(null);
+  const [selectedRndExecutionId, setSelectedRndExecutionId] = useState("");
   const [recommendationResult, setRecommendationResult] = useState<JsonRecord | null>(null);
   const [feedback, setFeedback] = useState<Feedback | null>(null);
   const [demoProgress, setDemoProgress] = useState("");
@@ -191,6 +245,16 @@ export default function InterimUserConsole() {
   const terminalState = state === "ESCALATED" || state === "STOPPED" || state === "ADVERSE_EVENT";
   const activeHelp = activeStage === 2 ? PRO_STAGE_HELP[proStep] : EVALUATION_STAGES[activeStage];
   const activeStageTitle = activeStage === 2 ? `복용 전후 건강 변화 · ${PRO_STAGE_LABELS[proStep]}` : EVALUATION_STAGES[activeStage].title;
+
+  function updateRndSessions(value: unknown) {
+    const parsed=parseRndSessions(value);
+    if (!parsed) return;
+    setRndSessions(parsed);
+    const replayable=parsed.recentSessions.filter(item=>item.replayAvailable);
+    const nextExecutionId=replayable.some(item=>item.executionId===selectedRndExecutionId)?selectedRndExecutionId:replayable[0]?.executionId??"";
+    if (nextExecutionId!==selectedRndExecutionId) setRndReplay(null);
+    setSelectedRndExecutionId(nextExecutionId);
+  }
 
   useEffect(() => {
     if (!helpOpen) return;
@@ -299,6 +363,7 @@ export default function InterimUserConsole() {
       setState(String(initialized.state ?? "NEW"));
       setStateToken(String(initialized.stateToken ?? ""));
       setDataLake(initialized.dataLake && typeof initialized.dataLake === "object" ? initialized.dataLake as JsonRecord : null);
+      updateRndSessions(initialized.rndSessions);
       setStageActivity("평가 세션과 입력 스냅샷 생성 완료");
       return true;
     } catch (error) {
@@ -333,6 +398,19 @@ export default function InterimUserConsole() {
     if (action === "create_followup") return { tone: "success", title: "2주 후속 평가 생성", detail: "14일 후 점수와 복용 여부를 확인하도록 설정되었습니다." };
     if (action === "ingest_pro") return { tone: "success", title: "PRO 기록 반영 완료", detail: "4주 시점 자가보고 결과가 조정 검토 상태로 반영되었습니다." };
     if (action === "ingest_device") return { tone: "success", title: "웨어러블 기록 반영 완료", detail: "기기 데이터가 활성 계획에 연결되었습니다." };
+    if (action === "list_rnd_sessions") {
+      const summary=parseRndSessions(result.rndSessions);
+      return summary?.connected
+        ? {tone:"success",title:"R&D 저장 세션 조회 완료",detail:`저장 세션 ${summary.totalSavedSessions}건 중 ${summary.replayableSessions}건을 같은 입력과 버전으로 재생할 수 있습니다.`}
+        : {tone:"warning",title:"R&D 서버 미연결",detail:"R&D 서버 주소와 내부 인증 설정을 확인한 뒤 다시 조회하십시오."};
+    }
+    if (action === "replay_rnd_session") {
+      const replay=parseRndReplay(result.rndReplay);
+      if (!replay?.connected) return {tone:"warning",title:"R&D 세션 재생 불가",detail:"R&D 서버 연결을 확인한 뒤 저장 세션을 다시 조회하십시오."};
+      if (replay.status==="MATCH") return {tone:"success",title:"동일 결과 확인",detail:"저장한 입력과 실행 버전으로 다시 계산한 결과가 기준 결과와 일치합니다."};
+      if (replay.status==="VERSION_MISMATCH") return {tone:"warning",title:"버전 불일치로 재생 중단",detail:"현재 실행 버전이 저장 당시 버전과 달라 추천 계산을 실행하지 않았습니다."};
+      return {tone:"error",title:"재생 결과 차이 확인",detail:"같은 입력과 버전에서 기준 결과와 다른 항목이 확인되었습니다."};
+    }
     return { tone: "error", title: "추천 절차 중단", detail: "중대한 이상사례 기록에 따라 긴급 검토 상태로 전환되었습니다." };
   }
 
@@ -349,6 +427,7 @@ export default function InterimUserConsole() {
         });
         token = String(initialized.stateToken ?? "");
         setStateToken(token);
+        updateRndSessions(initialized.rndSessions);
       }
       const result = await runLab({
         action,
@@ -359,6 +438,9 @@ export default function InterimUserConsole() {
       });
       setTrace(result);
       if (action === "recommend") setRecommendationResult(result);
+      if (action === "list_rnd_sessions" || action === "replay_rnd_session") updateRndSessions(result.rndSessions);
+      if (action === "list_rnd_sessions") setRndReplay(null);
+      if (action === "replay_rnd_session") setRndReplay(parseRndReplay(result.rndReplay));
       setFeedback(describeResult(action, result));
       if (typeof result.state === "string") setState(result.state);
       if (typeof result.stateToken === "string") setStateToken(result.stateToken);
@@ -389,6 +471,7 @@ export default function InterimUserConsole() {
     setState("NEW");
     setStateToken("");
     setDataLake(null);
+    setRndReplay(null);
     setRecommendationResult(null);
     setFeedback(null);
     setTrace({ 안내: "새 시험 세션이 초기화되었습니다." });
@@ -405,7 +488,7 @@ export default function InterimUserConsole() {
     const scopes=["followup:write","pro:write","ae:write","device:write"];
     const p={age:s.age,sex:s.advanced.sex,pregnant:s.advanced.pregnancyStatus==="pregnant",pregnancyStatus:s.advanced.pregnancyStatus,monthlyBudgetKrw:s.advanced.monthlyBudgetKrw,maxDailyPills:s.advanced.maxDailyPills,preferredForm:s.advanced.preferredForm,goals:[s.goal],conditions:s.conditions,medicationClasses:s.medications,allergies:s.fishAllergy?["fish"]:[],dietPatterns:s.advanced.dietPatterns,currentSupplements:s.advanced.currentSupplements,wearableFeatures:s.advanced.wearableFeatures,symptoms:s.advanced.symptoms,labs:s.advanced.labs,riskFlags:[...s.advanced.riskFlags,...(s.redFlag?["red_flag_chest_pain"]:[])]};
     try {
-      setConsents(scopes); setDemoProgress("1/6 세션 초기화"); let r=await runLab({action:"initialize",profile:p,consentScopes:scopes}); let token=String(r.stateToken??"");
+      setConsents(scopes); setDemoProgress("1/6 세션 초기화"); let r=await runLab({action:"initialize",profile:p,consentScopes:scopes}); updateRndSessions(r.rndSessions); let token=String(r.stateToken??"");
       setDemoProgress("2/6 추천·안전 판정"); r=await runLab({action:"recommend",stateToken:token,profile:p,consentScopes:scopes}); setRecommendationResult(r); setTrace(r); setFeedback(describeResult("recommend",r)); setState(String(r.state??"")); token=String(r.stateToken??token); setStateToken(token);
       if (["ESCALATED","STOPPED","ADVERSE_EVENT"].includes(String(r.state))) { setDemoProgress("완료 · 안전 중단 경로 재현"); moveToStage(4); return; }
       for (const [i,action] of (["retrieve_evidence","create_followup","ingest_pro","ingest_device"] as LabAction[]).entries()) { setDemoProgress(`${i+3}/6 ${action}`); r=await runLab({action,stateToken:token,profile:p,consentScopes:scopes,payload:action==="retrieve_evidence"?{query:`${s.goal} 근거`}:action==="ingest_device"?{source:"wearable"}:{}}); token=String(r.stateToken??token); setTrace(r); setState(String(r.state??"")); setStateToken(token); }
@@ -570,6 +653,45 @@ export default function InterimUserConsole() {
           <p className={styles.sectionLabel}>4. 추천 이후 기록 기능 시험</p>
           <h2 className={styles.sectionTitle}>추천 이후 기록과 상태 전이 평가</h2>
           <p className={styles.sectionBody}>저장 동의 범위에 따라 근거, 후속 일정, 자가보고 결과와 기기 데이터를 세션에 연결합니다. 중대한 이상사례 입력 시 추가 추천 차단과 약사 검토 전환을 평가합니다.</p>
+          <section className={styles.rndReplayPanel} aria-labelledby="rnd-replay-title">
+            <header>
+              <div>
+                <span>R&D 실행 세션</span>
+                <h3 id="rnd-replay-title">저장 세션 재생 검증</h3>
+              </div>
+              <strong data-connected={rndSessions?.connected===true}>
+                {rndSessions?.connected?"R&D 서버 연결":rndSessions?.availability==="UNAVAILABLE"?"R&D 서버 응답 없음":rndSessions?.availability==="DISABLED"?"R&D 서버 미연결":"조회 전"}
+              </strong>
+            </header>
+            <p>저장 당시 입력과 모델·데이터·코드 버전이 같은지 먼저 확인한 뒤 추천 결과를 다시 계산합니다.</p>
+            <div className={styles.rndReplayStats}>
+              <div><span>저장 세션</span><strong>{rndSessions?.connected?`${rndSessions.totalSavedSessions}건`:"—"}</strong></div>
+              <div><span>재생 가능</span><strong>{rndSessions?.connected?`${rndSessions.replayableSessions}건`:"—"}</strong></div>
+              <div><span>재생 실행</span><strong>{rndSessions?.connected?`${rndSessions.replayRunCount}건`:"—"}</strong></div>
+            </div>
+            {rndSessions?.connected ? <>
+              {rndSessions.recentSessions.some(item=>item.replayAvailable)?<label className={styles.rndSessionSelect}>
+                <span>검증할 저장 세션</span>
+                <select value={selectedRndExecutionId} onChange={event=>{setSelectedRndExecutionId(event.target.value);setRndReplay(null);}}>
+                  {rndSessions.recentSessions.filter(item=>item.replayAvailable).map((item,index)=><option key={item.executionId} value={item.executionId}>{`${formatRndSessionTime(item.createdAt)} 저장 · ${item.lastReplayStatus?rndReplayLabel(item.lastReplayStatus):index===0?"최근 세션":"재생 기록 없음"}`}</option>)}
+                </select>
+              </label>:<div className={styles.rndReplayUnavailable}><strong>재생 가능한 저장 세션 없음</strong><p>입력 저장 동의를 포함한 추천 실행을 생성한 뒤 다시 조회하십시오.</p></div>}
+              <div className={styles.rndReplayActions}>
+                <button type="button" onClick={()=>execute("list_rnd_sessions")} disabled={busyAction!==null}>{busyAction==="list_rnd_sessions"?"조회 중…":"저장 세션 다시 조회"}</button>
+                <button type="button" onClick={()=>execute("replay_rnd_session",{executionId:selectedRndExecutionId})} disabled={busyAction!==null||!selectedRndExecutionId}>{busyAction==="replay_rnd_session"?"재생 중…":"선택 세션 재생"}</button>
+              </div>
+            </>:<div className={styles.rndReplayUnavailable}>
+              <strong>{rndSessions?.availability==="UNAVAILABLE"?"R&D 서버 응답을 받지 못했습니다.":"R&D 서버가 프로덕션 화면에 연결되지 않았습니다."}</strong>
+              <p>{rndSessions?.availability==="UNAVAILABLE"?"잠시 후 저장 세션을 다시 조회하십시오.":"R&D 서버 주소와 내부 인증이 설정되면 저장 건수와 재생 결과를 확인할 수 있습니다."}</p>
+              <button type="button" onClick={()=>execute("list_rnd_sessions")} disabled={busyAction!==null}>{busyAction==="list_rnd_sessions"?"조회 중…":"연결 상태 다시 확인"}</button>
+            </div>}
+            {rndSessions?.connected&&rndReplay?.connected&&rndReplay.executionId===selectedRndExecutionId&&<div className={styles.rndReplayResult} data-status={rndReplay.status}>
+              <header><span>최근 재생 결과</span><strong>{rndReplayLabel(rndReplay.status)}</strong><small>{formatRndSessionTime(rndReplay.replayedAt)}</small></header>
+              <div><span>입력 일치</span><strong>{rndReplay.inputMatch?"확인":"불일치"}</strong></div>
+              <div><span>실행 버전 일치</span><strong>{rndReplay.versionMatch?"확인":"불일치"}</strong></div>
+              <div><span>추천 결과 일치</span><strong>{rndReplay.outputMatch===null?"실행 안 함":rndReplay.outputMatch?"확인":"불일치"}</strong></div>
+            </div>}
+          </section>
           <AgentDecisionWorkbench ref={agentDecisionRef} />
           <div className={styles.consentGrid}>
             {CONSENTS.map(([scope, label]) => (

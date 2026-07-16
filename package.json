@@ -40,6 +40,7 @@
     "qa:rnd:preview-route": "ts-node scripts/qa/check-rnd-recommend-preview.cts",
     "qa:rnd:profile-adapter": "node --conditions=react-server --import tsx scripts/qa/check-rnd-profile-adapter.cts",
     "qa:tips:interim": "ts-node scripts/qa/check-tips-interim-modules.cts",
+    "qa:tips:rnd-session-replay": "node --conditions=react-server --import tsx scripts/qa/check-tips-rnd-session-replay.cts",
     "qa:tips:web-lab": "ts-node scripts/qa/check-tips-web-lab.cts",
     "qa:tips:data-lake": "node scripts/qa/check-tips-data-lake.cjs",
     "qa:my-data:copy-localization": "ts-node scripts/qa/check-my-data-copy-localization.cts",

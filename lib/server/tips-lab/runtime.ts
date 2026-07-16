@@ -12,6 +12,7 @@ import { listBlindTests, recomputeBlindTest, verifyBlindTests } from "@/lib/serv
 import { datasetRegistry, listDatasetCases, verifyAllKpis, verifyDatasetSplit } from "@/lib/server/tips-lab/dataset-evaluation";
 import { decideNextAgentTask, normalizeAgentObservation, type AgentExecutionTrace, type AgentTask } from "@/lib/tips/agent-decision-engine";
 import { executeWorkflowNode, WORKFLOW_NODE_IDS, type WorkflowNodeId } from "@/lib/server/tips-lab/workflow-node-executor";
+import { listRndSavedSessions, replayRndSavedSession } from "@/lib/server/tips-lab/rnd-session-replay";
 
 export const TIPS_LAB_ACTIONS = [
   "initialize",
@@ -31,6 +32,8 @@ export const TIPS_LAB_ACTIONS = [
   "decide_next_action",
   "execute_agent_task",
   "execute_workflow_node",
+  "list_rnd_sessions",
+  "replay_rnd_session",
 ] as const;
 
 export type TipsLabAction = (typeof TIPS_LAB_ACTIONS)[number];
@@ -176,6 +179,22 @@ export async function runTipsLab(input: LabInput) {
         profile: currentProfile,
         consentScopes: scopes,
         next: "recommend",
+        rndSessions: await listRndSavedSessions(),
+      };
+    case "list_rnd_sessions":
+      return {
+        ...base(input.action, currentState),
+        rndSessions: await listRndSavedSessions(),
+        next: currentState,
+      };
+    case "replay_rnd_session":
+      return {
+        ...base(input.action, currentState),
+        rndReplay: await replayRndSavedSession(
+          String(input.payload?.executionId ?? "")
+        ),
+        rndSessions: await listRndSavedSessions(),
+        next: currentState,
       };
     case "list_blind_tests":
       return {
