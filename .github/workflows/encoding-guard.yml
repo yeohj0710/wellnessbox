@@ -31,3 +31,12 @@ jobs:
 
       - name: Verify R&D profile adapter contract
         run: npm run qa:rnd:profile-adapter
+
+      - name: Verify R&D recommendation fail-closed contract
+        run: npm run qa:rnd:preview-route
+
+      - name: Verify TIPS final safety authority wiring
+        run: npm run qa:tips:interim
+
+      - name: Verify TIPS final safety authority behavior
+        run: npm run qa:rnd:interim-safety-authority

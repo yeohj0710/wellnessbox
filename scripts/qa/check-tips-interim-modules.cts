@@ -8,6 +8,7 @@ function read(path: string) {
 
 const client = read("lib/server/wb-rnd-interim-client.ts");
 const routes = read("lib/server/wb-rnd-interim-route.ts");
+const safetyAuthority = read("lib/server/wb-rnd-interim-safety-authority.ts");
 const replay = read("lib/server/tips-lab/rnd-session-replay.ts");
 const runtime = read("lib/server/tips-lab/runtime.ts");
 const userPage = read("components/tips/InterimUserConsole.tsx");
@@ -25,6 +26,11 @@ assert.match(routes, /requirePharmSession/);
 assert.match(routes, /requireAdminSession/);
 assert.match(routes, /pseudonymizeInterimUserId\(auth\.data\.appUserId\)/);
 assert.match(routes, /request_too_large/);
+assert.match(routes, /enforceWbRndInterimSafetyAuthority/);
+assert.match(routes, /buildWbRndInterimFailClosedResponse/);
+assert.match(safetyAuthority, /SERVICE-RND-FINAL-AUTHORITY-001/);
+assert.match(safetyAuthority, /invalid_upstream_recommendation_contract/);
+assert.match(safetyAuthority, /recommendations\.length > 0/);
 assert.match(routes, /review_already_decided|runPharmInterimDecisionRoute/);
 assert.match(replay, /callWbRndInterim/);
 assert.match(replay, /\/v1\/interim\/executions\?limit=20/);
@@ -55,6 +61,7 @@ console.log(
         "hmac_pseudonymization",
         "role_auth",
         "timeout_no_store",
+        "final_safety_authority_fail_closed",
         "simulation_disclosure",
         "pro_ae_followup_paths",
         "rnd_saved_session_replay",

@@ -31,6 +31,50 @@ type AdapterContract = {
   source_profile_validation_cases: SourceProfileValidationCase[];
 };
 
+function buildValidNeedsReviewResponse() {
+  return {
+    execution_id: `exec_${"2".repeat(32)}`,
+    request_id: "profile-adapter-contract-001",
+    decision_id: "profile-adapter-decision-001",
+    status: "needs_review",
+    decision_summary: {
+      headline: "needs review",
+      summary: "more input required",
+      confidence_band: "low",
+    },
+    normalized_focus_goals: ["sleep_support"],
+    safety_summary: {
+      applied_at: "2026-07-16T00:00:00Z",
+      status: "needs_review",
+      warnings: [],
+      blocked_reasons: [],
+      excluded_ingredients: [],
+      rule_refs: [],
+      duplicate_ingredient_keys: [],
+      ingredient_dose_aggregates: [],
+    },
+    safety_flags: [],
+    safety_evidence: [],
+    recommendations: [],
+    next_action: "collect_more_input",
+    next_action_rationale: {
+      reason_code: "collect_more_input",
+      summary: "more input required",
+      supporting_codes: [],
+    },
+    follow_up_window_days: 14,
+    follow_up_questions: [],
+    missing_information: [],
+    limitations: [],
+    limitation_details: [],
+    metadata: {
+      engine_version: "contract-test",
+      mode: "deterministic_baseline_v1",
+      generated_at: "2026-07-16T00:00:00Z",
+    },
+  };
+}
+
 function materializeValidationCaseValue(testCase: SourceProfileValidationCase) {
   const factory = testCase.value_factory;
   if (!factory) return structuredClone(testCase.value);
@@ -142,7 +186,7 @@ async function run() {
     const result = await callWbRndRecommendPreview(request, {
       fetchImpl: async (_input, init) => {
         forwardedBody = JSON.parse(String(init?.body));
-        return new Response(JSON.stringify({ status: "needs_review" }), {
+        return new Response(JSON.stringify(buildValidNeedsReviewResponse()), {
           status: 200,
           headers: { "Content-Type": "application/json" },
         });
@@ -157,7 +201,7 @@ async function run() {
       incoming.on("end", () => {
         routeForwardedBody = JSON.parse(Buffer.concat(chunks).toString("utf8"));
         outgoing.writeHead(200, { "Content-Type": "application/json" });
-        outgoing.end(JSON.stringify({ status: "needs_review" }));
+        outgoing.end(JSON.stringify(buildValidNeedsReviewResponse()));
       });
     });
     routeServer.listen(0, "127.0.0.1");

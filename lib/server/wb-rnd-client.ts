@@ -1,8 +1,21 @@
+import { randomUUID } from "node:crypto";
+
 import type { UserProfile } from "@/types/chat";
 
 const DEFAULT_RND_RECOMMEND_TIMEOUT_MS = 4_000;
 const MIN_RND_RECOMMEND_TIMEOUT_MS = 500;
 const MAX_RND_RECOMMEND_TIMEOUT_MS = 15_000;
+const RECOMMENDATION_GOALS = new Set([
+  "stress_support",
+  "sleep_support",
+  "immunity_support",
+  "energy_support",
+  "gut_health",
+  "bone_joint",
+  "heart_health",
+  "blood_glucose",
+  "general_wellness",
+]);
 
 type BiologicalSex = "female" | "male" | "other" | "undisclosed";
 type RecommendationGoal =
@@ -91,6 +104,11 @@ export type WbRndPreviewCallResult = {
   source: "rnd" | "fallback";
   usedFallback: boolean;
   fallbackReason: string | null;
+  safetyAuthority: {
+    final: true;
+    mode: "rnd_final" | "service_fail_closed";
+    reason: string | null;
+  };
   timeoutMs: number;
   serviceConfigured: boolean;
   upstreamStatus: number | null;
@@ -154,6 +172,218 @@ function normalizeErrorMessage(error: unknown) {
   return "unknown_error";
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function isStringArray(value: unknown) {
+  return Array.isArray(value) && value.every((item) => typeof item === "string");
+}
+
+function isRecommendationGoalArray(value: unknown) {
+  return (
+    isStringArray(value) && value.every((item) => RECOMMENDATION_GOALS.has(item))
+  );
+}
+
+function isIsoDateTime(value: unknown) {
+  return (
+    typeof value === "string" &&
+    /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/.test(
+      value
+    ) &&
+    Number.isFinite(Date.parse(value))
+  );
+}
+
+function isCitation(value: unknown) {
+  return (
+    isRecord(value) &&
+    typeof value.reference_id === "string" &&
+    (value.claim_id === null || typeof value.claim_id === "string") &&
+    typeof value.source_title === "string" &&
+    typeof value.source_type === "string" &&
+    typeof value.page_or_section === "string" &&
+    typeof value.excerpt === "string" &&
+    typeof value.reference_uri === "string"
+  );
+}
+
+function isRuleReference(value: unknown) {
+  return (
+    isRecord(value) &&
+    typeof value.rule_id === "string" &&
+    Number.isInteger(value.rule_version) &&
+    Number(value.rule_version) >= 1 &&
+    typeof value.message === "string" &&
+    (value.application_reason === null ||
+      ["dose_evidence_incomplete", "upper_limit_exceeded"].includes(
+        String(value.application_reason)
+      )) &&
+    ["info", "warning", "blocker"].includes(String(value.severity)) &&
+    typeof value.source === "string" &&
+    isStringArray(value.reference_ids) &&
+    isStringArray(value.claim_ids) &&
+    Array.isArray(value.citations) &&
+    value.citations.every(isCitation)
+  );
+}
+
+function isDoseAggregate(value: unknown) {
+  return (
+    isRecord(value) &&
+    typeof value.ingredient_key === "string" &&
+    Number.isInteger(value.product_count) &&
+    Number(value.product_count) >= 1 &&
+    isStringArray(value.product_names) &&
+    typeof value.duplicate_across_products === "boolean" &&
+    (value.total_daily_amount === null ||
+      (typeof value.total_daily_amount === "number" &&
+        Number.isFinite(value.total_daily_amount) &&
+        value.total_daily_amount >= 0)) &&
+    (value.unit === null || typeof value.unit === "string") &&
+    Number.isInteger(value.dose_input_count) &&
+    Number(value.dose_input_count) >= 0 &&
+    Number.isInteger(value.dose_observation_count) &&
+    Number(value.dose_observation_count) >= 0 &&
+    typeof value.dose_complete === "boolean"
+  );
+}
+
+function isSafetyEvidence(value: unknown) {
+  return (
+    isRecord(value) &&
+    ["rule", "excluded_ingredient", "user_preference"].includes(
+      String(value.evidence_type)
+    ) &&
+    typeof value.code === "string" &&
+    typeof value.summary === "string" &&
+    isStringArray(value.reference_ids)
+  );
+}
+
+function isMissingInformation(value: unknown) {
+  return (
+    isRecord(value) &&
+    typeof value.code === "string" &&
+    typeof value.question === "string" &&
+    typeof value.reason === "string" &&
+    ["low", "medium", "high"].includes(String(value.importance))
+  );
+}
+
+function isLimitationDetail(value: unknown) {
+  return (
+    isRecord(value) &&
+    typeof value.code === "string" &&
+    typeof value.summary === "string"
+  );
+}
+
+function isRecommendationCandidate(value: unknown) {
+  if (!isRecord(value) || !isRecord(value.score_breakdown)) return false;
+  const scoreBreakdown = value.score_breakdown;
+  const scoreFields = [
+    "goal_alignment",
+    "symptom_alignment",
+    "lifestyle_alignment",
+    "evidence_readiness",
+    "budget_adjustment",
+    "safety_adjustment",
+    "conservative_adjustment",
+    "learned_effect_bonus",
+    "total",
+  ];
+  return (
+    typeof value.ingredient_key === "string" &&
+    typeof value.display_name === "string" &&
+    typeof value.rationale === "string" &&
+    isRecommendationGoalArray(value.expected_support_goals) &&
+    isStringArray(value.rule_refs) &&
+    scoreFields.every(
+      (field) =>
+        typeof scoreBreakdown[field] === "number" &&
+        Number.isFinite(scoreBreakdown[field])
+    ) &&
+    typeof value.follow_up_focus === "string"
+  );
+}
+
+function validateWbRndRecommendResponse(value: unknown) {
+  if (!isRecord(value)) return false;
+  const status = value.status;
+  const safetySummary = value.safety_summary;
+  const recommendations = value.recommendations;
+  const metadata = value.metadata;
+  const decisionSummary = value.decision_summary;
+  const nextActionRationale = value.next_action_rationale;
+  if (
+    typeof value.execution_id !== "string" ||
+    !/^exec_[a-f0-9]{32}$/.test(value.execution_id) ||
+    typeof value.request_id !== "string" ||
+    typeof value.decision_id !== "string" ||
+    !["ok", "needs_review", "blocked"].includes(String(status)) ||
+    !Array.isArray(recommendations) ||
+    !recommendations.every(isRecommendationCandidate) ||
+    !isRecord(safetySummary) ||
+    !["ok", "needs_review", "blocked"].includes(String(safetySummary.status)) ||
+    !isStringArray(safetySummary.blocked_reasons) ||
+    !Array.isArray(safetySummary.rule_refs) ||
+    !safetySummary.rule_refs.every(isRuleReference) ||
+    !isIsoDateTime(safetySummary.applied_at) ||
+    !isStringArray(safetySummary.warnings) ||
+    !isStringArray(safetySummary.excluded_ingredients) ||
+    !isStringArray(safetySummary.duplicate_ingredient_keys) ||
+    !Array.isArray(safetySummary.ingredient_dose_aggregates) ||
+    !safetySummary.ingredient_dose_aggregates.every(isDoseAggregate) ||
+    !isRecord(decisionSummary) ||
+    typeof decisionSummary.headline !== "string" ||
+    typeof decisionSummary.summary !== "string" ||
+    !["low", "medium", "high"].includes(String(decisionSummary.confidence_band)) ||
+    !isRecommendationGoalArray(value.normalized_focus_goals) ||
+    !isStringArray(value.safety_flags) ||
+    !Array.isArray(value.safety_evidence) ||
+    !value.safety_evidence.every(isSafetyEvidence) ||
+    ![
+      "blocked",
+      "ask_targeted_followup",
+      "trigger_safety_recheck",
+      "start_plan",
+      "continue_plan",
+      "re_optimize",
+      "reduce_or_stop",
+      "monitor_only",
+      "collect_more_input",
+    ].includes(String(value.next_action)) ||
+    !isRecord(nextActionRationale) ||
+    typeof nextActionRationale.reason_code !== "string" ||
+    typeof nextActionRationale.summary !== "string" ||
+    !isStringArray(nextActionRationale.supporting_codes) ||
+    !Number.isInteger(value.follow_up_window_days) ||
+    Number(value.follow_up_window_days) < 1 ||
+    Number(value.follow_up_window_days) > 90 ||
+    !isStringArray(value.follow_up_questions) ||
+    !Array.isArray(value.missing_information) ||
+    !value.missing_information.every(isMissingInformation) ||
+    !isStringArray(value.limitations) ||
+    !Array.isArray(value.limitation_details) ||
+    !value.limitation_details.every(isLimitationDetail) ||
+    !isRecord(metadata) ||
+    typeof metadata.engine_version !== "string" ||
+    typeof metadata.mode !== "string" ||
+    !isIsoDateTime(metadata.generated_at)
+  ) {
+    return false;
+  }
+
+  const topLevelBlocked = status === "blocked";
+  const safetyBlocked = safetySummary.status === "blocked";
+  if (topLevelBlocked !== safetyBlocked) return false;
+  if (status === "ok" && safetySummary.status !== "ok") return false;
+  if (topLevelBlocked && recommendations.length > 0) return false;
+  return true;
+}
+
 export function isWbRndRecommendPreviewEnabled() {
   if (process.env.NODE_ENV === "production") return false;
   return (
@@ -183,50 +413,69 @@ function buildFallbackRecommendResponse(
 ) {
   const fallbackGoals = Array.isArray(payload.goals) ? payload.goals : [];
   return {
+    execution_id: `exec_${randomUUID().replaceAll("-", "")}`,
     request_id: payload.request_id ?? "wb-preview-fallback",
     decision_id: `wb-preview-fallback-${Date.now()}`,
-    status: "needs_review",
+    status: "blocked",
     decision_summary: {
-      headline: "R&D preview fallback",
-      summary:
-        "wellnessbox-rnd 응답을 받지 못해 preview 전용 fallback 결과를 반환했습니다.",
+      headline: "R&D 추천 차단",
+      summary: "R&D 추천 서비스의 최종 안전 판정을 확인하지 못해 추천을 차단했습니다.",
       confidence_band: "low",
     },
     normalized_focus_goals: fallbackGoals,
     safety_summary: {
-      status: "needs_review",
-      warnings: ["preview_fallback_active"],
-      blocked_reasons: [],
+      applied_at: new Date().toISOString(),
+      status: "blocked",
+      warnings: ["service_fail_closed"],
+      blocked_reasons: [`R&D final safety authority unavailable: ${reason}`],
       excluded_ingredients: [],
       rule_refs: [
         {
           rule_id: "preview_fallback",
-          message: `fallback reason: ${reason}`,
-          severity: "warning",
+          rule_version: 1,
+          application_reason: null,
+          message: `recommendation blocked because ${reason}`,
+          severity: "blocker",
           source: "wellnessbox_preview",
+          reference_ids: [],
+          claim_ids: [],
+          citations: [],
         },
       ],
+      duplicate_ingredient_keys: [],
+      ingredient_dose_aggregates: [],
     },
-    safety_flags: ["preview_fallback_active"],
+    safety_flags: ["service_fail_closed", reason],
+    safety_evidence: [],
     recommendations: [],
-    next_action: "collect_more_input",
+    next_action: "blocked",
+    next_action_rationale: {
+      reason_code: "service_fail_closed",
+      summary: "R&D 안전 엔진의 최종 판정을 확인하지 못했습니다.",
+      supporting_codes: ["SERVICE-RND-FINAL-AUTHORITY-001"],
+    },
     follow_up_window_days: 14,
     follow_up_questions: [
-      "수면 시간과 스트레스 수준을 다시 확인해 주세요.",
-      "현재 복용 중인 약물과 건강기능식품을 구체적으로 입력해 주세요.",
+      "R&D 추천 서비스 연결 상태를 확인한 뒤 다시 시도해 주세요.",
     ],
     missing_information: [
       {
         code: "preview_fallback",
-        question: "wellnessbox-rnd 연결 상태를 확인해 주세요.",
+        question: "R&D 추천 서비스 연결 상태를 확인해 주세요.",
         reason,
         importance: "high",
       },
     ],
     limitations: [
-      "이 응답은 preview 전용 fallback 입니다.",
-      "실제 추천 의사결정은 wellnessbox-rnd 응답 성공 시에만 신뢰해야 합니다.",
+      "이 응답은 서비스 연결 실패 시 적용하는 안전 차단 결과입니다.",
+      "R&D 안전 엔진의 정상 응답을 확인하기 전에는 추천을 제공하지 않습니다.",
       ...(errorMessage ? [`upstream error: ${errorMessage}`] : []),
+    ],
+    limitation_details: [
+      {
+        code: "service_fail_closed",
+        summary: "R&D 안전 엔진 연결을 확인하기 전에는 추천을 제공하지 않습니다.",
+      },
     ],
     metadata: {
       engine_version: "wellnessbox-preview-fallback",
@@ -275,6 +524,11 @@ export async function callWbRndRecommendPreview(
       source: "fallback",
       usedFallback: true,
       fallbackReason: "service_base_url_missing",
+      safetyAuthority: {
+        final: true,
+        mode: "service_fail_closed",
+        reason: "service_base_url_missing",
+      },
       timeoutMs,
       serviceConfigured,
       upstreamStatus: null,
@@ -315,6 +569,11 @@ export async function callWbRndRecommendPreview(
         source: "fallback",
         usedFallback: true,
         fallbackReason: "decode_error",
+        safetyAuthority: {
+          final: true,
+          mode: "service_fail_closed",
+          reason: "decode_error",
+        },
         timeoutMs,
         serviceConfigured,
         upstreamStatus: response.status,
@@ -330,6 +589,11 @@ export async function callWbRndRecommendPreview(
         source: "fallback",
         usedFallback: true,
         fallbackReason: `upstream_${response.status}`,
+        safetyAuthority: {
+          final: true,
+          mode: "service_fail_closed",
+          reason: `upstream_${response.status}`,
+        },
         timeoutMs,
         serviceConfigured,
         upstreamStatus: response.status,
@@ -341,12 +605,40 @@ export async function callWbRndRecommendPreview(
       };
     }
 
+    if (!validateWbRndRecommendResponse(parsed)) {
+      return {
+        ok: true,
+        enabled: true,
+        source: "fallback",
+        usedFallback: true,
+        fallbackReason: "invalid_upstream_contract",
+        safetyAuthority: {
+          final: true,
+          mode: "service_fail_closed",
+          reason: "invalid_upstream_contract",
+        },
+        timeoutMs,
+        serviceConfigured,
+        upstreamStatus: response.status,
+        requestedAt,
+        response: buildFallbackRecommendResponse(
+          payload,
+          "invalid_upstream_contract"
+        ),
+      };
+    }
+
     return {
       ok: true,
       enabled: true,
       source: "rnd",
       usedFallback: false,
       fallbackReason: null,
+      safetyAuthority: {
+        final: true,
+        mode: "rnd_final",
+        reason: null,
+      },
       timeoutMs,
       serviceConfigured,
       upstreamStatus: response.status,
@@ -364,6 +656,11 @@ export async function callWbRndRecommendPreview(
       source: "fallback",
       usedFallback: true,
       fallbackReason,
+      safetyAuthority: {
+        final: true,
+        mode: "service_fail_closed",
+        reason: fallbackReason,
+      },
       timeoutMs,
       serviceConfigured,
       upstreamStatus: null,

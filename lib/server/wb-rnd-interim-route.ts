@@ -9,6 +9,10 @@ import {
   requirePharmSession,
   requireUserSession,
 } from "@/lib/server/route-auth";
+import {
+  buildWbRndInterimFailClosedResponse,
+  enforceWbRndInterimSafetyAuthority,
+} from "@/lib/server/wb-rnd-interim-safety-authority";
 
 type JsonRecord = Record<string, unknown>;
 
@@ -39,6 +43,20 @@ async function proxyError(error: unknown) {
   return noStore({ error: timeout ? "R&D timeout" : code }, timeout ? 504 : 502);
 }
 
+async function recommendationProxyError(error: unknown) {
+  const code = error instanceof Error ? error.message : "unknown_error";
+  const timeout = error instanceof Error && error.name === "AbortError";
+  return noStore(
+    buildWbRndInterimFailClosedResponse(timeout ? "R&D timeout" : code),
+    timeout ? 504 : 502
+  );
+}
+
+export type WbRndRecommendationRouteDependencies = {
+  requireUserSessionImpl: typeof requireUserSession;
+  callWbRndInterimImpl: typeof callWbRndInterim;
+};
+
 export async function runUserInterimStatusRoute() {
   if (!isWbRndInterimEnabled()) return disabled();
   const auth = await requireUserSession();
@@ -67,20 +85,29 @@ export async function runUserInterimProfileRoute(req: Request) {
   }
 }
 
-export async function runUserInterimRecommendationRoute(req: Request) {
+export async function runUserInterimRecommendationRoute(
+  req: Request,
+  dependencies: Partial<WbRndRecommendationRouteDependencies> = {}
+) {
   if (!isWbRndInterimEnabled()) return disabled();
-  const auth = await requireUserSession();
+  const authenticate = dependencies.requireUserSessionImpl ?? requireUserSession;
+  const callInterim = dependencies.callWbRndInterimImpl ?? callWbRndInterim;
+  const auth = await authenticate();
   if (!auth.ok) return auth.response;
   try {
     const body = await readJson(req);
-    return noStore(
-      await callWbRndInterim("/v1/interim/recommendations", "POST", {
+    const upstream = await callInterim<unknown>(
+      "/v1/interim/recommendations",
+      "POST",
+      {
         ...body,
         profile_id: pseudonymizeInterimUserId(auth.data.appUserId),
-      })
+      }
     );
+    const enforced = enforceWbRndInterimSafetyAuthority(upstream);
+    return noStore(enforced.response, enforced.ok ? 200 : 502);
   } catch (error) {
-    return proxyError(error);
+    return recommendationProxyError(error);
   }
 }
 
