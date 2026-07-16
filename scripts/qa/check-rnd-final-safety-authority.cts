@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
-import { writeFileSync } from "node:fs";
+import { readFileSync, writeFileSync } from "node:fs";
+import { resolve } from "node:path";
 
 import {
   pseudonymizeInterimUserId,
@@ -12,6 +13,17 @@ import {
   POST as postTipsRecommendation,
 } from "../../app/api/tips/route";
 import { setTipsPostTestDependencies } from "../../lib/server/wb-rnd-tips-route-test-hook";
+
+process.env.NODE_ENV = "test";
+
+const productCatalogSnapshot = JSON.parse(
+  readFileSync(
+    resolve("contracts/wb-rnd/product-candidate-catalog-snapshot-v1.json"),
+    "utf8"
+  )
+) as {
+  products: Array<{ id: number; name: string; categories: string[] }>;
+};
 
 async function run() {
   const serviceBaseUrl = (process.env.WB_RND_INTERIM_BASE_URL ?? "").trim();
@@ -61,6 +73,7 @@ async function run() {
     safety_action?: string;
     findings?: Array<{ rule_id?: string; action?: string }>;
     recommendations?: unknown[];
+    product_candidate_resolution?: unknown;
     safety_authority?: { final?: boolean; mode?: string; reason?: string | null };
   };
 
@@ -75,6 +88,7 @@ async function run() {
     )
   );
   assert.deepEqual(response.recommendations, []);
+  assert.equal(response.product_candidate_resolution, undefined);
   assert.equal(response.safety_authority?.final, true);
   assert.equal(response.safety_authority?.mode, "rnd_final");
 
@@ -97,6 +111,7 @@ async function run() {
     uncertainty: "mapping fixture",
   };
   const readyUpstream = (async () => readyFixture) as typeof callWbRndInterim;
+  const listProductCatalogImpl = async () => productCatalogSnapshot.products;
   const readyRequest = new Request("http://wellnessbox.local/api/tips", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -105,6 +120,7 @@ async function run() {
   setTipsPostTestDependencies(readyRequest, {
     requireUserSessionImpl,
     callWbRndInterimImpl: readyUpstream,
+    listProductCatalogImpl,
   });
   const readyRouteResponse = await postTipsRecommendation(readyRequest);
   const ready = (await readyRouteResponse.json()) as {
@@ -112,13 +128,35 @@ async function run() {
     recommendations?: Array<{
       ingredient?: string;
       service_ingredient_id?: string;
+      product_candidate_status?: string;
+      product_candidates?: Array<{
+        product_id?: number;
+        product_name?: string;
+      }>;
     }>;
     ingredient_identifier_mapping?: { mapping_version?: string };
+    product_candidate_resolution?: {
+      mapping_version?: string;
+      complete?: boolean;
+    };
   };
   assert.equal(readyRouteResponse.status, 200);
   assert.equal(ready.status, "READY");
   assert.equal(ready.recommendations?.[0]?.ingredient, "magnesium_glycinate");
-  assert.equal(ready.recommendations?.[0]?.service_ingredient_id, "ING:MAGNESIUM");
+  assert.equal(
+    ready.recommendations?.[0]?.service_ingredient_id,
+    "ING:MAGNESIUM"
+  );
+  assert.equal(ready.recommendations?.[0]?.product_candidate_status, "MATCHED");
+  assert.equal(
+    ready.recommendations?.[0]?.product_candidates?.[0]?.product_id,
+    29
+  );
+  assert.equal(
+    ready.recommendations?.[0]?.product_candidates?.[0]?.product_name,
+    "종근당 칼슘 앤 마그네슘 비타민D 아연"
+  );
+  assert.equal(ready.product_candidate_resolution?.complete, true);
   assert.equal(
     ready.ingredient_identifier_mapping?.mapping_version,
     "2026-07-16.1"
@@ -216,6 +254,7 @@ async function run() {
       "top_level_blocked",
       "zero_recommendations",
       "mapped_ready_identifier_enriched",
+      "mapped_ready_service_product_candidate_resolved",
       "unmapped_ready_identifier_fail_closed",
       "invalid_upstream_contract_fail_closed",
     ],
@@ -231,6 +270,10 @@ async function run() {
       mapping_version: ready.ingredient_identifier_mapping?.mapping_version,
       mapped_service_ingredient_id:
         ready.recommendations?.[0]?.service_ingredient_id,
+      mapped_service_product_id:
+        ready.recommendations?.[0]?.product_candidates?.[0]?.product_id,
+      product_candidate_mapping_version:
+        ready.product_candidate_resolution?.mapping_version,
       unmapped_identifier_http_status: unmappedRouteResponse.status,
       invalid_contract_http_status: failClosedRouteResponse.status,
       invalid_contract_authority_mode: failClosed.safety_authority?.mode,

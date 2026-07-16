@@ -43,3 +43,6 @@ jobs:
 
       - name: Verify R&D ingredient identifier map
         run: npm run qa:rnd:ingredient-map
+
+      - name: Verify R&D service product candidates
+        run: npm run qa:rnd:product-candidates

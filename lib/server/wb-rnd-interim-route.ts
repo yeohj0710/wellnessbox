@@ -13,6 +13,10 @@ import {
   buildWbRndInterimFailClosedResponse,
   enforceWbRndInterimSafetyAuthority,
 } from "@/lib/server/wb-rnd-interim-safety-authority";
+import {
+  attachWbRndProductCandidates,
+  listWbRndProductCatalog,
+} from "@/lib/server/wb-rnd-product-candidates";
 
 type JsonRecord = Record<string, unknown>;
 
@@ -55,6 +59,7 @@ async function recommendationProxyError(error: unknown) {
 export type WbRndRecommendationRouteDependencies = {
   requireUserSessionImpl: typeof requireUserSession;
   callWbRndInterimImpl: typeof callWbRndInterim;
+  listProductCatalogImpl: typeof listWbRndProductCatalog;
 };
 
 export async function runUserInterimStatusRoute() {
@@ -92,6 +97,8 @@ export async function runUserInterimRecommendationRoute(
   if (!isWbRndInterimEnabled()) return disabled();
   const authenticate = dependencies.requireUserSessionImpl ?? requireUserSession;
   const callInterim = dependencies.callWbRndInterimImpl ?? callWbRndInterim;
+  const listProductCatalog =
+    dependencies.listProductCatalogImpl ?? listWbRndProductCatalog;
   const auth = await authenticate();
   if (!auth.ok) return auth.response;
   try {
@@ -105,7 +112,17 @@ export async function runUserInterimRecommendationRoute(
       }
     );
     const enforced = enforceWbRndInterimSafetyAuthority(upstream);
-    return noStore(enforced.response, enforced.ok ? 200 : 502);
+    if (!enforced.ok) return noStore(enforced.response, 502);
+    const recommendationCount = Array.isArray(enforced.response.recommendations)
+      ? enforced.response.recommendations.length
+      : 0;
+    if (recommendationCount === 0) return noStore(enforced.response, 200);
+    const productCatalog = await listProductCatalog();
+    const withProductCandidates = attachWbRndProductCandidates(
+      enforced.response,
+      productCatalog
+    );
+    return noStore(withProductCandidates, 200);
   } catch (error) {
     return recommendationProxyError(error);
   }

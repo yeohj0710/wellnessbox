@@ -34,6 +34,18 @@ export async function getProductsIdName() {
   });
 }
 
+export async function getProductCandidateCatalog() {
+  return db.product.findMany({
+    where: IN_STOCK_PRODUCT_WHERE,
+    select: {
+      id: true,
+      name: true,
+      categories: { select: { name: true } },
+    },
+    orderBy: DEFAULT_PRODUCT_ORDER,
+  });
+}
+
 export async function getProductSummaries(limit = 30) {
   const products = await db.product.findMany({
     where: IN_STOCK_PRODUCT_WHERE,

@@ -1,0 +1,43 @@
+{
+  "schema_version": "wb_rnd_product_catalog_snapshot_v1",
+  "captured_on": "2026-07-17",
+  "source": "wellnessbox configured Prisma Product catalog with in-stock PharmacyProduct",
+  "production_operation_proven": false,
+  "products": [
+    {
+      "id": 29,
+      "name": "종근당 칼슘 앤 마그네슘 비타민D 아연",
+      "categories": ["칼슘", "비타민D", "마그네슘", "아연"]
+    },
+    {
+      "id": 30,
+      "name": "고려은단 비타민C 1000",
+      "categories": ["비타민C"]
+    },
+    {
+      "id": 31,
+      "name": "프로메가 오메가3 트리플 장용성",
+      "categories": ["오메가3"]
+    },
+    {
+      "id": 33,
+      "name": "종근당건강 비타민D 2000IU",
+      "categories": ["비타민D"]
+    },
+    {
+      "id": 35,
+      "name": "크리스찬한센 덴마크 유산균 이야기",
+      "categories": ["프로바이오틱스(유산균)"]
+    },
+    {
+      "id": 42,
+      "name": "나우푸드 아연",
+      "categories": ["아연"]
+    },
+    {
+      "id": 44,
+      "name": "GNM자연의품격 코큐텐11 코엔자임Q10 11",
+      "categories": ["코엔자임Q10"]
+    }
+  ]
+}

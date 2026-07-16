@@ -1,0 +1,40 @@
+{
+  "schema_version": "wb_rnd_product_candidate_match_v1",
+  "mapping_version": "2026-07-16.1",
+  "product_catalog_source": "wellnessbox Prisma Product + in-stock PharmacyProduct",
+  "max_candidates_per_ingredient": 5,
+  "mappings": [
+    {
+      "service_ingredient_id": "ING:CALCIUM",
+      "match_terms": ["calcium", "칼슘"]
+    },
+    {
+      "service_ingredient_id": "ING:COQ10",
+      "match_terms": ["coq10", "coenzyme q10", "코엔자임 q10", "코큐텐"]
+    },
+    {
+      "service_ingredient_id": "ING:MAGNESIUM",
+      "match_terms": ["magnesium", "마그네슘"]
+    },
+    {
+      "service_ingredient_id": "ING:OMEGA3",
+      "match_terms": ["omega3", "오메가3"]
+    },
+    {
+      "service_ingredient_id": "ING:PROBIOTIC",
+      "match_terms": ["probiotic", "probiotics", "프로바이오틱스", "유산균"]
+    },
+    {
+      "service_ingredient_id": "ING:VITAMIN_C",
+      "match_terms": ["vitamin c", "비타민 c"]
+    },
+    {
+      "service_ingredient_id": "ING:VITAMIN_D",
+      "match_terms": ["vitamin d", "vitamin d3", "비타민 d"]
+    },
+    {
+      "service_ingredient_id": "ING:ZINC",
+      "match_terms": ["zinc", "아연"]
+    }
+  ]
+}
