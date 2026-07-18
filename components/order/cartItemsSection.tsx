@@ -32,6 +32,7 @@ type CartItemsSectionProps = {
   onOpenAddressModal?: () => void;
   userSummary?: UserContextSummary | null;
   stockRecovery?: CartStockRecovery | null;
+  onGoShopping?: () => void;
 };
 
 export default function CartItemsSection({
@@ -47,6 +48,7 @@ export default function CartItemsSection({
   onRetryResolve,
   isAddressMissing = false,
   onOpenAddressModal,
+  onGoShopping,
 }: CartItemsSectionProps) {
   const {
     products,
@@ -113,6 +115,7 @@ export default function CartItemsSection({
           selectedPharmacyName={selectedPharmacy?.name}
           onUpdateCart={onUpdateCart}
           onProductClick={onProductClick}
+          onGoShopping={onGoShopping}
         />
 
         {/* Beta cart guide block hidden for now per current checkout UI cleanup request. */}

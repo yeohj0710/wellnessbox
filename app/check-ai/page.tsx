@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { XMarkIcon } from "@heroicons/react/24/outline";
 import ModalLayer from "@/components/common/modalLayer";
 import { useLoading } from "@/components/common/loadingContext.client";
 import { CheckAiAnimationStyles } from "@/components/check-ai/CheckAiAnimationStyles";
@@ -197,11 +198,12 @@ export default function CheckAI() {
                   추천 결과
                 </h2>
                 <button
+                  type="button"
                   onClick={() => setModalOpen(false)}
-                  className="grid h-9 w-9 place-items-center rounded-full bg-gray-100 text-lg text-gray-500 hover:bg-gray-200 focus:outline-none"
+                  className="grid h-9 w-9 place-items-center rounded-full bg-gray-100 text-gray-500 hover:bg-gray-200 focus:outline-none"
                   aria-label="닫기"
                 >
-                  ×
+                  <XMarkIcon className="h-5 w-5" />
                 </button>
               </div>
 

@@ -105,20 +105,24 @@ export default function ChatInput(props: ChatInputProps) {
 
             {loading ? (
               <button
+                type="button"
                 className={`grid h-8 w-8 place-items-center rounded-full bg-black text-white hover:opacity-90 ${align}`}
                 onClick={() => onStop?.()}
                 title="정지"
+                aria-label="정지"
               >
                 <StopIcon className="h-4 w-4" />
               </button>
             ) : (
               <button
+                type="button"
                 className={`grid h-8 w-8 place-items-center rounded-full text-white ${
                   canSend ? "bg-black hover:opacity-90" : "cursor-not-allowed bg-slate-400"
                 } ${align}`}
                 onClick={doSend}
                 disabled={!canSend}
                 title="전송"
+                aria-label="전송"
               >
                 <ArrowUpIcon className="h-4 w-4" />
               </button>

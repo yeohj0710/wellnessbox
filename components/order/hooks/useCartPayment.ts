@@ -1,4 +1,5 @@
 import { useCallback } from "react";
+import { useToast } from "@/components/common/toastContext.client";
 import type { LoginStatus } from "@/lib/useLoginStatus";
 import type { CartLineItem } from "../cart.types";
 
@@ -26,10 +27,15 @@ type UseCartPaymentParams = {
 };
 
 export function useCartPayment(params: UseCartPaymentParams) {
+  const { showToast } = useToast();
+
   const handleKGInicisPayment = useCallback(() => {
     const IMP = (window as any).IMP;
     if (!IMP) {
-      alert("결제 모듈을 불러오지 못했어요.");
+      showToast("결제 모듈을 불러오지 못했어요.", {
+        type: "error",
+        toastKey: "cart-payment",
+      });
       return;
     }
 
@@ -72,7 +78,7 @@ export function useCartPayment(params: UseCartPaymentParams) {
         }
       }
     );
-  }, [params]);
+  }, [params, showToast]);
 
   const handleKpnAndKakaoPayment = useCallback(
     async (payMethod: string, channelKey: string) => {
@@ -110,55 +116,66 @@ export function useCartPayment(params: UseCartPaymentParams) {
         }
       } catch (error) {
         console.error("결제 요청 중 오류 발생:", error);
-        alert(`결제 요청 중 오류가 발생했어요: ${JSON.stringify(error)}`);
+        const detail =
+          error instanceof Error && error.message ? ` (${error.message})` : "";
+        showToast(
+          `결제 요청 중 오류가 발생했어요. 잠시 후 다시 시도해 주세요.${detail}`,
+          { type: "error", toastKey: "cart-payment" }
+        );
       }
     },
-    [params]
+    [params, showToast]
   );
 
   const handleRequestPayment = useCallback(() => {
+    const notify = (message: string) =>
+      showToast(message, { type: "info", toastKey: "cart-payment" });
+
     if (
       params.selectedPaymentMethod === "inicis" &&
       (!params.sdkLoaded || !(window as any).IMP)
     ) {
-      alert("결제 모듈을 불러오지 못했어요. 페이지를 새로고침한 뒤 다시 시도해 주세요.");
+      showToast(
+        "결제 모듈을 불러오지 못했어요. 페이지를 새로고침한 뒤 다시 시도해 주세요.",
+        { type: "error", toastKey: "cart-payment" }
+      );
       return;
     }
 
     if (params.phoneStatusLoading) {
-      alert("휴대폰 정보를 확인하고 있어요. 잠시 후 다시 시도해 주세요.");
+      notify("휴대폰 정보를 확인하고 있어요. 잠시 후 다시 시도해 주세요.");
       return;
     }
 
     if (!params.phone) {
-      alert("전화번호 인증을 먼저 진행해 주세요.");
+      notify("전화번호 인증을 먼저 진행해 주세요.");
       params.onOpenPhoneModal();
       return;
     }
 
     if (!params.hasVerifiedPhone) {
-      alert("전화번호 인증을 완료해 주세요.");
+      notify("전화번호 인증을 완료해 주세요.");
       params.onOpenPhoneModal();
       return;
     }
 
     if (!params.password) {
-      alert("주문 조회 비밀번호를 입력해 주세요.");
+      notify("주문 조회 비밀번호를 입력해 주세요.");
       return;
     }
 
     if (params.password.length < 4) {
-      alert("비밀번호는 최소 4자리 이상으로 입력해 주세요.");
+      notify("비밀번호는 최소 4자리 이상으로 입력해 주세요.");
       return;
     }
 
     if (!params.selectedPaymentMethod) {
-      alert("결제 수단을 선택해 주세요.");
+      notify("결제 수단을 선택해 주세요.");
       return;
     }
 
     params.onOpenConfirmModal();
-  }, [params]);
+  }, [params, showToast]);
 
   const handlePayment = useCallback(async () => {
     localStorage.setItem("cartBackup", JSON.stringify(params.cartItems));

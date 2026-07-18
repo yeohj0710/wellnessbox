@@ -77,7 +77,11 @@ export function HomeProductsStatusState({
             백그라운드에서 자동으로 다시 연결을 시도하고 있어요.
           </p>
         ) : null}
-        <button className="text-sm text-sky-500" onClick={onRetry}>
+        <button
+          type="button"
+          className="rounded-full bg-sky-500 px-4 py-2 text-sm font-medium text-white transition hover:bg-sky-600"
+          onClick={onRetry}
+        >
           다시 시도
         </button>
       </div>
@@ -90,7 +94,11 @@ export function HomeProductsStatusState({
         <p className="text-sm text-gray-500">
           상품 로딩이 지연되고 있어요.
         </p>
-        <button className="text-sm text-sky-500" onClick={onRetry}>
+        <button
+          type="button"
+          className="rounded-full bg-sky-500 px-4 py-2 text-sm font-medium text-white transition hover:bg-sky-600"
+          onClick={onRetry}
+        >
           지금 다시 시도
         </button>
       </div>

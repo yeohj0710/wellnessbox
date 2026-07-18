@@ -234,7 +234,7 @@ export default function ProductDetail({
                 ) : null}
               </div>
             ) : (
-              <div className="flex h-64 items-center justify-center bg-slate-100 text-slate-500">
+              <div className="flex h-[18rem] items-center justify-center bg-slate-100 text-slate-500 sm:h-[24rem]">
                 이미지 없음
               </div>
             )}
@@ -255,6 +255,11 @@ export default function ProductDetail({
                         <div className="mb-2 text-[12px] font-semibold tracking-[0.08em] text-slate-500">
                           옵션 선택
                         </div>
+                        {sortedOptionTypes.length === 0 && (
+                          <p className="text-[13px] leading-5 text-slate-500">
+                            현재 선택하신 약국에서는 이 상품의 옵션을 준비 중이에요.
+                          </p>
+                        )}
                         <div className="flex flex-wrap gap-2">
                           {sortedOptionTypes.map((option) => {
                             const capacity = getCapacityByOptionType(
@@ -359,7 +364,8 @@ export default function ProductDetail({
                 });
                 onClose();
               }}
-              className="w-full rounded-full bg-sky-500 px-8 py-3 text-[16px] font-semibold text-white shadow-sm transition hover:bg-sky-600 sm:w-auto"
+              disabled={!selectedOption}
+              className="w-full rounded-full bg-sky-500 px-8 py-3 text-[16px] font-semibold text-white shadow-sm transition hover:bg-sky-600 disabled:cursor-not-allowed disabled:bg-slate-300 sm:w-auto"
             >
               담기
             </button>

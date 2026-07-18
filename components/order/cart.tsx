@@ -222,6 +222,7 @@ export default function Cart({
         onOpenAddressModal={openAddressModal}
         userSummary={offerSummary}
         stockRecovery={stockRecovery}
+        onGoShopping={onBack}
       />
 
       <AddressSection

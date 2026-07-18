@@ -10,5 +10,8 @@ export const CART_ITEMS_SECTION_COPY = {
   noImageLabel: "\uC774\uBBF8\uC9C0 \uC5C6\uC74C",
   noCategoryLabel: "\uCE74\uD14C\uACE0\uB9AC \uC5C6\uC74C",
   emptyMessage: "\uC7A5\uBC14\uAD6C\uB2C8\uAC00 \uBE44\uC5B4 \uC788\uC5B4\uC694.",
+  emptySubtext:
+    "\uB9C8\uC74C\uC5D0 \uB4DC\uB294 \uC601\uC591\uC81C\uB97C \uB2F4\uC544\uBCF4\uC138\uC694.",
+  goShoppingLabel: "\uC0C1\uD488 \uBCF4\uB7EC \uAC00\uAE30",
   currencyUnit: "\uC6D0",
 } as const;

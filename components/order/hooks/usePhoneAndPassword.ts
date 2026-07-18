@@ -134,7 +134,8 @@ export function usePhoneAndPassword() {
 
   const handleSendOtp = useCallback(async () => {
     if (!isValidPhone) {
-      alert("전화번호를 올바른 형식으로 입력해 주세요.");
+      setOtpStatusMessage(null);
+      setOtpErrorMessage("전화번호를 올바른 형식으로 입력해 주세요.");
       return;
     }
 
@@ -167,12 +168,14 @@ export function usePhoneAndPassword() {
 
   const handleVerifyOtp = useCallback(async () => {
     if (!normalizedContact || !isValidPhone) {
-      alert("전화번호를 올바르게 입력하고 인증을 진행해 주세요.");
+      setOtpStatusMessage(null);
+      setOtpErrorMessage("전화번호를 올바르게 입력하고 인증을 진행해 주세요.");
       return;
     }
 
     if (!otpCode) {
-      alert("수신한 인증번호를 입력해 주세요.");
+      setOtpStatusMessage(null);
+      setOtpErrorMessage("수신한 인증번호를 입력해 주세요.");
       return;
     }
 

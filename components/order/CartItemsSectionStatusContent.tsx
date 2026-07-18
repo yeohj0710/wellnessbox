@@ -20,6 +20,7 @@ type CartItemsSectionStatusContentProps = {
   selectedPharmacyName?: string | null;
   onUpdateCart: (items: CartLineItem[]) => void;
   onProductClick: (product: CartProduct, optionType: string) => void;
+  onGoShopping?: () => void;
 };
 
 export default function CartItemsSectionStatusContent({
@@ -37,6 +38,7 @@ export default function CartItemsSectionStatusContent({
   selectedPharmacyName,
   onUpdateCart,
   onProductClick,
+  onGoShopping,
 }: CartItemsSectionStatusContentProps) {
   if (resolving) {
     return (
@@ -141,10 +143,22 @@ export default function CartItemsSectionStatusContent({
   }
 
   return (
-    <div className="flex justify-center items-center h-28">
-      <p className="text-gray-500 font-medium">
+    <div className="flex flex-col items-center justify-center gap-1.5 py-10 text-center">
+      <p className="text-gray-700 font-semibold">
         {CART_ITEMS_SECTION_COPY.emptyMessage}
       </p>
+      <p className="text-sm text-gray-500">
+        {CART_ITEMS_SECTION_COPY.emptySubtext}
+      </p>
+      {onGoShopping && (
+        <button
+          type="button"
+          onClick={onGoShopping}
+          className="mt-2 rounded-full bg-sky-500 px-4 py-2 text-sm font-medium text-white transition hover:bg-sky-600"
+        >
+          {CART_ITEMS_SECTION_COPY.goShoppingLabel}
+        </button>
+      )}
     </div>
   );
 }

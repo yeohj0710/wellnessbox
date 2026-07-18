@@ -13,6 +13,8 @@ interface ProductGridProps {
   selectedPharmacy: HomePharmacy | null;
   setSelectedProduct: (product: HomeProduct) => void;
   isUpdating?: boolean;
+  showEmptyState?: boolean;
+  onResetFilters?: () => void;
 }
 
 export default function ProductGrid({
@@ -22,6 +24,8 @@ export default function ProductGrid({
   selectedPharmacy,
   setSelectedProduct,
   isUpdating = false,
+  showEmptyState = false,
+  onResetFilters,
 }: ProductGridProps) {
   const showSkeleton = isLoading && products.length === 0;
 
@@ -113,6 +117,25 @@ export default function ProductGrid({
               </button>
             );
           })}
+      {showEmptyState && !showSkeleton && products.length === 0 && (
+        <div className="col-span-full flex min-h-[30vh] flex-col items-center justify-center gap-1.5 py-10 text-center">
+          <p className="text-[15px] font-semibold text-gray-800">
+            조건에 맞는 상품을 찾지 못했어요.
+          </p>
+          <p className="text-sm text-gray-500">
+            필터를 조정하거나 초기화하면 다른 상품을 볼 수 있어요.
+          </p>
+          {onResetFilters && (
+            <button
+              type="button"
+              onClick={onResetFilters}
+              className="mt-2 rounded-full bg-sky-500 px-4 py-2 text-sm font-medium text-white transition hover:bg-sky-600"
+            >
+              필터 초기화
+            </button>
+          )}
+        </div>
+      )}
       {isUpdating && !showSkeleton && (
         <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/55 backdrop-blur-[1px]">
           <div className="h-8 w-8 rounded-full border-4 border-sky-500 border-t-transparent animate-spin" />

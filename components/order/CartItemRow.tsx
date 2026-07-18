@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { TrashIcon } from "@heroicons/react/16/solid";
+import { useToast } from "@/components/common/toastContext.client";
 import {
   buildDecrementedCartItems,
   buildIncrementedCartItems,
@@ -31,6 +32,7 @@ export default function CartItemRow({
   onProductClick,
 }: CartItemRowProps) {
   const { item, product, pharmacyProduct } = row;
+  const { showToast } = useToast();
 
   return (
     <div className="flex items-center gap-4 border-b pb-4">
@@ -70,17 +72,21 @@ export default function CartItemRow({
       </div>
       <div className="flex items-center gap-2">
         <button
+          type="button"
+          aria-label="수량 줄이기"
           onClick={(event) => {
             event.stopPropagation();
             const updated = buildDecrementedCartItems(cartItems, item);
             updateCartAndPersist(updated, onUpdateCart);
           }}
-          className="leading-none w-8 h-8 bg-gray-100 hover:bg-gray-200 rounded-full flex items-center justify-center text-lg"
+          className="leading-none w-9 h-9 bg-gray-100 hover:bg-gray-200 rounded-full flex items-center justify-center text-lg"
         >
           -
         </button>
         <span className="font-bold">{item.quantity}</span>
         <button
+          type="button"
+          aria-label="수량 늘리기"
           onClick={(event) => {
             event.stopPropagation();
             if (item.quantity < pharmacyProduct.stock) {
@@ -88,25 +94,28 @@ export default function CartItemRow({
               updateCartAndPersist(updated, onUpdateCart);
               return;
             }
-            alert(
+            showToast(
               buildStockLimitAlertMessage({
                 pharmacyName: selectedPharmacyName,
                 productName: product.name,
                 optionType: pharmacyProduct.optionType,
-              })
+              }),
+              { type: "info", toastKey: "cart-stock-limit" }
             );
           }}
-          className="leading-none w-8 h-8 bg-gray-100 hover:bg-gray-200 rounded-full flex items-center justify-center text-lg"
+          className="leading-none w-9 h-9 bg-gray-100 hover:bg-gray-200 rounded-full flex items-center justify-center text-lg"
         >
           +
         </button>
         <button
+          type="button"
+          aria-label="상품 삭제"
           onClick={(event) => {
             event.stopPropagation();
             const updated = buildRemovedCartItems(cartItems, item);
             updateCartAndPersist(updated, onUpdateCart);
           }}
-          className="leading-none w-8 h-8 bg-red-100 hover:bg-red-200 rounded-full flex items-center justify-center"
+          className="leading-none w-9 h-9 bg-red-100 hover:bg-red-200 rounded-full flex items-center justify-center"
         >
           <TrashIcon className="w-5 h-5 text-red-500" />
         </button>

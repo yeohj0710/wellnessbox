@@ -182,6 +182,12 @@ export function HomeProductSectionContent({
         selectedPackage={deferredSelectedPackage}
         selectedPharmacy={selectedPharmacy}
         setSelectedProduct={onOpenProductDetail}
+        showEmptyState={!isLoading && allProducts.length > 0}
+        onResetFilters={() => {
+          setSelectedSymptoms([]);
+          onResetCategories();
+          onSelectPackage(HOME_PACKAGE_LABELS.all);
+        }}
       />
 
       <HomeProductsStatusState
