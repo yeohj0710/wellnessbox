@@ -71,12 +71,12 @@ export function TopBarHeader({
         ref={rowRef}
         className="mx-auto flex h-14 items-center justify-between px-4 sm:px-6 lg:px-8 max-w-[120rem]"
       >
-        <div className="flex items-center gap-6">
+        <div className="flex min-w-0 items-center gap-4 sm:gap-6">
           <button
             ref={leftBrandRef}
             onClick={onGoHome}
             className={menuItemClasses(
-              "group shrink-0 whitespace-nowrap text-[17px] font-extrabold tracking-tight flex items-center gap-2"
+              "group min-w-0 shrink-0 whitespace-nowrap text-[17px] font-extrabold tracking-tight flex items-center gap-2"
             )}
             aria-label={TOPBAR_COPY.brandAriaLabel}
           >
@@ -90,7 +90,7 @@ export function TopBarHeader({
                 className="object-contain group-hover:animate-bounce-custom"
               />
             </div>
-            <span>{TOPBAR_COPY.brandText}</span>
+            <span className="max-[340px]:hidden">{TOPBAR_COPY.brandText}</span>
           </button>
 
           <nav
@@ -111,7 +111,10 @@ export function TopBarHeader({
           </nav>
         </div>
 
-        <div ref={rightActionsRef} className="flex items-center gap-3 md:gap-5">
+        <div
+          ref={rightActionsRef}
+          className="flex shrink-0 items-center gap-2 sm:gap-3 md:gap-5"
+        >
           {loginStatus?.isTestLoggedIn === true && (
             <span className="hidden sm:inline-flex rounded-full bg-orange-400 px-3 py-1 text-xs font-bold text-white cursor-default">
               {TOPBAR_COPY.testBadge}
@@ -159,14 +162,14 @@ export function TopBarHeader({
           <button
             {...sevenDayIntentHandlers}
             onClick={onGoSevenDays}
-            className="group relative inline-flex shrink-0 whitespace-nowrap items-center justify-center rounded-full px-5 py-2 text-sm font-semibold text-white bg-gradient-to-r from-[#59C1FF] to-[#7B61FF] shadow-[0_10px_30px_rgba(86,115,255,0.35)] transition-all duration-300 ease-out will-change-transform hover:scale-[1.03] hover:shadow-[0_14px_36px_rgba(86,115,255,0.5)] hover:saturate-150 hover:brightness-110 hover:from-[#6BD1FF] hover:to-[#6E58FF] active:translate-y-[1px] focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[#6E58FF] after:content-[''] after:absolute after:inset-0 after:rounded-full after:bg-white/20 after:opacity-0 hover:after:opacity-10"
+            className="group relative inline-flex shrink-0 whitespace-nowrap items-center justify-center rounded-full px-4 py-2 text-[13px] font-semibold text-white bg-gradient-to-r from-[#59C1FF] to-[#7B61FF] shadow-[0_10px_30px_rgba(86,115,255,0.35)] transition-all duration-300 ease-out will-change-transform hover:scale-[1.03] hover:shadow-[0_14px_36px_rgba(86,115,255,0.5)] hover:saturate-150 hover:brightness-110 hover:from-[#6BD1FF] hover:to-[#6E58FF] active:translate-y-[1px] focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[#6E58FF] after:content-[''] after:absolute after:inset-0 after:rounded-full after:bg-white/20 after:opacity-0 hover:after:opacity-10 sm:px-5 sm:text-sm"
           >
             {TOPBAR_COPY.startText}
           </button>
 
           <button
             className={menuItemClasses(
-              `text-2xl ml-1 ${isDrawerMode ? "inline-flex" : "hidden"}`
+              `text-2xl ${isDrawerMode ? "inline-flex" : "hidden"}`
             )}
             onClick={onToggleDrawer}
             aria-label={TOPBAR_COPY.drawerButtonAriaLabel}

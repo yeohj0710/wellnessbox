@@ -126,7 +126,7 @@ export default function AddressModal({
   return (
     <ModalLayer>
       <div
-        className="fixed inset-0 z-[120] flex items-end justify-center bg-slate-900/45 p-3 backdrop-blur-[1.5px] sm:items-center sm:p-5"
+        className="fixed inset-0 z-[120] flex items-center justify-center overscroll-contain bg-slate-900/45 p-3 backdrop-blur-[1.5px] sm:p-5"
         onClick={onClose}
       >
       <section
@@ -136,7 +136,7 @@ export default function AddressModal({
         role="dialog"
         aria-modal="true"
         aria-label="배송지 주소 설정"
-        className="relative w-full max-w-2xl overflow-hidden rounded-[1.75rem] border border-slate-200 bg-white shadow-[0_24px_64px_rgba(15,23,42,0.28)]"
+        className="relative flex max-h-[calc(100dvh-1.5rem)] w-full max-w-2xl flex-col overflow-hidden rounded-[1.75rem] border border-slate-200 bg-white shadow-[0_24px_64px_rgba(15,23,42,0.28)]"
       >
         <div
           onPointerDown={addressDrag.handleDragPointerDown}
@@ -146,7 +146,7 @@ export default function AddressModal({
           aria-hidden
         />
 
-        <header className="border-b border-slate-200 px-5 pb-4 pt-5 sm:px-6">
+        <header className="shrink-0 border-b border-slate-200 px-5 pb-4 pt-5 sm:px-6">
           <div className="mb-3 flex justify-center">
             <span className="h-1.5 w-12 rounded-full bg-slate-300" />
           </div>
@@ -168,10 +168,12 @@ export default function AddressModal({
           </div>
         </header>
 
-        <div className="grid gap-4 px-5 pb-5 pt-4 sm:px-6 sm:pb-6">
-          <div className="flex items-center gap-2">
+        <div className="grid min-h-0 flex-1 gap-4 overflow-y-auto px-5 pb-5 pt-4 overscroll-contain sm:px-6 sm:pb-6">
+          <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2">
             <input
               type="text"
+              name="addressSearch"
+              autoComplete="street-address"
               placeholder="도로명 또는 지번을 검색하세요"
               value={searchQuery}
               onChange={(event) => setSearchQuery(event.target.value)}
@@ -182,13 +184,13 @@ export default function AddressModal({
                 }
               }}
               disabled={isLoading}
-              className="h-11 min-w-0 flex-1 rounded-xl border border-slate-300 px-3 text-sm text-slate-800 outline-none transition focus:border-sky-400 focus:ring-2 focus:ring-sky-100 disabled:bg-slate-50"
+              className="h-11 min-w-0 rounded-xl border border-slate-300 px-3 text-[16px] text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-sky-400 focus:ring-2 focus:ring-sky-100 disabled:bg-slate-50 sm:text-sm"
             />
             <button
               type="button"
               onClick={() => void handleSearch()}
               disabled={isLoading}
-              className="inline-flex h-11 min-w-[4.75rem] items-center justify-center rounded-xl bg-sky-500 px-4 text-sm font-semibold text-white shadow-sm hover:bg-sky-600 disabled:cursor-not-allowed disabled:bg-sky-300"
+              className="inline-flex h-11 min-w-[4rem] items-center justify-center rounded-xl bg-sky-500 px-4 text-sm font-semibold text-white shadow-sm hover:bg-sky-600 disabled:cursor-not-allowed disabled:bg-sky-300"
             >
               {isLoading ? (
                 <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
@@ -199,7 +201,7 @@ export default function AddressModal({
           </div>
 
           <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-2">
-            <div className="max-h-56 overflow-y-auto pr-1">
+            <div className="max-h-44 overflow-y-auto overscroll-contain pr-1 sm:max-h-56">
               {!hasSearched ? (
                 <div className="px-3 py-10 text-center text-sm text-slate-500">
                   주소를 검색하면 결과가 여기에 표시됩니다.
@@ -261,6 +263,8 @@ export default function AddressModal({
             <input
               id="address-detail-input"
               type="text"
+              name="addressDetail"
+              autoComplete="address-line2"
               placeholder="예: 101동 1203호"
               value={detailedAddress}
               onChange={(event) => setDetailedAddress(event.target.value)}
@@ -270,7 +274,7 @@ export default function AddressModal({
                   handleSave();
                 }
               }}
-              className="h-11 rounded-xl border border-slate-300 px-3 text-sm text-slate-800 outline-none transition focus:border-sky-400 focus:ring-2 focus:ring-sky-100"
+              className="h-11 rounded-xl border border-slate-300 px-3 text-[16px] text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-sky-400 focus:ring-2 focus:ring-sky-100 sm:text-sm"
             />
           </div>
 
@@ -280,7 +284,7 @@ export default function AddressModal({
             </p>
           ) : null}
 
-          <div className="flex flex-wrap justify-end gap-2 border-t border-slate-200 pt-4">
+          <div className="sticky bottom-0 z-10 -mx-5 flex flex-wrap justify-end gap-2 border-t border-slate-200 bg-white px-5 pt-4 sm:-mx-6 sm:px-6">
             {canDelete && onDelete ? (
               <button
                 type="button"

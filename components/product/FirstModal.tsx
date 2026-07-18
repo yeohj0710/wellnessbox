@@ -28,7 +28,7 @@ export default function FirstModal({
       {!isAddressModalOpen ? (
         <ModalLayer>
           <div
-            className="fixed inset-0 z-[110] flex items-end justify-center bg-slate-900/45 p-3 backdrop-blur-[1.5px] sm:items-center sm:p-5"
+            className="fixed inset-0 z-[110] flex items-center justify-center bg-slate-900/45 p-3 backdrop-blur-[1.5px] sm:p-5"
             onClick={handleBackgroundClick}
           >
           <section

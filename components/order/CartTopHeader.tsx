@@ -7,7 +7,7 @@ type CartTopHeaderProps = {
 
 export default function CartTopHeader({ onBack }: CartTopHeaderProps) {
   return (
-    <div className="z-10 fixed top-14 left-0 right-0 mx-auto flex h-12 w-full max-w-[640px] items-center gap-3 border-b border-gray-200 bg-sky-400 px-4 sm:h-14 sm:px-5">
+    <div className="sticky top-0 z-10 mx-auto flex h-12 w-full max-w-[640px] shrink-0 items-center gap-3 border-b border-gray-200 bg-sky-400 px-4 sm:h-14 sm:px-5">
       <button
         onClick={onBack}
         aria-label={CART_COPY.backButtonLabel}

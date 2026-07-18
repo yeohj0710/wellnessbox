@@ -219,21 +219,21 @@ function HomeSearchHubSection() {
 
           <nav
             aria-label="주요 서비스 바로가기"
-            className="mt-5 grid auto-rows-fr gap-3 sm:grid-cols-2 sm:gap-4"
+            className="mt-4 grid auto-rows-fr gap-3 sm:grid-cols-2"
           >
             {items.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
-                className="group flex h-full min-h-[8.25rem] min-w-0 flex-col rounded-[1.4rem] border border-slate-200 bg-white/95 px-4 py-3 transition hover:-translate-y-0.5 hover:border-[#4568F5] hover:shadow-[0_16px_36px_-28px_rgba(59,91,255,0.28)] sm:min-h-[8.75rem]"
+                className="group flex h-full min-h-[7.5rem] min-w-0 flex-col rounded-[1.25rem] border border-slate-200 bg-white/95 px-4 py-3 transition hover:-translate-y-0.5 hover:border-[#4568F5] hover:shadow-[0_16px_36px_-28px_rgba(59,91,255,0.28)] sm:min-h-[7.75rem]"
               >
-                <h3 className="min-h-[2rem] break-keep text-base font-bold leading-6 text-slate-900 group-hover:text-[#3450e5]">
+                <h3 className="break-keep text-base font-bold leading-6 text-slate-900 group-hover:text-[#3450e5]">
                   {item.title}
                 </h3>
-                <p className="mt-1 break-keep text-sm leading-6 text-slate-600">
+                <p className="mt-2 break-keep text-sm leading-5 text-slate-600">
                   {item.description}
                 </p>
-                <span className="mt-3 inline-flex items-center gap-1.5 text-sm font-semibold text-[#4568F5]">
+                <span className="mt-auto inline-flex items-center gap-1.5 pt-2 text-sm font-semibold text-[#4568F5]">
                   <span>바로 가기</span>
                   <ChevronRightIcon className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5" />
                 </span>

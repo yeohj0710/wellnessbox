@@ -77,10 +77,9 @@ export function TopBarDrawer({
     <>
       <div
         aria-hidden={!isAnimatingOpen}
-        className={`fixed bottom-0 right-0 z-[70] w-[260px] bg-white shadow-lg transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none ${
+        className={`fixed bottom-0 right-0 top-14 z-[70] w-[min(20rem,calc(100vw-1.5rem))] overflow-y-auto overscroll-contain bg-white shadow-lg transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none ${
           isAnimatingOpen ? "translate-x-0" : "translate-x-full"
         }`}
-        style={{ top: "3.5rem" }}
       >
         <div className="flex flex-col gap-4 p-6 text-[15px] font-medium text-slate-600 [&_a]:text-slate-700 [&_a]:hover:text-slate-900">
           <MenuLinks
@@ -128,10 +127,9 @@ export function TopBarDrawer({
       </div>
 
       <div
-        className={`fixed inset-x-0 bottom-0 z-[69] bg-black/40 transition-opacity duration-300 ease-out motion-reduce:transition-none ${
+        className={`fixed inset-x-0 bottom-0 top-14 z-[69] bg-black/40 transition-opacity duration-300 ease-out motion-reduce:transition-none ${
           isAnimatingOpen ? "opacity-100" : "opacity-0"
         }`}
-        style={{ top: "3.5rem" }}
         onClick={onCloseDrawer}
       />
     </>

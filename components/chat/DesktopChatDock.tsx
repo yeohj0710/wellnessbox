@@ -397,7 +397,7 @@ export default function DesktopChatDock() {
 
   return (
     <div
-      className="fixed bottom-[max(24px,env(safe-area-inset-bottom))] left-0 right-0 z-[58] flex justify-end px-3 sm:bottom-7 sm:left-auto sm:right-5 sm:px-0"
+      className="pointer-events-none fixed bottom-[max(24px,env(safe-area-inset-bottom))] left-0 right-0 z-[58] flex justify-end px-3 sm:bottom-7 sm:left-auto sm:right-5 sm:px-0"
       style={triggerBottomStyle ? { bottom: triggerBottomStyle } : undefined}
     >
       <div

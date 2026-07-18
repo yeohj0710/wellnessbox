@@ -118,7 +118,7 @@ function DesktopChatDockPanel({
   return (
     <aside
       ref={panelRef}
-      className={`fixed z-10 isolate flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_24px_60px_rgba(15,23,42,0.24)] will-change-[transform,opacity,left,top] transition-[opacity,transform,visibility] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none ${
+      className={`pointer-events-auto fixed z-10 isolate flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_24px_60px_rgba(15,23,42,0.24)] will-change-[transform,opacity,left,top] transition-[opacity,transform,visibility] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none ${
         isOpen
           ? "visible pointer-events-auto translate-y-0 scale-100 opacity-100"
           : "invisible translate-y-4 scale-95 opacity-0 pointer-events-none"
