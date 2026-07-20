@@ -4,7 +4,7 @@ import { useEffect, useState, type RefObject } from "react";
 
 const MM_TO_PX = 3.7795275591;
 
-export function useContainerMetrics(ref: RefObject<HTMLDivElement>) {
+export function useContainerMetrics(ref: RefObject<HTMLDivElement | null>) {
   const [metrics, setMetrics] = useState({
     width: 0,
     mmToPx: MM_TO_PX,

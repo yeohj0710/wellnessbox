@@ -6,7 +6,7 @@ import { useDraggableModal } from "@/components/common/useDraggableModal";
 
 interface Props {
   open: boolean;
-  cancelBtnRef: RefObject<HTMLButtonElement>;
+  cancelBtnRef: RefObject<HTMLButtonElement | null>;
   onCancel: () => void;
   onConfirm: () => void;
 }

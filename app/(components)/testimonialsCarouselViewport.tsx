@@ -6,7 +6,7 @@ import { TestimonialCard } from "./testimonialCard";
 import { TestimonialsProgressBar } from "./testimonialsProgressBar";
 
 type TestimonialsCarouselViewportProps = {
-  trackRef: RefObject<HTMLDivElement>;
+  trackRef: RefObject<HTMLDivElement | null>;
   items: readonly TestimonialItem[];
   progress: number;
 };

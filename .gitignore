@@ -60,4 +60,4 @@ tmp/rnd/ai-model-artifacts/
 tmp/rnd/latest-train-all-run.json
 tmp/pdfs/
 .playwright-cli/
-output/playwright/
+output/

@@ -60,7 +60,7 @@ type HomeProductSectionContentProps = {
   onCloseProductDetail: () => void;
   onAddToCart: (cartItem: HomeCartItem) => void;
   isCartVisible: boolean;
-  cartContainerRef: RefObject<HTMLDivElement>;
+  cartContainerRef: RefObject<HTMLDivElement | null>;
   isPharmacyLoading: boolean;
   pharmacyError: string | null;
   onRetryPharmacyResolve: () => void;

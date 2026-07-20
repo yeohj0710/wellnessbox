@@ -13,7 +13,7 @@ type ProfileImageEditorPreviewPaneProps = {
   isImageReady: boolean;
   isApplying: boolean;
   dragging: boolean;
-  previewRef: RefObject<HTMLDivElement>;
+  previewRef: RefObject<HTMLDivElement | null>;
   editorImageStyle: CSSProperties;
   livePreviewStyle: CSSProperties;
   onImageLoad: (event: SyntheticEvent<HTMLImageElement>) => void;

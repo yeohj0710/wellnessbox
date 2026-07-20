@@ -315,5 +315,5 @@ export function renderMetricCards(rows: LatestCheckupRow[]) {
         </article>
       );
     })
-    .filter((item): item is JSX.Element => item !== null);
+    .filter((item): item is React.JSX.Element => item !== null);
 }

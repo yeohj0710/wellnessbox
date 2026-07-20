@@ -13,6 +13,7 @@
     "start": "next start",
     "prelint": "npm run audit:encoding && npm run audit:route-method-exports",
     "lint": "next lint",
+    "typecheck": "tsc --noEmit",
     "perf:push-benchmark": "node scripts/perf/push-notification-benchmark.cjs",
     "audit:clients": "ts-node scripts/audit-clients.cts",
     "playwright:install:chromium": "node scripts/install-playwright-chromium.cjs",
@@ -280,7 +281,6 @@
     "langchain": "^1.2.3",
     "next": "^15.5.20",
     "nodemailer": "^9.0.3",
-    "onnxruntime-node": "1.17.3",
     "onnxruntime-web": "1.16.1",
     "pg": "^8.16.3",
     "playwright": "^1.58.2",
@@ -304,9 +304,6 @@
     "web-push": "^3.6.7",
     "zod": "^4.1.0"
   },
-  "overrides": {
-    "onnxruntime-node": "1.17.3"
-  },
   "devDependencies": {
     "@capacitor/assets": "^3.0.5",
     "@capacitor/cli": "^7.4.4",
@@ -314,8 +311,8 @@
     "@types/node": "^20",
     "@types/nodemailer": "^7.0.4",
     "@types/pg": "^8.15.5",
-    "@types/react": "^18.3.23",
-    "@types/react-dom": "^18.3.7",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
     "@types/tailwindcss": "^3.1.0",
     "@types/web-push": "^3.6.4",
     "eslint": "^8",

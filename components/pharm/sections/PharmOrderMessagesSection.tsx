@@ -8,7 +8,7 @@ type PharmOrderMessagesSectionProps = {
   newMessage: string;
   isSending: boolean;
   isMessagesRefreshing: boolean;
-  messagesContainerRef: RefObject<HTMLDivElement>;
+  messagesContainerRef: RefObject<HTMLDivElement | null>;
   refreshMessages: (manual?: boolean) => Promise<void>;
   handleScroll: () => void;
   handleDeleteMessage: (messageId: number) => Promise<void>;

@@ -19,7 +19,7 @@ type DesktopMenuContentProps = {
   aiOpen: boolean;
   onToggleAiOpen: () => void;
   onCloseAiOpen: () => void;
-  aiRef: RefObject<HTMLDivElement>;
+  aiRef: RefObject<HTMLDivElement | null>;
   onRequestLogout?: () => void;
   isLogoutPending?: boolean;
   onItemClick?: () => void;

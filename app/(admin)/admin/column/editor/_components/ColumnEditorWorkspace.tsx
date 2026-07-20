@@ -23,8 +23,8 @@ type ColumnEditorWorkspaceProps = {
   devSaving: boolean;
   publishBlockReason: string | null;
   qualityReport: EditorialQualityReport;
-  textareaRef: RefObject<HTMLTextAreaElement>;
-  fileInputRef: RefObject<HTMLInputElement>;
+  textareaRef: RefObject<HTMLTextAreaElement | null>;
+  fileInputRef: RefObject<HTMLInputElement | null>;
   onEditorTabChange: (tab: EditorTab) => void;
   onTitleChange: (value: string) => void;
   onAutoSlugChange: (value: string) => void;

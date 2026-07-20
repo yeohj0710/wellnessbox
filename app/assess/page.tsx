@@ -1,5 +1,6 @@
 "use client";
 
+import type { JSX } from "react";
 import { useLoading } from "@/components/common/loadingContext.client";
 import IntroSection from "./components/IntroSection";
 import QuestionSection from "./components/QuestionSection";

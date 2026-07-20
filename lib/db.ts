@@ -57,9 +57,7 @@ function getPrismaClient() {
 
   const created = createPrismaClient();
   attachQueryLogging(created);
-  if (process.env.NODE_ENV !== "production") {
-    globalForPrisma.prisma = created;
-  }
+  globalForPrisma.prisma = created;
   return created;
 }
 

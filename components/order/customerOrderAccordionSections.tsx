@@ -84,8 +84,8 @@ type CustomerOrderMessagesSectionProps = {
   newMessage: string;
   isSending: boolean;
   isMessagesRefreshing: boolean;
-  messagesContainerRef: RefObject<HTMLDivElement>;
-  messageInputRef: RefObject<HTMLTextAreaElement>;
+  messagesContainerRef: RefObject<HTMLDivElement | null>;
+  messageInputRef: RefObject<HTMLTextAreaElement | null>;
   refreshMessages: (manual?: boolean) => Promise<void>;
   handleScroll: () => void;
   handleDeleteMessage: (messageId: number) => Promise<void>;
