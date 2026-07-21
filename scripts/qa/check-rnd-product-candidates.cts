@@ -23,8 +23,11 @@ const productContract = JSON.parse(
   combination_contract_version: string;
   optimization_constraints_contract_version: string;
   combination_filter_contract_version: string;
+  combination_ranking_contract_version: string;
+  catalog_version_contract_version: string;
   max_product_combinations: number;
   max_product_combination_search_states: number;
+  max_ranked_product_combinations: number;
   mappings: Array<{ service_ingredient_id: string; match_terms: string[] }>;
 };
 const ingredientContract = JSON.parse(
@@ -286,6 +289,21 @@ async function run() {
       search_truncated?: boolean;
       combination_limit_reached?: boolean;
     };
+    product_combination_top_k?: Array<{
+      rank?: number;
+      combination_id?: string;
+      ranking_tuple?: [number, number, string];
+    }>;
+    product_combination_non_selection?: Array<{
+      combination_id?: string;
+      reason_codes?: string[];
+    }>;
+    product_combination_replay?: {
+      schema_version?: string;
+      input_sha256?: string;
+      catalog_version?: string;
+      result_sha256?: string;
+    };
   };
   assert.equal(matchedResponse.status, 200);
   assert.equal(matched.status, "READY");
@@ -331,6 +349,15 @@ async function run() {
     productContract.combination_filter_contract_version,
     "product_combination_filter_v1"
   );
+  assert.equal(
+    productContract.combination_ranking_contract_version,
+    "product_combination_ranking_v1"
+  );
+  assert.equal(
+    productContract.catalog_version_contract_version,
+    "product_catalog_content_sha256_v1"
+  );
+  assert.equal(productContract.max_ranked_product_combinations, 3);
   assert.equal(
     matched.product_candidate_resolution?.catalog_contract_version,
     "wb_rnd_selling_product_catalog_v1"
@@ -440,6 +467,49 @@ async function run() {
       duplicate_across_products: true,
     }
   );
+  assert.deepEqual(
+    matched.product_combination_top_k?.map((item) => item.rank),
+    [1, 2, 3]
+  );
+  assert.ok(
+    matched.product_combination_non_selection?.every(
+      (item) => (item.reason_codes?.length ?? 0) > 0
+    )
+  );
+  assert.match(
+    matched.product_combination_replay?.catalog_version ?? "",
+    /^catalog_[a-f0-9]{64}$/
+  );
+  assert.match(
+    matched.product_combination_replay?.input_sha256 ?? "",
+    /^[a-f0-9]{64}$/
+  );
+  assert.match(
+    matched.product_combination_replay?.result_sha256 ?? "",
+    /^[a-f0-9]{64}$/
+  );
+  const repeatedResponse = await routeWithCatalog(combinationProductCatalog);
+  const repeated = (await repeatedResponse.json()) as typeof matched;
+  const reorderedResponse = await routeWithCatalog(
+    [...combinationProductCatalog].reverse()
+  );
+  const reordered = (await reorderedResponse.json()) as typeof matched;
+  assert.deepEqual(
+    repeated.product_combination_top_k,
+    matched.product_combination_top_k
+  );
+  assert.deepEqual(
+    repeated.product_combination_non_selection,
+    matched.product_combination_non_selection
+  );
+  assert.equal(
+    reordered.product_combination_replay?.catalog_version,
+    matched.product_combination_replay?.catalog_version
+  );
+  assert.equal(
+    reordered.product_combination_replay?.result_sha256,
+    matched.product_combination_replay?.result_sha256
+  );
 
   const constrainedPolicy = {
     schema_version: "product_optimization_constraints_v1",
@@ -464,6 +534,10 @@ async function run() {
       product_count_excluded_count?: number;
       safety_excluded_count?: number;
     };
+    product_combination_non_selection?: Array<{
+      combination_id?: string;
+      reason_codes?: string[];
+    }>;
   };
   assert.equal(constrainedResponse.status, 200);
   assert.ok((constrained.product_combinations?.length ?? 0) > 0);
@@ -485,6 +559,13 @@ async function run() {
   assert.equal(
     constrained.product_combination_resolution?.safety_excluded_count,
     0
+  );
+  assert.ok(
+    constrained.product_combination_non_selection?.some(
+      (item) =>
+        item.reason_codes?.includes("OVER_BUDGET") &&
+        item.reason_codes?.includes("OVER_MAX_PRODUCTS")
+    )
   );
 
   const safetyControlFixture = {
@@ -522,6 +603,9 @@ async function run() {
   });
   const safetyFiltered = (await safetyFilteredResponse.json()) as {
     product_combinations?: unknown[];
+    product_combination_non_selection?: Array<{
+      reason_codes?: string[];
+    }>;
     product_combination_resolution?: {
       pre_filter_combination_count?: number;
       combination_count?: number;
@@ -534,6 +618,10 @@ async function run() {
     Number(safetyFiltered.product_combination_resolution?.pre_filter_combination_count) > 0
   );
   assert.equal(safetyFiltered.product_combination_resolution?.combination_count, 0);
+  assert.deepEqual(
+    safetyFiltered.product_combination_non_selection?.[0]?.reason_codes,
+    ["SAFETY_EXCLUDED_INGREDIENT"]
+  );
   assert.ok(
     Number(safetyFiltered.product_combination_resolution?.safety_excluded_count) > 0
   );
@@ -738,7 +826,7 @@ async function run() {
 
   const report = {
     ok: true,
-    schema_version: "op065_op066_service_product_combination_filter_contract_v1",
+    schema_version: "op067_op068_service_product_combination_ranking_contract_v1",
     checks: [
       "product_match_contract_covers_every_mapped_service_ingredient",
       "api_tips_maps_rnd_ingredients_to_service_ingredients",
@@ -759,6 +847,10 @@ async function run() {
       "budget_and_product_count_limits_filter_materialized_combinations",
       "safety_excluded_product_ingredient_cannot_reenter",
       "safety_excluded_recommendation_fails_closed",
+      "top_k_uses_explicit_deterministic_ranking_tuple",
+      "every_evaluated_non_selected_combination_has_reason_codes",
+      "same_input_and_catalog_content_reproduce_same_result",
+      "catalog_version_is_independent_of_catalog_row_order",
     ],
     observed: {
       service_route: "POST /api/tips",
@@ -815,6 +907,23 @@ async function run() {
       contradictory_safety_reentry_http_status: contradictoryResponse.status,
       contradictory_safety_reentry_reason:
         contradictory.safety_authority?.reason,
+      combination_ranking_contract_version:
+        productContract.combination_ranking_contract_version,
+      catalog_version_contract_version:
+        productContract.catalog_version_contract_version,
+      max_ranked_product_combinations:
+        productContract.max_ranked_product_combinations,
+      top_k: matched.product_combination_top_k,
+      non_selection: matched.product_combination_non_selection,
+      replay_identity: matched.product_combination_replay,
+      repeated_top_k: repeated.product_combination_top_k,
+      repeated_non_selection: repeated.product_combination_non_selection,
+      repeated_replay_identity: repeated.product_combination_replay,
+      reordered_catalog_top_k: reordered.product_combination_top_k,
+      reordered_catalog_non_selection:
+        reordered.product_combination_non_selection,
+      reordered_catalog_replay_identity:
+        reordered.product_combination_replay,
       ...(process.env.WB_RND_INCLUDE_PRODUCT_COMBINATION_EVIDENCE === "1"
         ? {
             verified_product_combinations: [

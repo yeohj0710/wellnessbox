@@ -49,10 +49,13 @@ type ProductCandidateContract = {
   combinationContractVersion: "wb_rnd_product_combination_v1";
   optimizationConstraintsContractVersion: "product_optimization_constraints_v1";
   combinationFilterContractVersion: "product_combination_filter_v1";
+  combinationRankingContractVersion: "product_combination_ranking_v1";
+  catalogVersionContractVersion: "product_catalog_content_sha256_v1";
   productCatalogSource: string;
   maxCandidatesPerIngredient: number;
   maxProductCombinations: number;
   maxProductCombinationSearchStates: number;
+  maxRankedProductCombinations: number;
   mappings: ProductMatchMapping[];
 };
 
@@ -100,6 +103,8 @@ function loadContract(value: unknown): ProductCandidateContract {
     value.optimization_constraints_contract_version !==
       "product_optimization_constraints_v1" ||
     value.combination_filter_contract_version !== "product_combination_filter_v1" ||
+    value.combination_ranking_contract_version !== "product_combination_ranking_v1" ||
+    value.catalog_version_contract_version !== "product_catalog_content_sha256_v1" ||
     value.ingredient_mapping_version !== WB_RND_INGREDIENT_MAPPING_VERSION ||
     !nonEmptyString(value.product_catalog_source) ||
     !Number.isInteger(value.max_candidates_per_ingredient) ||
@@ -111,6 +116,9 @@ function loadContract(value: unknown): ProductCandidateContract {
     !Number.isInteger(value.max_product_combination_search_states) ||
     Number(value.max_product_combination_search_states) < 1 ||
     Number(value.max_product_combination_search_states) > 100_000 ||
+    !Number.isInteger(value.max_ranked_product_combinations) ||
+    Number(value.max_ranked_product_combinations) < 1 ||
+    Number(value.max_ranked_product_combinations) > 10 ||
     !Array.isArray(value.mappings)
   ) {
     throw new Error("WB_RND_PRODUCT_MATCH_invalid_contract");
@@ -151,12 +159,15 @@ function loadContract(value: unknown): ProductCandidateContract {
     optimizationConstraintsContractVersion:
       value.optimization_constraints_contract_version,
     combinationFilterContractVersion: value.combination_filter_contract_version,
+    combinationRankingContractVersion: value.combination_ranking_contract_version,
+    catalogVersionContractVersion: value.catalog_version_contract_version,
     productCatalogSource: value.product_catalog_source,
     maxCandidatesPerIngredient: Number(value.max_candidates_per_ingredient),
     maxProductCombinations: Number(value.max_product_combinations),
     maxProductCombinationSearchStates: Number(
       value.max_product_combination_search_states
     ),
+    maxRankedProductCombinations: Number(value.max_ranked_product_combinations),
     mappings,
   };
 }
@@ -471,9 +482,11 @@ function buildProductCombinations(
       budgetExcludedCount: 0,
       productCountExcludedCount: 0,
       safetyExcludedCount: 0,
+      evaluatedCombinations: [],
     };
   }
   const unique = new Map<string, ReturnType<typeof materializeCombination>>();
+  const evaluated = new Map<string, ReturnType<typeof materializeCombination>>();
   const preFilterIdentities = new Set<string>();
   const budgetExcludedIdentities = new Set<string>();
   const productCountExcludedIdentities = new Set<string>();
@@ -498,6 +511,7 @@ function buildProductCombinations(
       const combination = materializeCombination(recommendations, selected);
       if (preFilterIdentities.has(combination.combination_id)) return;
       preFilterIdentities.add(combination.combination_id);
+      evaluated.set(combination.combination_id, combination);
       if (combination.total_cost_krw > constraints.maxTotalCostKrw) {
         budgetExcludedIdentities.add(combination.combination_id);
       }
@@ -537,7 +551,146 @@ function buildProductCombinations(
     budgetExcludedCount: budgetExcludedIdentities.size,
     productCountExcludedCount: productCountExcludedIdentities.size,
     safetyExcludedCount: safetyExcludedIdentities.size,
+    evaluatedCombinations: [...evaluated.values()].sort((left, right) =>
+      left.combination_id.localeCompare(right.combination_id)
+    ),
   };
+}
+
+function canonicalSha256(value: unknown) {
+  return createHash("sha256").update(JSON.stringify(value)).digest("hex");
+}
+
+function catalogVersion(catalog: WbRndProductCatalogItem[]) {
+  const canonical = [...catalog]
+    .sort((left, right) => left.id - right.id)
+    .map((product) => ({
+      id: product.id,
+      name: product.name,
+      categories: [...product.categories].sort(),
+      ingredient_declarations: [...product.ingredientDeclarations]
+        .map((item) => ({ label: item.label, value: item.value }))
+        .sort(
+          (left, right) =>
+            left.label.localeCompare(right.label) ||
+            left.value.localeCompare(right.value)
+        ),
+      ingredient_amounts: [...product.ingredientAmounts].sort(
+        (left, right) =>
+          left.service_ingredient_id.localeCompare(right.service_ingredient_id) ||
+          left.normalized_unit.localeCompare(right.normalized_unit) ||
+          left.normalized_amount - right.normalized_amount ||
+          left.source_label.localeCompare(right.source_label) ||
+          left.source_value.localeCompare(right.source_value)
+      ),
+      formulation: product.formulation,
+      formulation_kind: product.formulationKind,
+      offers: [...product.offers].sort(
+        (left, right) =>
+          left.pharmacyProductId - right.pharmacyProductId ||
+          left.priceKrw - right.priceKrw ||
+          left.stockCount - right.stockCount
+      ),
+    }));
+  return `catalog_${canonicalSha256(canonical)}`;
+}
+
+function recommendationInputSha256(
+  recommendations: JsonRecord[],
+  constraints: ProductOptimizationConstraints
+) {
+  const canonicalRecommendations = recommendations
+    .map((item) => ({
+      ingredient: item.ingredient,
+      service_ingredient_id: item.service_ingredient_id,
+      rank: item.rank,
+      score: item.score,
+      evidence_ids: Array.isArray(item.evidence_ids)
+        ? [...item.evidence_ids].map(String).sort()
+        : [],
+    }))
+    .sort(
+      (left, right) =>
+        Number(left.rank) - Number(right.rank) ||
+        String(left.service_ingredient_id).localeCompare(
+          String(right.service_ingredient_id)
+        )
+    );
+  return canonicalSha256({
+    recommendations: canonicalRecommendations,
+    constraints: {
+      max_total_cost_krw: constraints.maxTotalCostKrw,
+      max_products: constraints.maxProducts,
+      excluded_ingredient_keys: constraints.excludedRndIngredientKeys,
+      safety_rule_ids: constraints.safetyRuleIds,
+    },
+  });
+}
+
+function rankProductCombinations(
+  combinationResult: ReturnType<typeof buildProductCombinations>,
+  constraints: ProductOptimizationConstraints,
+  inputSha256: string,
+  catalogVersionValue: string
+) {
+  const ranked = [...combinationResult.combinations].sort(
+    (left, right) =>
+      left.total_cost_krw - right.total_cost_krw ||
+      left.product_count - right.product_count ||
+      left.combination_id.localeCompare(right.combination_id)
+  );
+  const topK = ranked
+    .slice(0, contract.maxRankedProductCombinations)
+    .map((item, index) => ({
+      schema_version: contract.combinationRankingContractVersion,
+      rank: index + 1,
+      combination_id: item.combination_id,
+      ranking_tuple: [
+        item.total_cost_krw,
+        item.product_count,
+        item.combination_id,
+      ] as [number, number, string],
+    }));
+  const topIdentities = new Set(topK.map((item) => item.combination_id));
+  const eligibleIdentities = new Set(
+    combinationResult.combinations.map((item) => item.combination_id)
+  );
+  const nonSelection = combinationResult.evaluatedCombinations
+    .filter((item) => !topIdentities.has(item.combination_id))
+    .map((item) => {
+      const reasons: string[] = [];
+      if (item.total_cost_krw > constraints.maxTotalCostKrw) {
+        reasons.push("OVER_BUDGET");
+      }
+      if (item.product_count > constraints.maxProducts) {
+        reasons.push("OVER_MAX_PRODUCTS");
+      }
+      if (
+        item.ingredient_totals.some((total) =>
+          constraints.excludedServiceIngredientIds.has(
+            total.service_ingredient_id
+          )
+        )
+      ) {
+        reasons.push("SAFETY_EXCLUDED_INGREDIENT");
+      }
+      if (eligibleIdentities.has(item.combination_id)) {
+        reasons.push("LOWER_RANKED");
+      }
+      return {
+        combination_id: item.combination_id,
+        reason_codes: reasons.sort(),
+      };
+    })
+    .sort((left, right) => left.combination_id.localeCompare(right.combination_id));
+  const resultSha256 = canonicalSha256({
+    schema_version: contract.combinationRankingContractVersion,
+    input_sha256: inputSha256,
+    catalog_version: catalogVersionValue,
+    top_k: topK,
+    non_selection: nonSelection,
+  });
+  return { topK, nonSelection, resultSha256 };
 }
 
 function materializeCombination(
@@ -732,6 +885,17 @@ export function attachWbRndProductCandidates(
     optimizationConstraints
   );
   const productCombinations = combinationResult.combinations;
+  const catalogVersionValue = catalogVersion(catalog);
+  const inputSha256 = recommendationInputSha256(
+    recommendations as JsonRecord[],
+    optimizationConstraints
+  );
+  const ranking = rankProductCombinations(
+    combinationResult,
+    optimizationConstraints,
+    inputSha256,
+    catalogVersionValue
+  );
   const factCompleteRecommendationCount = recommendations.filter((item) =>
     item.product_candidates.some(
       (product) =>
@@ -745,6 +909,15 @@ export function attachWbRndProductCandidates(
     ...value,
     recommendations,
     product_combinations: productCombinations,
+    product_combination_top_k: ranking.topK,
+    product_combination_non_selection: ranking.nonSelection,
+    product_combination_replay: {
+      schema_version: "product_combination_replay_identity_v1",
+      input_sha256: inputSha256,
+      catalog_version: catalogVersionValue,
+      catalog_version_contract: contract.catalogVersionContractVersion,
+      result_sha256: ranking.resultSha256,
+    },
     product_combination_resolution: {
       schema_version: contract.combinationContractVersion,
       filter_schema_version: contract.combinationFilterContractVersion,

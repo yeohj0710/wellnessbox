@@ -5,11 +5,14 @@
   "combination_contract_version": "wb_rnd_product_combination_v1",
   "optimization_constraints_contract_version": "product_optimization_constraints_v1",
   "combination_filter_contract_version": "product_combination_filter_v1",
+  "combination_ranking_contract_version": "product_combination_ranking_v1",
+  "catalog_version_contract_version": "product_catalog_content_sha256_v1",
   "ingredient_mapping_version": "2026-07-16.1",
   "product_catalog_source": "wellnessbox Prisma Product + in-stock PharmacyProduct",
   "max_candidates_per_ingredient": 5,
   "max_product_combinations": 64,
   "max_product_combination_search_states": 4096,
+  "max_ranked_product_combinations": 3,
   "mappings": [
     {
       "service_ingredient_id": "ING:CALCIUM",
