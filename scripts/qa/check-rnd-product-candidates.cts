@@ -21,6 +21,8 @@ const productContract = JSON.parse(
   mapping_version: string;
   ingredient_mapping_version: string;
   combination_contract_version: string;
+  optimization_constraints_contract_version: string;
+  combination_filter_contract_version: string;
   max_product_combinations: number;
   max_product_combination_search_states: number;
   mappings: Array<{ service_ingredient_id: string; match_terms: string[] }>;
@@ -64,6 +66,13 @@ const readyFixture = {
     score: 0.91 - index * 0.01,
     evidence_ids: [`EV-OP050-${index + 1}`],
   })),
+  product_optimization_constraints: {
+    schema_version: "product_optimization_constraints_v1",
+    max_total_cost_krw: 1_000_000_000,
+    max_products: 20,
+    excluded_ingredient_keys: [],
+    safety_rule_ids: [],
+  },
   uncertainty: "op050 route fixture",
 };
 
@@ -153,13 +162,12 @@ const expectedPrimaryProductIdByServiceIngredient = {
   "ING:ZINC": 29,
 } as const;
 
-async function routeWithCatalog(catalog: unknown) {
+async function routeWithCatalog(catalog: unknown, upstream: unknown = readyFixture) {
   const requireUserSessionImpl = (async () => ({
     ok: true,
     data: { appUserId: "op050-user" },
   })) as WbRndRecommendationRouteDependencies["requireUserSessionImpl"];
-  const callWbRndInterimImpl = (async () =>
-    readyFixture) as typeof callWbRndInterim;
+  const callWbRndInterimImpl = (async () => upstream) as typeof callWbRndInterim;
   const listProductCatalogImpl = (async () =>
     catalog) as unknown as WbRndRecommendationRouteDependencies["listProductCatalogImpl"];
   const request = new Request("http://wellnessbox.local/api/tips", {
@@ -267,7 +275,12 @@ async function run() {
     }>;
     product_combination_resolution?: {
       schema_version?: string;
+      filter_schema_version?: string;
       combination_count?: number;
+      pre_filter_combination_count?: number;
+      budget_excluded_count?: number;
+      product_count_excluded_count?: number;
+      safety_excluded_count?: number;
       complete?: boolean;
       search_state_count?: number;
       search_truncated?: boolean;
@@ -311,6 +324,14 @@ async function run() {
   assert.equal(productContract.max_product_combinations, 64);
   assert.equal(productContract.max_product_combination_search_states, 4096);
   assert.equal(
+    productContract.optimization_constraints_contract_version,
+    "product_optimization_constraints_v1"
+  );
+  assert.equal(
+    productContract.combination_filter_contract_version,
+    "product_combination_filter_v1"
+  );
+  assert.equal(
     matched.product_candidate_resolution?.catalog_contract_version,
     "wb_rnd_selling_product_catalog_v1"
   );
@@ -349,6 +370,20 @@ async function run() {
     "wb_rnd_product_combination_v1"
   );
   assert.equal(matched.product_combination_resolution?.complete, true);
+  assert.equal(
+    matched.product_combination_resolution?.filter_schema_version,
+    "product_combination_filter_v1"
+  );
+  assert.equal(
+    matched.product_combination_resolution?.pre_filter_combination_count,
+    matched.product_combination_resolution?.combination_count
+  );
+  assert.equal(matched.product_combination_resolution?.budget_excluded_count, 0);
+  assert.equal(
+    matched.product_combination_resolution?.product_count_excluded_count,
+    0
+  );
+  assert.equal(matched.product_combination_resolution?.safety_excluded_count, 0);
   assert.ok((matched.product_combinations?.length ?? 0) > 0);
   assert.ok(
     (matched.product_combinations?.length ?? 0) <=
@@ -404,6 +439,106 @@ async function run() {
       product_ids: [29, 42],
       duplicate_across_products: true,
     }
+  );
+
+  const constrainedResponse = await routeWithCatalog(combinationProductCatalog, {
+    ...readyFixture,
+    product_optimization_constraints: {
+      schema_version: "product_optimization_constraints_v1",
+      max_total_cost_krw: 65_000,
+      max_products: 5,
+      excluded_ingredient_keys: [],
+      safety_rule_ids: [],
+    },
+  });
+  const constrained = (await constrainedResponse.json()) as {
+    product_combinations?: Array<{
+      total_cost_krw?: number;
+      product_count?: number;
+    }>;
+    product_combination_resolution?: {
+      combination_count?: number;
+      pre_filter_combination_count?: number;
+      budget_excluded_count?: number;
+      product_count_excluded_count?: number;
+      safety_excluded_count?: number;
+    };
+  };
+  assert.equal(constrainedResponse.status, 200);
+  assert.ok((constrained.product_combinations?.length ?? 0) > 0);
+  assert.ok(
+    constrained.product_combinations?.every(
+      (item) => Number(item.total_cost_krw) <= 65_000 && Number(item.product_count) <= 5
+    )
+  );
+  assert.ok(
+    Number(constrained.product_combination_resolution?.pre_filter_combination_count) >
+      Number(constrained.product_combination_resolution?.combination_count)
+  );
+  assert.ok(
+    Number(constrained.product_combination_resolution?.budget_excluded_count) > 0
+  );
+  assert.ok(
+    Number(constrained.product_combination_resolution?.product_count_excluded_count) > 0
+  );
+  assert.equal(
+    constrained.product_combination_resolution?.safety_excluded_count,
+    0
+  );
+
+  const safetyFilteredResponse = await routeWithCatalog(combinationProductCatalog, {
+    ...readyFixture,
+    recommendations: readyFixture.recommendations.filter(
+      (item) => item.ingredient === "magnesium_glycinate"
+    ),
+    product_optimization_constraints: {
+      schema_version: "product_optimization_constraints_v1",
+      max_total_cost_krw: 100_000,
+      max_products: 5,
+      excluded_ingredient_keys: ["zinc"],
+      safety_rule_ids: ["SAFE-OP066-TEST"],
+    },
+  });
+  const safetyFiltered = (await safetyFilteredResponse.json()) as {
+    product_combinations?: unknown[];
+    product_combination_resolution?: {
+      pre_filter_combination_count?: number;
+      combination_count?: number;
+      safety_excluded_count?: number;
+    };
+  };
+  assert.equal(safetyFilteredResponse.status, 200);
+  assert.equal(safetyFiltered.product_combinations?.length, 0);
+  assert.ok(
+    Number(safetyFiltered.product_combination_resolution?.pre_filter_combination_count) > 0
+  );
+  assert.equal(safetyFiltered.product_combination_resolution?.combination_count, 0);
+  assert.ok(
+    Number(safetyFiltered.product_combination_resolution?.safety_excluded_count) > 0
+  );
+
+  const contradictoryResponse = await routeWithCatalog(combinationProductCatalog, {
+    ...readyFixture,
+    product_optimization_constraints: {
+      schema_version: "product_optimization_constraints_v1",
+      max_total_cost_krw: 100_000,
+      max_products: 6,
+      excluded_ingredient_keys: ["magnesium_glycinate"],
+      safety_rule_ids: ["SAFE-OP066-TEST"],
+    },
+  });
+  const contradictory = (await contradictoryResponse.json()) as {
+    status?: string;
+    recommendations?: unknown[];
+    safety_authority?: { mode?: string; reason?: string | null };
+  };
+  assert.equal(contradictoryResponse.status, 502);
+  assert.equal(contradictory.status, "BLOCKED");
+  assert.deepEqual(contradictory.recommendations, []);
+  assert.equal(contradictory.safety_authority?.mode, "service_fail_closed");
+  assert.equal(
+    contradictory.safety_authority?.reason,
+    "WB_RND_PRODUCT_MATCH_excluded_recommendation_reentered"
   );
 
   const boundedSearchResponse = await routeWithCatalog(sharedCombinationCatalog);
@@ -582,7 +717,7 @@ async function run() {
 
   const report = {
     ok: true,
-    schema_version: "op063_op064_service_product_combination_contract_v1",
+    schema_version: "op065_op066_service_product_combination_filter_contract_v1",
     checks: [
       "product_match_contract_covers_every_mapped_service_ingredient",
       "api_tips_maps_rnd_ingredients_to_service_ingredients",
@@ -600,6 +735,9 @@ async function run() {
       "name_match_without_target_ingredient_amount_is_not_a_candidate",
       "shared_candidate_search_is_memoized_and_bounded",
       "fractional_micrograms_use_exact_integer_nanograms",
+      "budget_and_product_count_limits_filter_materialized_combinations",
+      "safety_excluded_product_ingredient_cannot_reenter",
+      "safety_excluded_recommendation_fails_closed",
     ],
     observed: {
       service_route: "POST /api/tips",
@@ -636,12 +774,29 @@ async function run() {
       shared_product_combination_product_count:
         sharedProductCombination?.product_count,
       duplicate_zinc_combination_id: duplicateZincCombination?.combination_id,
+      optimization_constraints_contract_version:
+        productContract.optimization_constraints_contract_version,
+      combination_filter_contract_version:
+        matched.product_combination_resolution?.filter_schema_version,
+      unfiltered_resolution: matched.product_combination_resolution,
+      constrained_resolution: constrained.product_combination_resolution,
+      safety_filtered_resolution:
+        safetyFiltered.product_combination_resolution,
+      contradictory_safety_reentry_http_status: contradictoryResponse.status,
+      contradictory_safety_reentry_reason:
+        contradictory.safety_authority?.reason,
       ...(process.env.WB_RND_INCLUDE_PRODUCT_COMBINATION_EVIDENCE === "1"
         ? {
             verified_product_combinations: [
               sharedProductCombination,
               duplicateZincCombination,
             ],
+          }
+        : {}),
+      ...(process.env.WB_RND_INCLUDE_PRODUCT_COMBINATION_FILTER_EVIDENCE === "1"
+        ? {
+            verified_eligible_product_combinations:
+              constrained.product_combinations,
           }
         : {}),
     },
