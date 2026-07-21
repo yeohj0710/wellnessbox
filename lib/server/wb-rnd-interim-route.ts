@@ -179,6 +179,12 @@ export async function runUserInterimProPlanRoute(
     if (typeof body.requestId !== "string" || !/^pro_[a-f0-9]{32}$/.test(body.requestId)) {
       return noStore({ error: "PRO 등록 요청 ID가 올바르지 않습니다." }, 400);
     }
+    if (
+      body.dataClass !== "SYNTHETIC_OUTCOME_PROXY" &&
+      body.dataClass !== "REAL_WORLD_OUTCOME"
+    ) {
+      return noStore({ error: "PRO 결과 데이터 종류가 올바르지 않습니다." }, 400);
+    }
     const subjectId = pseudonymizeInterimUserId(auth.data.appUserId);
     const recommendationRequest = mapWellnessBoxProfileToWbRndRequest(body.profile, {
       requestId: body.requestId,
@@ -193,6 +199,7 @@ export async function runUserInterimProPlanRoute(
         recommendation_request: recommendationRequest,
         baseline: body.baseline,
         observed_at: body.observedAt,
+        data_class: body.dataClass,
       })
     );
   } catch (error) {

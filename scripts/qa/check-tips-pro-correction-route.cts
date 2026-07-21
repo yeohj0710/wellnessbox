@@ -31,6 +31,7 @@ async function run() {
           baseline: { instrument: "PSQI", item_scores: [2, 2, 2, 2, 2, 2, 2] },
           observedAt: "2026-01-01T00:00:00Z",
           consentAccepted: true,
+          dataClass: "REAL_WORLD_OUTCOME",
           recommendation_request: { plan_id: "attacker-plan" },
         }),
       }),
@@ -42,6 +43,25 @@ async function run() {
     assert.match(planBody.recommendation_request.source_profile.subject_id, /^usr_[a-f0-9]{32}$/);
     assert.equal(planBody.recommendation_request.plan_id, undefined);
     assert.equal(planBody.recommendation_request.data_source_consents.survey.allow_persistent_storage, true);
+    assert.equal(planBody.data_class, "REAL_WORLD_OUTCOME");
+
+    const invalidResponse = await runUserInterimProPlanRoute(
+      new Request("http://localhost/api/tips/pro/plans", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          requestId: `pro_${"b".repeat(32)}`,
+          profile: { age: 41, sex: "other", goals: ["sleep quality"] },
+          baseline: { instrument: "PSQI", item_scores: [2, 2, 2, 2, 2, 2, 2] },
+          observedAt: "2026-01-01T00:00:00Z",
+          consentAccepted: true,
+          dataClass: "PHARMACIST_GOLD",
+        }),
+      }),
+      dependencies
+    );
+    assert.equal(invalidResponse.status, 400);
+    assert.equal(calls.length, 1);
 
     const followUpResponse = await runUserInterimProFollowUpRoute(
       new Request("http://localhost/api/tips/pro/effects", {

@@ -5,7 +5,9 @@ import { enrollProPlan, saveProFollowup } from "../../lib/tips/pro-study-rnd-cli
 
 async function run() {
   const component = await readFile("components/tips/ProStudySimulation.tsx", "utf8");
-  assert.match(component, /import \{ enrollProPlan, saveProFollowup \}/);
+  assert.match(component, /import \{ enrollProPlan, saveProFollowup, type ProOutcomeDataClass \}/);
+  assert.match(component, /REAL_WORLD_OUTCOME/);
+  assert.match(component, /lastRndActionDecision/);
   assert.match(component, /await enrollProPlan\(/);
   assert.match(component, /await saveProFollowup\(/);
   assert.match(component, /mode: "live"/);
@@ -22,7 +24,7 @@ async function run() {
         execution_id: `exec_${"1".repeat(32)}`,
         plan_id: "plan_runtime_001",
         baseline_event_id: `event_${"2".repeat(32)}`,
-        baseline: { instrument_scores: [{ raw_score: 14 }] },
+        baseline: { instrument_scores: [{ raw_score: 14 }], data_class: "REAL_WORLD_OUTCOME" },
         recommendation: { recommendations: [{ ingredient_key: "magnesium_glycinate" }] },
       });
     }
@@ -32,6 +34,7 @@ async function run() {
       raw_score: 7,
       interpretation: { mean_health_z_change: 1.2 },
       lineage: { plan_id: "plan_runtime_001" },
+      action_decision: { action: "maintain" },
     });
   }) as typeof fetch;
   try {
@@ -41,6 +44,7 @@ async function run() {
       baseline: { instrument: "PSQI", responses: [2, 2, 2, 2, 2, 2, 2] },
       observedAt: "2026-01-01T00:00:00Z",
       consentAccepted: true,
+      dataClass: "REAL_WORLD_OUTCOME",
     });
     const followed = await saveProFollowup({
       executionId: enrolled.executionId,
@@ -57,6 +61,9 @@ async function run() {
     assert.equal(calls[1].path, "/api/tips/pro/effects");
     assert.equal(enrolled.rawScore, 14);
     assert.equal(followed.rawScore, 7);
+    assert.equal(enrolled.dataClass, "REAL_WORLD_OUTCOME");
+    assert.equal(followed.actionDecision.action, "maintain");
+    assert.equal(calls[0].body.dataClass, "REAL_WORLD_OUTCOME");
   } finally {
     globalThis.fetch = originalFetch;
   }

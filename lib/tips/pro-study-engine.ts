@@ -24,6 +24,8 @@ export type StudyParticipant = {
   baselineEventId?: string;
   baselineRawScore?: number;
   lastRndInterpretation?: Record<string, unknown>;
+  lastRndActionDecision?: Record<string, unknown>;
+  dataClass?: "SYNTHETIC_OUTCOME_PROXY" | "REAL_WORLD_OUTCOME";
   recommendationRun?: { runAt: string; modelVersion: string; modelSha256: string };
 };
 

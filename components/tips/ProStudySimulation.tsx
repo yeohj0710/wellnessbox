@@ -11,7 +11,7 @@ import {
   type ProInstrumentId,
   type StudyParticipant,
 } from "@/lib/tips/pro-study-engine";
-import { enrollProPlan, saveProFollowup } from "@/lib/tips/pro-study-rnd-client";
+import { enrollProPlan, saveProFollowup, type ProOutcomeDataClass } from "@/lib/tips/pro-study-rnd-client";
 import styles from "./interim.module.css";
 
 const STORAGE_KEY = "wellnessbox.tips.pro-study.v3";
@@ -88,6 +88,7 @@ const ProStudySimulation = forwardRef<ProStudySimulationHandle, Props>(function 
   const [adherence, setAdherence] = useState(85);
   const [adverseEvent, setAdverseEvent] = useState(false);
   const [consentAccepted, setConsentAccepted] = useState(false);
+  const [dataClass, setDataClass] = useState<ProOutcomeDataClass>("SYNTHETIC_OUTCOME_PROXY");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const resultRef = useRef<HTMLDivElement>(null);
@@ -138,6 +139,7 @@ const ProStudySimulation = forwardRef<ProStudySimulationHandle, Props>(function 
         baseline,
         observedAt,
         consentAccepted,
+        dataClass,
       });
       const participant: StudyParticipant = {
         id: `T-${String(Date.now()).slice(-8)}`,
@@ -153,6 +155,7 @@ const ProStudySimulation = forwardRef<ProStudySimulationHandle, Props>(function 
         executionId: enrolled.executionId,
         planId: enrolled.planId,
         baselineEventId: enrolled.baselineEventId,
+        dataClass: enrolled.dataClass,
       };
       setParticipants((current) => [participant, ...current]);
       setSelectedId(participant.id);
@@ -187,6 +190,7 @@ const ProStudySimulation = forwardRef<ProStudySimulationHandle, Props>(function 
       setParticipants((list) => list.map((participant) => participant.id !== selected.id ? participant : {
         ...participant,
         lastRndInterpretation: saved.interpretation,
+        lastRndActionDecision: saved.actionDecision,
         followups: [...participant.followups.filter((item) => item.week !== week), {
           week,
           answers: followup,
@@ -238,7 +242,7 @@ const ProStudySimulation = forwardRef<ProStudySimulationHandle, Props>(function 
       setStep((step - 1) as 0 | 1 | 2 | 3);
       return true;
     },
-  }), [busy, step, age, goal, name, baseline, consentAccepted, selected, followup, week, adherence, adverseEvent]);
+  }), [busy, step, age, goal, name, baseline, consentAccepted, dataClass, selected, followup, week, adherence, adverseEvent]);
 
   return <section className={`${styles.section} ${styles.proStudy}`} aria-labelledby="pro-study-title">
     <p className={styles.sectionLabel}>복용 전후 건강 변화 평가</p>
@@ -260,6 +264,7 @@ const ProStudySimulation = forwardRef<ProStudySimulationHandle, Props>(function 
         <label className={styles.control}><span>나이</span><input className={styles.field} type="number" min="18" max="120" value={age} onChange={(event) => setAge(+event.target.value)} /></label>
         <label className={styles.control}><span>관리 목표</span><select className={styles.field} value={goal} onChange={(event) => setGoal(event.target.value)}>{Object.entries(GOALS).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
         <label className={styles.control}><span>사용 설문</span><select className={styles.field} value={instrument} onChange={(event) => changeInstrument(event.target.value as ProInstrumentId)}>{Object.values(PRO_INSTRUMENTS).map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label>
+        <label className={styles.control}><span>결과 데이터 종류</span><select className={styles.field} value={dataClass} onChange={(event) => setDataClass(event.target.value as ProOutcomeDataClass)}><option value="SYNTHETIC_OUTCOME_PROXY">시험용 합성 결과</option><option value="REAL_WORLD_OUTCOME">실제 관찰 결과</option></select></label>
       </div>
       <Questionnaire value={baseline} onChange={(index, value) => updateAnswers(setBaseline, baseline, index, value)} />
       <label className={styles.aeCheck}><input type="checkbox" checked={consentAccepted} onChange={(event) => setConsentAccepted(event.target.checked)} /> 설문 응답과 추천 계획을 연구 데이터 저장소에 보관하는 데 동의합니다.</label>
@@ -283,6 +288,7 @@ const ProStudySimulation = forwardRef<ProStudySimulationHandle, Props>(function 
         <div><span>{selected.mode === "live" ? "건강 Z점수 변화" : "건강 백분위 변화"}</span><strong>{result.change === null ? "—" : `${result.change >= 0 ? "+" : ""}${result.change.toFixed(2)}${selected.mode === "live" ? "" : "pp"}`}</strong></div>
         <div><span>해석</span><strong>{result.change === null ? "평가 전" : result.improved ? "관찰된 개선" : "개선 확인 안 됨"}</strong></div>
       </div>
+      {selected.mode === "live" && selected.lastRndActionDecision && <p><strong>다음 행동:</strong> {String(selected.lastRndActionDecision.action ?? "확인 필요")}</p>}
       {selected.mode === "live" && week === 2 && <button type="button" onClick={() => { setWeek(4); setStep(2); }}>4주 결과 입력</button>}
       <details className={styles.secondaryOptions}><summary>전체 평가 현황</summary><div className={styles.studyKpis}><div><span>등록</span><strong>{kpi.enrolled}명</strong></div><div><span>4주 평가</span><strong>{kpi.completed}명</strong></div><div><span>개선 비율</span><strong>{kpi.improvedPercent.toFixed(1)}%</strong></div></div></details>
     </div>}

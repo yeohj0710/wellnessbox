@@ -8,7 +8,10 @@ export type ProPlanEnrollmentResult = {
   baselineEventId: string;
   recommendation: string[];
   rawScore: number;
+  dataClass: ProOutcomeDataClass;
 };
+
+export type ProOutcomeDataClass = "SYNTHETIC_OUTCOME_PROXY" | "REAL_WORLD_OUTCOME";
 
 export type ProFollowUpResult = {
   operation: "created" | "corrected";
@@ -16,6 +19,7 @@ export type ProFollowUpResult = {
   rawScore: number;
   interpretation: JsonRecord;
   lineage: JsonRecord;
+  actionDecision: JsonRecord;
 };
 
 async function postJson(path: string, payload: unknown): Promise<JsonRecord> {
@@ -48,6 +52,7 @@ export async function enrollProPlan(input: {
   baseline: ProAnswers;
   observedAt: string;
   consentAccepted: boolean;
+  dataClass: ProOutcomeDataClass;
 }): Promise<ProPlanEnrollmentResult> {
   const value = await postJson("/api/tips/pro/plans", {
     requestId: input.requestId,
@@ -55,6 +60,7 @@ export async function enrollProPlan(input: {
     baseline: { instrument: input.baseline.instrument, item_scores: input.baseline.responses },
     observedAt: input.observedAt,
     consentAccepted: input.consentAccepted,
+    dataClass: input.dataClass,
   });
   const recommendation = value.recommendation as JsonRecord | undefined;
   const candidates = recommendation?.recommendations;
@@ -69,6 +75,7 @@ export async function enrollProPlan(input: {
     baselineEventId: requiredString(value.baseline_event_id, "baseline_event_id"),
     recommendation: candidates.map((item) => requiredString((item as JsonRecord).ingredient_key, "ingredient_key")),
     rawScore: Number((instrumentScores[0] as JsonRecord).raw_score),
+    dataClass: requiredString(baseline?.data_class, "data_class") as ProOutcomeDataClass,
   };
 }
 
@@ -96,11 +103,15 @@ export async function saveProFollowup(input: {
   if (!value.lineage || typeof value.lineage !== "object") {
     throw new Error("PRO 추적 응답에 계획 연결 정보가 없습니다.");
   }
+  if (!value.action_decision || typeof value.action_decision !== "object") {
+    throw new Error("PRO 추적 응답에 다음 행동 결정이 없습니다.");
+  }
   return {
     operation: value.operation,
     eventId: requiredString(value.event_id, "event_id"),
     rawScore: Number(value.raw_score),
     interpretation: value.interpretation as JsonRecord,
     lineage: value.lineage as JsonRecord,
+    actionDecision: value.action_decision as JsonRecord,
   };
 }
