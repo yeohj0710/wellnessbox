@@ -30,7 +30,7 @@ async function executeCase(item: FrozenCase, frozenAt: string) {
     query: item.query,
     answered_at: frozenAt,
     profile: { goals: ["general_wellness"] },
-    consent_scopes: ["simulation:write"],
+    consent_scopes: ["simulation:write", "counseling:external-provider"],
     goals: ["general_wellness"],
     ingredients: [],
     safety: { requires_test: true },
