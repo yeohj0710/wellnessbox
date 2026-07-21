@@ -26,12 +26,10 @@ const productCatalogSnapshot = JSON.parse(
 };
 const productCatalog = productCatalogSnapshot.products.map((product, index) => ({
   ...product,
-  ingredientDeclarations: [
-    {
-      label: "기능 성분 함량",
-      value: `${product.categories[0]} ${100 + index * 10} mg`,
-    },
-  ],
+  ingredientDeclarations: product.categories.map((category, categoryIndex) => ({
+    label: "기능 성분 함량",
+    value: `${category} ${100 + index * 10 + categoryIndex} mg`,
+  })),
   formulation: index % 2 === 0 ? "캡슐" : "정제",
   formulationKind: index % 2 === 0 ? "capsule" : "tablet",
   offers: [
