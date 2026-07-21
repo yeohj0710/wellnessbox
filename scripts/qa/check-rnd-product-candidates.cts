@@ -6,6 +6,7 @@ import { POST as postTipsRecommendation } from "../../app/api/tips/route";
 import { type callWbRndInterim } from "../../lib/server/wb-rnd-interim-client";
 import type { WbRndRecommendationRouteDependencies } from "../../lib/server/wb-rnd-interim-route";
 import { setTipsPostTestDependencies } from "../../lib/server/wb-rnd-tips-route-test-hook";
+import { buildWbRndProductCatalogIdentityForEvidence } from "../../lib/server/wb-rnd-product-candidates";
 
 process.env.NODE_ENV = "test";
 process.env.WB_RND_INTERIM_ENABLED = "1";
@@ -473,7 +474,9 @@ async function run() {
   );
   assert.ok(
     matched.product_combination_non_selection?.every(
-      (item) => (item.reason_codes?.length ?? 0) > 0
+      (item) =>
+        (item.reason_codes?.length ?? 0) > 0 &&
+        item.reason_codes?.every((reason) => reason !== "LOWER_RANKED")
     )
   );
   assert.match(
@@ -510,6 +513,67 @@ async function run() {
     reordered.product_combination_replay?.result_sha256,
     matched.product_combination_replay?.result_sha256
   );
+  const optionChangedCatalog = combinationProductCatalog.map((product, index) =>
+    index === 0
+      ? {
+          ...product,
+          offers: product.offers.map((offer) => ({
+            ...offer,
+            optionType: `${offer.optionType}-changed`,
+            capacity: `${offer.capacity}-changed`,
+          })),
+        }
+      : product
+  );
+  const optionChangedResponse = await routeWithCatalog(optionChangedCatalog);
+  const optionChanged = (await optionChangedResponse.json()) as typeof matched;
+  assert.notEqual(
+    optionChanged.product_combination_replay?.catalog_version,
+    matched.product_combination_replay?.catalog_version
+  );
+  const duplicateOfferCatalog = combinationProductCatalog.map((product, index) =>
+    index === 1
+      ? {
+          ...product,
+          offers: product.offers.map((offer) => ({
+            ...offer,
+            pharmacyProductId: combinationProductCatalog[0].offers[0].pharmacyProductId,
+          })),
+        }
+      : product
+  );
+  assert.equal((await routeWithCatalog(duplicateOfferCatalog)).status, 502);
+
+  const globalRankingMappings = productContract.mappings.slice(0, 3);
+  const globalRankingCatalog = globalRankingMappings.flatMap((mapping, mappingIndex) =>
+    Array.from({ length: 5 }, (_, candidateIndex) => ({
+      id: 20_000 + mappingIndex * 10 + candidateIndex,
+      name: `${mapping.match_terms[0]} ${candidateIndex}`,
+      categories: [mapping.match_terms[0]],
+      ingredientDeclarations: [{
+        label: "ingredient amount",
+        value: `${mapping.match_terms[0]} ${100 + candidateIndex} mg`,
+      }],
+      formulation: "tablet",
+      formulationKind: "tablet",
+      offers: [{
+        pharmacyProductId: 30_000 + mappingIndex * 10 + candidateIndex,
+        priceKrw: candidateIndex === 4 ? 1_000 : 10_000 + candidateIndex,
+        stockCount: 10,
+        optionType: null,
+        capacity: null,
+      }],
+    }))
+  );
+  const globalRankingResponse = await routeWithCatalog(globalRankingCatalog, {
+    ...readyFixture,
+    recommendations: readyFixture.recommendations.slice(0, 3),
+  });
+  const globalRanking = (await globalRankingResponse.json()) as typeof matched;
+  assert.equal(globalRankingResponse.status, 200);
+  assert.equal(globalRanking.product_combination_top_k?.[0]?.ranking_tuple?.[0], 3_000);
+  assert.equal(globalRanking.product_combination_resolution?.search_truncated, false);
+  assert.equal(globalRanking.product_combination_resolution?.combination_limit_reached, true);
 
   const constrainedPolicy = {
     schema_version: "product_optimization_constraints_v1",
@@ -658,6 +722,8 @@ async function run() {
       search_truncated?: boolean;
       combination_limit_reached?: boolean;
     };
+    product_combination_top_k?: unknown[];
+    product_combination_non_selection?: Array<{ reason_codes?: string[] }>;
   };
   assert.equal(boundedSearchResponse.status, 200);
   assert.equal(
@@ -668,9 +734,12 @@ async function run() {
     Number(boundedSearch.product_combination_resolution?.search_state_count) <=
       productContract.max_product_combination_search_states
   );
-  assert.equal(
-    boundedSearch.product_combination_resolution?.search_truncated,
-    false
+  assert.equal(boundedSearch.product_combination_resolution?.search_truncated, true);
+  assert.deepEqual(boundedSearch.product_combination_top_k, []);
+  assert.ok(
+    boundedSearch.product_combination_non_selection?.some((item) =>
+      item.reason_codes?.includes("SEARCH_TRUNCATED")
+    )
   );
   assert.equal(
     boundedSearch.product_combination_resolution?.combination_limit_reached,
@@ -851,6 +920,10 @@ async function run() {
       "every_evaluated_non_selected_combination_has_reason_codes",
       "same_input_and_catalog_content_reproduce_same_result",
       "catalog_version_is_independent_of_catalog_row_order",
+      "catalog_version_covers_offer_option_and_capacity",
+      "duplicate_offer_identity_fails_closed",
+      "top_k_ranks_all_eligible_combinations_before_output_limit",
+      "truncated_search_fails_closed_without_top_k",
     ],
     observed: {
       service_route: "POST /api/tips",
@@ -879,6 +952,7 @@ async function run() {
         boundedSearch.product_combination_resolution?.search_state_count,
       bounded_search_combination_count:
         boundedSearch.product_combination_resolution?.combination_count,
+      bounded_search_top_k_count: boundedSearch.product_combination_top_k?.length,
       fractional_micrograms_normalized_to_nanograms: 12_500,
       combination_contract_version:
         matched.product_combination_resolution?.schema_version,
@@ -949,6 +1023,9 @@ async function run() {
             verified_safety_filter_input_combinations:
               safetyControl.product_combinations,
           }
+        : {}),
+      ...(process.env.WB_RND_INCLUDE_PRODUCT_COMBINATION_RANKING_EVIDENCE === "1"
+        ? { catalog_identity: buildWbRndProductCatalogIdentityForEvidence(combinationProductCatalog) }
         : {}),
     },
   };

@@ -242,6 +242,7 @@ function validateCatalog(value: unknown): WbRndProductCatalogItem[] {
   if (!Array.isArray(value))
     throw new Error("WB_RND_PRODUCT_MATCH_invalid_catalog");
   const seenProductIds = new Set<number>();
+  const seenPharmacyProductIds = new Set<number>();
   return value.map((raw) => {
     if (!isRecord(raw)) throw new Error("WB_RND_PRODUCT_MATCH_invalid_catalog");
     const id = raw.id;
@@ -302,6 +303,10 @@ function validateCatalog(value: unknown): WbRndProductCatalogItem[] {
       ) {
         throw new Error("WB_RND_PRODUCT_MATCH_invalid_catalog");
       }
+      if (seenPharmacyProductIds.has(Number(entry.pharmacyProductId))) {
+        throw new Error("WB_RND_PRODUCT_MATCH_invalid_catalog");
+      }
+      seenPharmacyProductIds.add(Number(entry.pharmacyProductId));
       return {
         pharmacyProductId: Number(entry.pharmacyProductId),
         priceKrw: Number(entry.priceKrw),
@@ -485,7 +490,7 @@ function buildProductCombinations(
       evaluatedCombinations: [],
     };
   }
-  const unique = new Map<string, ReturnType<typeof materializeCombination>>();
+  const eligible = new Map<string, ReturnType<typeof materializeCombination>>();
   const evaluated = new Map<string, ReturnType<typeof materializeCombination>>();
   const preFilterIdentities = new Set<string>();
   const budgetExcludedIdentities = new Set<string>();
@@ -495,7 +500,6 @@ function buildProductCombinations(
   let searchStateCount = 0;
   let searchTruncated = false;
   const visit = (index: number, selected: ProductCandidate[]) => {
-    if (unique.size >= contract.maxProductCombinations) return;
     const selectedIdentity = [...new Set(selected.map((item) => item.product_id))]
       .sort((left, right) => left - right)
       .join(",");
@@ -530,23 +534,28 @@ function buildProductCombinations(
         !productCountExcludedIdentities.has(combination.combination_id) &&
         !safetyExcludedIdentities.has(combination.combination_id)
       ) {
-        unique.set(combination.combination_id, combination);
+        eligible.set(combination.combination_id, combination);
       }
       return;
     }
     for (const candidate of recommendations[index].product_candidates) {
       visit(index + 1, [...selected, candidate]);
-      if (unique.size >= contract.maxProductCombinations) break;
     }
   };
   visit(0, []);
-  return {
-    combinations: [...unique.values()].sort((left, right) =>
+  const rankedEligible = [...eligible.values()].sort(
+    (left, right) =>
+      left.total_cost_krw - right.total_cost_krw ||
+      left.product_count - right.product_count ||
       left.combination_id.localeCompare(right.combination_id)
-    ),
+  );
+  return {
+    combinations: rankedEligible
+      .slice(0, contract.maxProductCombinations)
+      .sort((left, right) => left.combination_id.localeCompare(right.combination_id)),
     searchStateCount,
     searchTruncated,
-    combinationLimitReached: unique.size >= contract.maxProductCombinations,
+    combinationLimitReached: eligible.size > contract.maxProductCombinations,
     preFilterCombinationCount: preFilterIdentities.size,
     budgetExcludedCount: budgetExcludedIdentities.size,
     productCountExcludedCount: productCountExcludedIdentities.size,
@@ -561,8 +570,8 @@ function canonicalSha256(value: unknown) {
   return createHash("sha256").update(JSON.stringify(value)).digest("hex");
 }
 
-function catalogVersion(catalog: WbRndProductCatalogItem[]) {
-  const canonical = [...catalog]
+function canonicalCatalogIdentity(catalog: WbRndProductCatalogItem[]) {
+  return [...catalog]
     .sort((left, right) => left.id - right.id)
     .map((product) => ({
       id: product.id,
@@ -585,17 +594,25 @@ function catalogVersion(catalog: WbRndProductCatalogItem[]) {
       ),
       formulation: product.formulation,
       formulation_kind: product.formulationKind,
-      offers: [...product.offers].sort(
-        (left, right) =>
-          left.pharmacyProductId - right.pharmacyProductId ||
-          left.priceKrw - right.priceKrw ||
-          left.stockCount - right.stockCount
-      ),
+      offers: [...product.offers]
+        .map((offer) => ({
+          pharmacy_product_id: offer.pharmacyProductId,
+          price_krw: offer.priceKrw,
+          stock_count: offer.stockCount,
+          option_type: offer.optionType,
+          capacity: offer.capacity,
+        }))
+        .sort((left, right) =>
+          left.pharmacy_product_id - right.pharmacy_product_id
+        ),
     }));
-  return `catalog_${canonicalSha256(canonical)}`;
 }
 
-function recommendationInputSha256(
+function catalogVersion(catalog: WbRndProductCatalogItem[]) {
+  return `catalog_${canonicalSha256(canonicalCatalogIdentity(catalog))}`;
+}
+
+function canonicalRecommendationInput(
   recommendations: JsonRecord[],
   constraints: ProductOptimizationConstraints
 ) {
@@ -616,7 +633,7 @@ function recommendationInputSha256(
           String(right.service_ingredient_id)
         )
     );
-  return canonicalSha256({
+  return {
     recommendations: canonicalRecommendations,
     constraints: {
       max_total_cost_krw: constraints.maxTotalCostKrw,
@@ -624,7 +641,11 @@ function recommendationInputSha256(
       excluded_ingredient_keys: constraints.excludedRndIngredientKeys,
       safety_rule_ids: constraints.safetyRuleIds,
     },
-  });
+  };
+}
+
+export function buildWbRndProductCatalogIdentityForEvidence(rawCatalog: unknown) {
+  return canonicalCatalogIdentity(validateCatalog(rawCatalog));
 }
 
 function rankProductCombinations(
@@ -633,14 +654,25 @@ function rankProductCombinations(
   inputSha256: string,
   catalogVersionValue: string
 ) {
-  const ranked = [...combinationResult.combinations].sort(
+  const ranked = combinationResult.evaluatedCombinations
+    .filter(
+      (item) =>
+        item.total_cost_krw <= constraints.maxTotalCostKrw &&
+        item.product_count <= constraints.maxProducts &&
+        !item.ingredient_totals.some((total) =>
+          constraints.excludedServiceIngredientIds.has(total.service_ingredient_id)
+        )
+    )
+    .sort(
     (left, right) =>
       left.total_cost_krw - right.total_cost_krw ||
       left.product_count - right.product_count ||
       left.combination_id.localeCompare(right.combination_id)
-  );
-  const topK = ranked
-    .slice(0, contract.maxRankedProductCombinations)
+    );
+  const topK = (combinationResult.searchTruncated
+    ? []
+    : ranked.slice(0, contract.maxRankedProductCombinations)
+  )
     .map((item, index) => ({
       schema_version: contract.combinationRankingContractVersion,
       rank: index + 1,
@@ -653,8 +685,20 @@ function rankProductCombinations(
     }));
   const topIdentities = new Set(topK.map((item) => item.combination_id));
   const eligibleIdentities = new Set(
-    combinationResult.combinations.map((item) => item.combination_id)
+    combinationResult.evaluatedCombinations
+      .filter(
+        (item) =>
+          item.total_cost_krw <= constraints.maxTotalCostKrw &&
+          item.product_count <= constraints.maxProducts &&
+          !item.ingredient_totals.some((total) =>
+            constraints.excludedServiceIngredientIds.has(
+              total.service_ingredient_id
+            )
+          )
+      )
+      .map((item) => item.combination_id)
   );
+  const rankingCutoff = topK.length > 0 ? ranked[topK.length - 1] : undefined;
   const nonSelection = combinationResult.evaluatedCombinations
     .filter((item) => !topIdentities.has(item.combination_id))
     .map((item) => {
@@ -675,7 +719,21 @@ function rankProductCombinations(
         reasons.push("SAFETY_EXCLUDED_INGREDIENT");
       }
       if (eligibleIdentities.has(item.combination_id)) {
-        reasons.push("LOWER_RANKED");
+        if (combinationResult.searchTruncated) {
+          reasons.push("SEARCH_TRUNCATED");
+        } else if (
+          rankingCutoff &&
+          item.total_cost_krw > rankingCutoff.total_cost_krw
+        ) {
+          reasons.push("HIGHER_COST");
+        } else if (
+          rankingCutoff &&
+          item.product_count > rankingCutoff.product_count
+        ) {
+          reasons.push("MORE_PRODUCTS");
+        } else {
+          reasons.push("DETERMINISTIC_ID_TIE_BREAK");
+        }
       }
       return {
         combination_id: item.combination_id,
@@ -886,10 +944,11 @@ export function attachWbRndProductCandidates(
   );
   const productCombinations = combinationResult.combinations;
   const catalogVersionValue = catalogVersion(catalog);
-  const inputSha256 = recommendationInputSha256(
+  const optimizationInput = canonicalRecommendationInput(
     recommendations as JsonRecord[],
     optimizationConstraints
   );
+  const inputSha256 = canonicalSha256(optimizationInput);
   const ranking = rankProductCombinations(
     combinationResult,
     optimizationConstraints,
@@ -917,6 +976,7 @@ export function attachWbRndProductCandidates(
       catalog_version: catalogVersionValue,
       catalog_version_contract: contract.catalogVersionContractVersion,
       result_sha256: ranking.resultSha256,
+      optimization_input: optimizationInput,
     },
     product_combination_resolution: {
       schema_version: contract.combinationContractVersion,
