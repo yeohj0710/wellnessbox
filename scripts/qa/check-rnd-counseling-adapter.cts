@@ -4,8 +4,36 @@ import {
   callWbRndCounselingTurn,
   pseudonymizeInterimSubjectId,
 } from "../../lib/server/wb-rnd-interim-client";
+import { buildRndCounselingMessageId } from "../../app/api/chat/save/route-service";
+import { buildRndCounselingProfile } from "../../app/api/chat/route-service";
 
 async function run() {
+  assert.notEqual(
+    buildRndCounselingMessageId("session-a", "shared-turn"),
+    buildRndCounselingMessageId("session-b", "shared-turn")
+  );
+  assert.equal(
+    buildRndCounselingMessageId("session-a", "shared-turn"),
+    buildRndCounselingMessageId("session-a", "shared-turn")
+  );
+  assert.deepEqual(
+    buildRndCounselingProfile(
+      {
+        age: 41,
+        biologicalSex: "female",
+        pregnant: false,
+        email: "must-not-leave-service@example.com",
+        phone: "010-0000-0000",
+      },
+      ["bone_joint"]
+    ),
+    {
+      age: 41,
+      biological_sex: "female",
+      pregnant: false,
+      goals: ["bone_joint"],
+    }
+  );
   process.env.WB_RND_INTERIM_ENABLED = "1";
   process.env.WB_RND_INTERIM_BASE_URL = "http://127.0.0.1:8765";
   process.env.WB_RND_INTERIM_TOKEN = "contract-token";

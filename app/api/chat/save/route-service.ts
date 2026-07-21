@@ -21,6 +21,13 @@ import { ensureClient } from "@/lib/server/client";
 import { NextRequest, NextResponse } from "next/server";
 import type { WbRndCounselingTurn } from "@/lib/server/wb-rnd-interim-client";
 import { DEFAULT_CHAT_TITLE } from "@/lib/chat/constants";
+import { createHash } from "node:crypto";
+
+export function buildRndCounselingMessageId(sessionId: string, turnId: string) {
+  return `rnd_${createHash("sha256")
+    .update(`${sessionId.length}:${sessionId}${turnId.length}:${turnId}`)
+    .digest("hex")}`;
+}
 
 const UNKNOWN_ERROR = "Unknown error";
 
@@ -104,6 +111,14 @@ export async function persistRndCounselingTurn(input: {
     throw new Error("Forbidden");
   }
   const execution = input.turn.recommendation_execution;
+  const messageId = buildRndCounselingMessageId(input.sessionId, input.turn.turn_id);
+  const existingMessage = await db.chatMessage.findUnique({
+    where: { id: messageId },
+    select: { sessionId: true },
+  });
+  if (existingMessage && existingMessage.sessionId !== input.sessionId) {
+    throw new Error("R&D counseling message session conflict");
+  }
   const rndMeta = {
     schemaVersion: "rndCounselingSessionBindingV1",
     agentRunId: input.turn.agent_run_id,
@@ -125,9 +140,9 @@ export async function persistRndCounselingTurn(input: {
     update: { meta: { rndCounseling: rndMeta } },
   });
   await db.chatMessage.upsert({
-    where: { id: `rnd:${input.turn.turn_id}` },
+    where: { id: messageId },
     create: {
-      id: `rnd:${input.turn.turn_id}`,
+      id: messageId,
       sessionId: input.sessionId,
       role: "assistant",
       content: input.turn.answer.answer_text,

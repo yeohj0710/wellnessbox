@@ -76,6 +76,27 @@ function stringList(value: unknown) {
     : [];
 }
 
+export function buildRndCounselingProfile(
+  rawProfile: unknown,
+  goals: string[]
+) {
+  const profile = asRecord(rawProfile);
+  const result: Record<string, unknown> = { goals };
+  if (typeof profile.age === "number" && Number.isFinite(profile.age)) {
+    result.age = profile.age;
+  }
+  if (
+    typeof profile.biologicalSex === "string" &&
+    ["male", "female", "other"].includes(profile.biologicalSex)
+  ) {
+    result.biological_sex = profile.biologicalSex;
+  }
+  for (const key of ["pregnant", "lactating"] as const) {
+    if (typeof profile[key] === "boolean") result[key] = profile[key];
+  }
+  return result;
+}
+
 async function runRndCounseling(input: {
   body: ChatRequestBody;
   actor: RequestActor;
@@ -107,8 +128,8 @@ async function runRndCounseling(input: {
     query,
     answered_at:
       typeof body.answeredAt === "string" ? body.answeredAt : new Date().toISOString(),
-    profile: { ...profile, goals },
-    consent_scopes: ["counseling:write", "recommendation:write"],
+    profile: buildRndCounselingProfile(profile, goals),
+    consent_scopes: [],
     goals,
     ingredients: stringList(body.ingredients),
     safety: asRecord(body.safety),
