@@ -84,20 +84,22 @@ export function buildRndCounselingProfile(
   if (typeof profile.age === "number" && Number.isFinite(profile.age)) {
     result.age = profile.age;
   }
-  if (
-    typeof profile.biologicalSex === "string" &&
-    ["male", "female", "other"].includes(profile.biologicalSex)
-  ) {
-    result.biological_sex = profile.biologicalSex;
+  if (typeof profile.sex === "string" && ["male", "female", "other"].includes(profile.sex)) {
+    result.biological_sex = profile.sex;
   }
-  for (const key of ["pregnant", "lactating"] as const) {
-    if (typeof profile[key] === "boolean") result[key] = profile[key];
+  if (typeof profile.pregnantOrBreastfeeding === "boolean") {
+    result.pregnant = profile.pregnantOrBreastfeeding;
+    result.lactating = profile.pregnantOrBreastfeeding;
   }
   return result;
 }
 
-export function buildRndCounselingSafety(rawSafety: unknown) {
+export function buildRndCounselingSafety(
+  rawSafety: unknown,
+  rawProfile?: unknown
+) {
   const safety = asRecord(rawSafety);
+  const profile = asRecord(rawProfile);
   const result: Record<string, unknown> = {};
   for (const key of [
     "pregnant",
@@ -108,6 +110,13 @@ export function buildRndCounselingSafety(rawSafety: unknown) {
     "label_constraint_violation",
   ] as const) {
     if (typeof safety[key] === "boolean") result[key] = safety[key];
+  }
+  if (
+    [profile.conditions, profile.medications, profile.allergies].some(
+      (value) => Array.isArray(value) && value.length > 0
+    )
+  ) {
+    result.requires_test = true;
   }
   return result;
 }
@@ -153,7 +162,7 @@ async function runRndCounseling(input: {
     consent_scopes: ["simulation:write"],
     goals,
     ingredients: stringList(body.ingredients),
-    safety: buildRndCounselingSafety(body.safety),
+    safety: buildRndCounselingSafety(body.safety, profile),
   });
   if (turn.service_session_id !== sessionId || turn.turn_id !== turnId) {
     throw new Error("WB_RND_COUNSELING_session_binding_mismatch");

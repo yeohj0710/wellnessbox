@@ -26,8 +26,8 @@ async function run() {
     buildRndCounselingProfile(
       {
         age: 41,
-        biologicalSex: "female",
-        pregnant: false,
+        sex: "female",
+        pregnantOrBreastfeeding: true,
         email: "must-not-leave-service@example.com",
         phone: "010-0000-0000",
       },
@@ -36,18 +36,22 @@ async function run() {
     {
       age: 41,
       biological_sex: "female",
-      pregnant: false,
+      pregnant: true,
+      lactating: true,
       goals: ["bone_joint"],
     }
   );
   assert.deepEqual(
-    buildRndCounselingSafety({
-      pregnant: true,
-      above_ul: false,
-      email: "must-not-leave-service@example.com",
-      medicationNotes: "private free text",
-    }),
-    { pregnant: true, above_ul: false }
+    buildRndCounselingSafety(
+      {
+        pregnant: true,
+        above_ul: false,
+        email: "must-not-leave-service@example.com",
+        medicationNotes: "private free text",
+      },
+      { medications: ["private medication"], conditions: ["private condition"] }
+    ),
+    { pregnant: true, above_ul: false, requires_test: true }
   );
   assert.deepEqual(
     mergeRndCounselingMeta(
