@@ -4,8 +4,14 @@ import {
   callWbRndCounselingTurn,
   pseudonymizeInterimSubjectId,
 } from "../../lib/server/wb-rnd-interim-client";
-import { buildRndCounselingMessageId } from "../../app/api/chat/save/route-service";
-import { buildRndCounselingProfile } from "../../app/api/chat/route-service";
+import {
+  buildRndCounselingMessageId,
+  mergeRndCounselingMeta,
+} from "../../app/api/chat/save/route-service";
+import {
+  buildRndCounselingProfile,
+  buildRndCounselingSafety,
+} from "../../app/api/chat/route-service";
 
 async function run() {
   assert.notEqual(
@@ -32,6 +38,25 @@ async function run() {
       biological_sex: "female",
       pregnant: false,
       goals: ["bone_joint"],
+    }
+  );
+  assert.deepEqual(
+    buildRndCounselingSafety({
+      pregnant: true,
+      above_ul: false,
+      email: "must-not-leave-service@example.com",
+      medicationNotes: "private free text",
+    }),
+    { pregnant: true, above_ul: false }
+  );
+  assert.deepEqual(
+    mergeRndCounselingMeta(
+      { existingFeature: { enabled: true } },
+      { bindingSha256: "a".repeat(64) }
+    ),
+    {
+      existingFeature: { enabled: true },
+      rndCounseling: { bindingSha256: "a".repeat(64) },
     }
   );
   process.env.WB_RND_INTERIM_ENABLED = "1";

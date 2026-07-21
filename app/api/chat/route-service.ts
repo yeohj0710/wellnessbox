@@ -4,7 +4,6 @@ import { applyActorCookie } from "@/lib/chat/session-route";
 import type { RequestActor } from "@/lib/server/actor";
 import { resolveActorForRequest } from "@/lib/server/actor";
 import type { ChatRequestBody } from "@/types/chat";
-import { createHash } from "node:crypto";
 import {
   callWbRndCounselingTurn,
   isWbRndInterimEnabled,
@@ -97,6 +96,22 @@ export function buildRndCounselingProfile(
   return result;
 }
 
+export function buildRndCounselingSafety(rawSafety: unknown) {
+  const safety = asRecord(rawSafety);
+  const result: Record<string, unknown> = {};
+  for (const key of [
+    "pregnant",
+    "lactating",
+    "above_ul",
+    "requires_test",
+    "timing_conflict",
+    "label_constraint_violation",
+  ] as const) {
+    if (typeof safety[key] === "boolean") result[key] = safety[key];
+  }
+  return result;
+}
+
 async function runRndCounseling(input: {
   body: ChatRequestBody;
   actor: RequestActor;
@@ -106,7 +121,9 @@ async function runRndCounseling(input: {
   const sessionId = typeof body.sessionId === "string" ? body.sessionId.trim() : "";
   const messages = Array.isArray(body.messages) ? body.messages : [];
   const last = [...messages].reverse().find((message) => asRecord(message).role === "user");
-  const query = typeof asRecord(last).content === "string" ? String(asRecord(last).content).trim() : "";
+  const lastMessage = asRecord(last);
+  const query =
+    typeof lastMessage.content === "string" ? String(lastMessage.content).trim() : "";
   if (!sessionId || !query) return null;
   const subject = input.actor.appUserId ?? input.actor.deviceClientId;
   if (!subject || !input.actor.deviceClientId) throw new Error("Missing chat actor identity");
@@ -116,23 +133,27 @@ async function runRndCounseling(input: {
     : stringList(body.localAssessCats).length
     ? stringList(body.localAssessCats)
     : ["general_wellness"];
-  const turnId =
-    typeof body.turnId === "string" && body.turnId.trim()
-      ? body.turnId.trim()
-      : createHash("sha256").update(`${sessionId}\n${query}`).digest("hex").slice(0, 32);
+  const turnId = typeof lastMessage.id === "string" ? lastMessage.id.trim() : "";
+  const createdAt = lastMessage.createdAt;
+  const answeredAt =
+    typeof createdAt === "number"
+      ? new Date(createdAt)
+      : typeof createdAt === "string"
+      ? new Date(createdAt)
+      : null;
+  if (!turnId || !answeredAt || Number.isNaN(answeredAt.getTime())) return null;
   const turn = await callWbRndCounselingTurn({
     schema_version: "counseling_turn_request_v1",
     service_session_id: sessionId,
     turn_id: turnId,
     profile_id: pseudonymizeInterimSubjectId(subject),
     query,
-    answered_at:
-      typeof body.answeredAt === "string" ? body.answeredAt : new Date().toISOString(),
+    answered_at: answeredAt.toISOString(),
     profile: buildRndCounselingProfile(profile, goals),
-    consent_scopes: [],
+    consent_scopes: ["simulation:write"],
     goals,
     ingredients: stringList(body.ingredients),
-    safety: asRecord(body.safety),
+    safety: buildRndCounselingSafety(body.safety),
   });
   if (turn.service_session_id !== sessionId || turn.turn_id !== turnId) {
     throw new Error("WB_RND_COUNSELING_session_binding_mismatch");
@@ -188,7 +209,8 @@ export async function buildChatStreamResponse(input: {
       try {
         // Flush stream headers quickly while upstream context/model bootstraps.
         controller.enqueue(encoder.encode("\u200b"));
-        const rndAnswer = isWbRndInterimEnabled()
+        const rndAnswer =
+          isWbRndInterimEnabled() && process.env.NODE_ENV !== "production"
           ? await runRndCounseling({
               body: patchedBody,
               actor: input.actor,

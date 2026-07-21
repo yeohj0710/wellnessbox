@@ -22,11 +22,23 @@ import { NextRequest, NextResponse } from "next/server";
 import type { WbRndCounselingTurn } from "@/lib/server/wb-rnd-interim-client";
 import { DEFAULT_CHAT_TITLE } from "@/lib/chat/constants";
 import { createHash } from "node:crypto";
+import type { Prisma } from "@prisma/client";
 
 export function buildRndCounselingMessageId(sessionId: string, turnId: string) {
   return `rnd_${createHash("sha256")
     .update(`${sessionId.length}:${sessionId}${turnId.length}:${turnId}`)
     .digest("hex")}`;
+}
+
+export function mergeRndCounselingMeta(
+  value: Prisma.JsonValue | null | undefined,
+  rndCounseling: Prisma.InputJsonObject
+): Prisma.InputJsonObject {
+  const existing =
+    value && typeof value === "object" && !Array.isArray(value)
+      ? (value as Prisma.JsonObject)
+      : {};
+  return { ...existing, rndCounseling };
 }
 
 const UNKNOWN_ERROR = "Unknown error";
@@ -103,22 +115,8 @@ export async function persistRndCounselingTurn(input: {
   userAgent: string | null;
 }) {
   await ensureClient(input.identity.clientId, { userAgent: input.userAgent });
-  const existing = await db.chatSession.findUnique({
-    where: { id: input.sessionId },
-    select: { clientId: true, appUserId: true, meta: true },
-  });
-  if (existing && !canWriteChatSession(existing, input.identity)) {
-    throw new Error("Forbidden");
-  }
   const execution = input.turn.recommendation_execution;
   const messageId = buildRndCounselingMessageId(input.sessionId, input.turn.turn_id);
-  const existingMessage = await db.chatMessage.findUnique({
-    where: { id: messageId },
-    select: { sessionId: true },
-  });
-  if (existingMessage && existingMessage.sessionId !== input.sessionId) {
-    throw new Error("R&D counseling message session conflict");
-  }
   const rndMeta = {
     schemaVersion: "rndCounselingSessionBindingV1",
     agentRunId: input.turn.agent_run_id,
@@ -127,31 +125,49 @@ export async function persistRndCounselingTurn(input: {
     simulation: execution?.simulation ?? true,
     bindingSha256: input.turn.session_binding_sha256,
   };
-  await db.chatSession.upsert({
-    where: { id: input.sessionId },
-    create: {
-      id: input.sessionId,
-      clientId: input.identity.clientId,
-      appUserId: input.identity.loggedIn ? input.identity.appUserId ?? undefined : undefined,
-      title: DEFAULT_CHAT_TITLE,
-      status: "active",
-      meta: { rndCounseling: rndMeta },
-    },
-    update: { meta: { rndCounseling: rndMeta } },
-  });
-  await db.chatMessage.upsert({
-    where: { id: messageId },
-    create: {
-      id: messageId,
-      sessionId: input.sessionId,
-      role: "assistant",
-      content: input.turn.answer.answer_text,
-      meta: { rndCounseling: rndMeta },
-    },
-    update: {
-      content: input.turn.answer.answer_text,
-      meta: { rndCounseling: rndMeta },
-    },
+  await db.$transaction(async (tx) => {
+    const existing = await tx.chatSession.findUnique({
+      where: { id: input.sessionId },
+      select: { clientId: true, appUserId: true, meta: true },
+    });
+    if (existing && !canWriteChatSession(existing, input.identity)) {
+      throw new Error("Forbidden");
+    }
+    const existingMessage = await tx.chatMessage.findUnique({
+      where: { id: messageId },
+      select: { sessionId: true, meta: true },
+    });
+    if (existingMessage && existingMessage.sessionId !== input.sessionId) {
+      throw new Error("R&D counseling message session conflict");
+    }
+    await tx.chatSession.upsert({
+      where: { id: input.sessionId },
+      create: {
+        id: input.sessionId,
+        clientId: input.identity.clientId,
+        appUserId: input.identity.loggedIn
+          ? input.identity.appUserId ?? undefined
+          : undefined,
+        title: DEFAULT_CHAT_TITLE,
+        status: "active",
+        meta: mergeRndCounselingMeta(null, rndMeta),
+      },
+      update: { meta: mergeRndCounselingMeta(existing?.meta, rndMeta) },
+    });
+    await tx.chatMessage.upsert({
+      where: { id: messageId },
+      create: {
+        id: messageId,
+        sessionId: input.sessionId,
+        role: "assistant",
+        content: input.turn.answer.answer_text,
+        meta: mergeRndCounselingMeta(null, rndMeta),
+      },
+      update: {
+        content: input.turn.answer.answer_text,
+        meta: mergeRndCounselingMeta(existingMessage?.meta, rndMeta),
+      },
+    });
   });
 }
 
