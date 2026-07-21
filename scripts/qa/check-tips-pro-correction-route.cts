@@ -1,6 +1,9 @@
 import assert from "node:assert/strict";
 
-import { runUserInterimProCorrectionRoute } from "../../lib/server/wb-rnd-interim-route";
+import {
+  runUserInterimProFollowUpRoute,
+  runUserInterimProPlanRoute,
+} from "../../lib/server/wb-rnd-interim-route";
 
 async function run() {
   const previous = {
@@ -9,44 +12,60 @@ async function run() {
   };
   process.env.WB_RND_INTERIM_ENABLED = "1";
   process.env.WB_RND_INTERIM_PSEUDONYM_SALT = "op057-local-contract-salt";
-  let forwardedPath = "";
-  let forwardedBody: unknown;
+  const calls: Array<{ path: string; method: string; body: unknown }> = [];
+  const dependencies = {
+    requireUserSessionImpl: async () => ({ ok: true as const, data: { appUserId: "service-user-057" } }),
+    callWbRndInterimImpl: async (path: string, method: string, body?: unknown) => {
+      calls.push({ path, method, body });
+      return { ok: true };
+    },
+  };
   try {
-    const response = await runUserInterimProCorrectionRoute(
+    const planResponse = await runUserInterimProPlanRoute(
+      new Request("http://localhost/api/tips/pro/plans", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          profile: { name: "테스터", age: 41, sex: "other", goals: ["sleep quality"] },
+          baseline: { instrument: "PSQI", item_scores: [2, 2, 2, 2, 2, 2, 2] },
+          observedAt: "2026-01-01T00:00:00Z",
+          consentAccepted: true,
+          recommendation_request: { plan_id: "attacker-plan" },
+        }),
+      }),
+      dependencies
+    );
+    assert.equal(planResponse.status, 200);
+    const planBody = calls[0].body as Record<string, any>;
+    assert.equal(calls[0].path, "/v1/interim/pro/plans");
+    assert.match(planBody.recommendation_request.source_profile.subject_id, /^usr_[a-f0-9]{32}$/);
+    assert.equal(planBody.recommendation_request.plan_id, undefined);
+    assert.equal(planBody.recommendation_request.data_source_consents.survey.allow_persistent_storage, true);
+
+    const followUpResponse = await runUserInterimProFollowUpRoute(
       new Request("http://localhost/api/tips/pro/effects", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
-          execution_id: `exec_${"1".repeat(32)}`,
-          target_event_id: `event_${"2".repeat(32)}`,
-          idempotency_key: "user-correction-001",
-          replacement_payload: { schema_version: "versioned_pro_followup_event_v1" },
+          executionId: `exec_${"1".repeat(32)}`,
+          planId: "plan_runtime_001",
+          timepoint: "week_2",
+          answers: { instrument: "PSQI", item_scores: [1, 1, 1, 1, 1, 1, 1] },
+          observedAt: "2026-01-15T00:00:00Z",
+          actualDayIndex: 14,
+          plannedDoseCount: 14,
+          takenDoseCount: 13,
           profile_id: "usr_client_value_must_not_win",
         }),
       }),
-      {
-        requireUserSessionImpl: async () => ({
-          ok: true as const,
-          data: { appUserId: "service-user-057" },
-        }),
-        callWbRndInterimImpl: async (path, method, body) => {
-          forwardedPath = `${method} ${path}`;
-          forwardedBody = body;
-          return { recalculated_immediately: true };
-        },
-      }
+      dependencies
     );
-    assert.equal(response.status, 200);
-    assert.equal(
-      forwardedPath,
-      "POST /v1/interim/pro/followups/correct-and-recalculate"
-    );
-    const body = forwardedBody as Record<string, unknown>;
-    assert.match(String(body.profile_id), /^usr_[a-f0-9]{32}$/);
-    assert.notEqual(body.profile_id, "usr_client_value_must_not_win");
-    assert.equal(body.idempotency_key, "user-correction-001");
-    assert.deepEqual(await response.json(), { recalculated_immediately: true });
-    assert.equal(response.headers.get("cache-control"), "no-store");
+    assert.equal(followUpResponse.status, 200);
+    const followBody = calls[1].body as Record<string, unknown>;
+    assert.equal(calls[1].path, "/v1/interim/pro/followups");
+    assert.match(String(followBody.profile_id), /^usr_[a-f0-9]{32}$/);
+    assert.notEqual(followBody.profile_id, "usr_client_value_must_not_win");
+    assert.equal(followBody.plan_id, "plan_runtime_001");
   } finally {
     process.env.WB_RND_INTERIM_ENABLED = previous.enabled;
     process.env.WB_RND_INTERIM_PSEUDONYM_SALT = previous.salt;

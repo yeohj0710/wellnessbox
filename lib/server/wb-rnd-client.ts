@@ -41,6 +41,7 @@ type WbRndDataSourceConsent = {
 
 export type WbRndRecommendRequest = {
   request_id?: string;
+  plan_id?: string;
   source_profile?: {
     schema_version: "wellnessbox.chat.UserProfile.v1";
     subject_id?: `usr_${string}`;

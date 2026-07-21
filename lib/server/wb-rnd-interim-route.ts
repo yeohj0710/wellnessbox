@@ -17,6 +17,7 @@ import {
   attachWbRndProductCandidates,
   listWbRndProductCatalog,
 } from "@/lib/server/wb-rnd-product-candidates";
+import { mapWellnessBoxProfileToWbRndRequest } from "@/lib/server/wb-rnd-profile-adapter";
 
 type JsonRecord = Record<string, unknown>;
 
@@ -66,6 +67,8 @@ export type WbRndProCorrectionRouteDependencies = {
   requireUserSessionImpl: typeof requireUserSession;
   callWbRndInterimImpl: typeof callWbRndInterim;
 };
+
+export type WbRndProPlanRouteDependencies = WbRndProCorrectionRouteDependencies;
 
 export async function runUserInterimStatusRoute() {
   if (!isWbRndInterimEnabled()) return disabled();
@@ -153,6 +156,71 @@ export async function runUserInterimProCorrectionRoute(
           profile_id: pseudonymizeInterimUserId(auth.data.appUserId),
         }
       )
+    );
+  } catch (error) {
+    return proxyError(error);
+  }
+}
+
+export async function runUserInterimProPlanRoute(
+  req: Request,
+  dependencies: Partial<WbRndProPlanRouteDependencies> = {}
+) {
+  if (!isWbRndInterimEnabled()) return disabled();
+  const authenticate = dependencies.requireUserSessionImpl ?? requireUserSession;
+  const callInterim = dependencies.callWbRndInterimImpl ?? callWbRndInterim;
+  const auth = await authenticate();
+  if (!auth.ok) return auth.response;
+  try {
+    const body = await readJson(req);
+    if (body.consentAccepted !== true) {
+      return noStore({ error: "PRO 설문 저장에 동의해야 합니다." }, 400);
+    }
+    const subjectId = pseudonymizeInterimUserId(auth.data.appUserId);
+    const recommendationRequest = mapWellnessBoxProfileToWbRndRequest(body.profile, {
+      subjectId,
+      surveyConsent: {
+        useForRecommendation: true,
+        allowPersistentStorage: true,
+      },
+    });
+    return noStore(
+      await callInterim("/v1/interim/pro/plans", "POST", {
+        recommendation_request: recommendationRequest,
+        baseline: body.baseline,
+        observed_at: body.observedAt,
+      })
+    );
+  } catch (error) {
+    return proxyError(error);
+  }
+}
+
+export async function runUserInterimProFollowUpRoute(
+  req: Request,
+  dependencies: Partial<WbRndProCorrectionRouteDependencies> = {}
+) {
+  if (!isWbRndInterimEnabled()) return disabled();
+  const authenticate = dependencies.requireUserSessionImpl ?? requireUserSession;
+  const callInterim = dependencies.callWbRndInterimImpl ?? callWbRndInterim;
+  const auth = await authenticate();
+  if (!auth.ok) return auth.response;
+  try {
+    const body = await readJson(req);
+    return noStore(
+      await callInterim("/v1/interim/pro/followups", "POST", {
+        execution_id: body.executionId,
+        profile_id: pseudonymizeInterimUserId(auth.data.appUserId),
+        plan_id: body.planId,
+        timepoint: body.timepoint,
+        answers: body.answers,
+        observed_at: body.observedAt,
+        actual_day_index: body.actualDayIndex,
+        planned_dose_count: body.plannedDoseCount,
+        taken_dose_count: body.takenDoseCount,
+        adverse_events: body.adverseEvents ?? [],
+        discontinuation_reason: body.discontinuationReason ?? null,
+      })
     );
   } catch (error) {
     return proxyError(error);

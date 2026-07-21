@@ -1,9 +1,29 @@
 export type ProInstrumentId = "PSQI" | "ISI" | "PSS10";
 export type ProAnswers = { instrument: ProInstrumentId; responses: number[] };
-export type FollowupRecord = { week: 2 | 4; answers: ProAnswers; adherencePercent: number; adverseEvent: boolean };
+export type FollowupRecord = {
+  week: 2 | 4;
+  answers: ProAnswers;
+  adherencePercent: number;
+  adverseEvent: boolean;
+  eventId?: string;
+  rndRawScore?: number;
+  rndInterpretation?: Record<string, unknown>;
+};
 export type StudyParticipant = {
-  id: string; name: string; age: number; goal: string; enrolledAt: string;
-  baseline: ProAnswers; recommendation: string[]; followups: FollowupRecord[];
+  id: string;
+  name: string;
+  age: number;
+  goal: string;
+  enrolledAt: string;
+  baseline: ProAnswers;
+  recommendation: string[];
+  followups: FollowupRecord[];
+  mode: "live" | "simulation";
+  executionId?: string;
+  planId?: string;
+  baselineEventId?: string;
+  baselineRawScore?: number;
+  lastRndInterpretation?: Record<string, unknown>;
   recommendationRun?: { runAt: string; modelVersion: string; modelSha256: string };
 };
 
@@ -24,22 +44,43 @@ export type ProInstrument = {
 
 export const PRO_INSTRUMENTS: Record<ProInstrumentId, ProInstrument> = {
   PSQI: {
-    id: "PSQI", name: "피츠버그 수면의 질 지수(PSQI)", recallPeriod: "최근 1개월",
-    itemCount: 7, itemMin: 0, itemMax: 3, scoreMin: 0, scoreMax: 21, lowerIsBetter: true,
-    scoreDescription: "공식 19개 자가보고 문항을 채점해 만든 7개 구성요소 점수의 합",
+    id: "PSQI",
+    name: "피츠버그 수면의 질 지수(PSQI)",
+    recallPeriod: "최근 1개월",
+    itemCount: 7,
+    itemMin: 0,
+    itemMax: 3,
+    scoreMin: 0,
+    scoreMax: 21,
+    lowerIsBetter: true,
+    scoreDescription: "공식 문항을 채점해 만든 7개 구성요소 점수의 합",
     sourceUrl: "https://www.sleep.pitt.edu/psqi",
     fields: ["주관적 수면의 질", "잠들기까지 걸린 시간", "수면 시간", "수면 효율", "수면 방해", "수면제 사용", "주간 기능 저하"],
   },
   ISI: {
-    id: "ISI", name: "불면증 심각도 지수(ISI)", recallPeriod: "최근 2주",
-    itemCount: 7, itemMin: 0, itemMax: 4, scoreMin: 0, scoreMax: 28, lowerIsBetter: true,
+    id: "ISI",
+    name: "불면증 심각도 지수(ISI)",
+    recallPeriod: "최근 2주",
+    itemCount: 7,
+    itemMin: 0,
+    itemMax: 4,
+    scoreMin: 0,
+    scoreMax: 28,
+    lowerIsBetter: true,
     scoreDescription: "공식 7개 문항 점수의 합",
     sourceUrl: "https://eprovide.mapi-trust.org/instruments/insomnia-severity-index",
-    fields: ["잠들기 어려움", "수면 유지 어려움", "이른 기상", "현재 수면 만족도", "일상 기능 방해", "주변에서 느끼는 기능 저하", "수면 문제에 대한 걱정"],
+    fields: ["잠들기 어려움", "수면 유지 어려움", "이른 기상", "현재 수면 만족도", "일상 기능 방해", "주변에서 알아챈 기능 저하", "수면 문제에 대한 걱정"],
   },
   PSS10: {
-    id: "PSS10", name: "지각된 스트레스 척도(PSS-10)", recallPeriod: "최근 1개월",
-    itemCount: 10, itemMin: 0, itemMax: 4, scoreMin: 0, scoreMax: 40, lowerIsBetter: true,
+    id: "PSS10",
+    name: "지각된 스트레스 척도(PSS-10)",
+    recallPeriod: "최근 1개월",
+    itemCount: 10,
+    itemMin: 0,
+    itemMax: 4,
+    scoreMin: 0,
+    scoreMax: 40,
+    lowerIsBetter: true,
     scoreDescription: "10개 문항 중 4·5·7·8번을 역채점한 뒤 합산",
     sourceUrl: "https://www.cmu.edu/dietrich/psychology/stress-immunity-disease-lab/scales/html/pss.html",
     fields: ["문항 1", "문항 2", "문항 3", "문항 4(역채점)", "문항 5(역채점)", "문항 6", "문항 7(역채점)", "문항 8(역채점)", "문항 9", "문항 10"],
@@ -69,7 +110,7 @@ function normalCdf(value: number): number {
 }
 
 export function baselineReference(participants: StudyParticipant[], instrument: ProInstrumentId) {
-  const scores = participants.filter((participant) => participant.baseline.instrument === instrument).map((participant) => proScore(participant.baseline));
+  const scores = participants.filter((participant) => participant.mode === "simulation" && participant.baseline.instrument === instrument).map((participant) => proScore(participant.baseline));
   const definition = PRO_INSTRUMENTS[instrument];
   if (scores.length < 2) return { mean: (definition.scoreMin + definition.scoreMax) / 2, sd: (definition.scoreMax - definition.scoreMin) / 6 };
   const mean = scores.reduce((sum, value) => sum + value, 0) / scores.length;
@@ -85,17 +126,18 @@ export function standardizedImprovement(baseline: ProAnswers, followup: ProAnswe
 }
 
 export function participantResult(participant: StudyParticipant, reference = baselineReference([participant], participant.baseline.instrument)) {
-  const baselineScore = proScore(participant.baseline);
+  const baselineScore = participant.mode === "live" ? participant.baselineRawScore ?? null : proScore(participant.baseline);
   const latest = [...participant.followups].filter((row) => row.answers.instrument === participant.baseline.instrument).sort((a, b) => b.week - a.week)[0];
-  const latestScore = latest ? proScore(latest.answers) : null;
-  const change = latest ? standardizedImprovement(participant.baseline, latest.answers, reference) : null;
+  const latestScore = latest ? participant.mode === "live" ? latest.rndRawScore ?? null : proScore(latest.answers) : null;
+  const observed = latest?.rndInterpretation?.mean_health_z_change;
+  const change = latest ? participant.mode === "live" ? typeof observed === "number" ? observed : null : standardizedImprovement(participant.baseline, latest.answers, reference) : null;
   return { baselineScore, latest, latestScore, change, improved: change !== null && change > 0 };
 }
 
 export function cohortKpis(participants: StudyParticipant[]) {
   const completedParticipants = participants.filter((participant) => participant.followups.some((row) => row.week === 4 && row.answers.instrument === participant.baseline.instrument));
   const completed = completedParticipants.map((participant) => participantResult(participant, baselineReference(participants, participant.baseline.instrument)));
-  const changes = completed.map((row) => row.change as number);
+  const changes = completed.map((row) => row.change).filter((value): value is number => value !== null);
   const adherence = completed.map((row) => row.latest!.adherencePercent);
   return {
     enrolled: participants.length,
