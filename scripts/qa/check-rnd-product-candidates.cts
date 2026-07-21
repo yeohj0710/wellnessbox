@@ -490,6 +490,10 @@ async function run() {
       shared_product_combination_product_count:
         sharedProductCombination?.product_count,
       duplicate_zinc_combination_id: duplicateZincCombination?.combination_id,
+      verified_product_combinations: [
+        sharedProductCombination,
+        duplicateZincCombination,
+      ],
     },
   };
   const serialized = `${JSON.stringify(report, null, 2)}\n`;
