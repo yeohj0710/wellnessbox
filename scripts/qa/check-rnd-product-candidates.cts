@@ -778,6 +778,26 @@ async function run() {
     changedSafetyPolicy.product_combination_cart_candidate?.unavailable_reason,
     "SAFETY_CONSTRAINTS_CHANGED"
   );
+  const changedRecommendationResponse = await routeWithCatalog(
+    stockChangedCatalog,
+    {
+      ...stockReadyFixture,
+      recommendations: stockReadyFixture.recommendations.map((item, index) =>
+        index === 0 ? { ...item, score: item.score - 0.01 } : item
+      ),
+    },
+    { product_combination_context: inventoryContext }
+  );
+  const changedRecommendation = (await changedRecommendationResponse.json()) as typeof matched;
+  assert.equal(changedRecommendationResponse.status, 200);
+  assert.equal(
+    changedRecommendation.product_combination_stock_substitution?.status,
+    "OPTIMIZATION_INPUT_CHANGED"
+  );
+  assert.equal(
+    changedRecommendation.product_combination_cart_candidate?.unavailable_reason,
+    "OPTIMIZATION_INPUT_CHANGED"
+  );
   assert.ok(
     substituted.product_combinations?.every((combination) =>
       combination.selected_products?.every(

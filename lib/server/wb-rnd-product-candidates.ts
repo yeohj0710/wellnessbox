@@ -1153,7 +1153,10 @@ function buildStockSubstitution(
 function buildCartCandidate(
   currentTop: ReturnType<typeof materializeCombination> | undefined,
   searchTruncated: boolean,
-  safetyConstraintsPreserved: boolean
+  substitutionBlockReason:
+    | "SAFETY_CONSTRAINTS_CHANGED"
+    | "OPTIMIZATION_INPUT_CHANGED"
+    | null
 ) {
   const missingOptionType = currentTop?.selected_products.some(
     (product) => !nonEmptyString(product.offer.option_type)
@@ -1161,15 +1164,15 @@ function buildCartCandidate(
   const ready =
     Boolean(currentTop) &&
     !searchTruncated &&
-    safetyConstraintsPreserved &&
+    substitutionBlockReason === null &&
     !missingOptionType;
   return {
     schema_version: contract.cartCandidateContractVersion,
     status: ready ? "READY" : "UNAVAILABLE",
     unavailable_reason: searchTruncated
       ? "SEARCH_TRUNCATED"
-      : !safetyConstraintsPreserved
-        ? "SAFETY_CONSTRAINTS_CHANGED"
+      : substitutionBlockReason !== null
+        ? substitutionBlockReason
       : !currentTop
         ? "NO_ELIGIBLE_COMBINATION"
         : missingOptionType
@@ -1289,8 +1292,11 @@ export function attachWbRndProductCandidates(
     product_combination_cart_candidate: buildCartCandidate(
       currentTop,
       combinationResult.searchTruncated,
-      stockSubstitution.safety_constraints_preserved !== false &&
-        stockSubstitution.optimization_input_unchanged !== false
+      stockSubstitution.safety_constraints_preserved === false
+        ? "SAFETY_CONSTRAINTS_CHANGED"
+        : stockSubstitution.optimization_input_unchanged === false
+          ? "OPTIMIZATION_INPUT_CHANGED"
+          : null
     ),
     product_combination_resolution: {
       schema_version: contract.combinationContractVersion,
