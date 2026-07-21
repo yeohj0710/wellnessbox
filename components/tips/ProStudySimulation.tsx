@@ -288,7 +288,17 @@ const ProStudySimulation = forwardRef<ProStudySimulationHandle, Props>(function 
         <div><span>{selected.mode === "live" ? "건강 Z점수 변화" : "건강 백분위 변화"}</span><strong>{result.change === null ? "—" : `${result.change >= 0 ? "+" : ""}${result.change.toFixed(2)}${selected.mode === "live" ? "" : "pp"}`}</strong></div>
         <div><span>해석</span><strong>{result.change === null ? "평가 전" : result.improved ? "관찰된 개선" : "개선 확인 안 됨"}</strong></div>
       </div>
-      {selected.mode === "live" && selected.lastRndActionDecision && <p><strong>다음 행동:</strong> {String(selected.lastRndActionDecision.action ?? "확인 필요")}</p>}
+      {selected.mode === "live" && selected.lastRndActionDecision && (
+        <p>
+          <strong>다음 행동:</strong>{" "}
+          {{
+            maintain: "유지",
+            reduce: "감량",
+            stop: "중단",
+            re_optimize: "재최적화",
+          }[String(selected.lastRndActionDecision.action)] ?? "확인 필요"}
+        </p>
+      )}
       {selected.mode === "live" && week === 2 && <button type="button" onClick={() => { setWeek(4); setStep(2); }}>4주 결과 입력</button>}
       <details className={styles.secondaryOptions}><summary>전체 평가 현황</summary><div className={styles.studyKpis}><div><span>등록</span><strong>{kpi.enrolled}명</strong></div><div><span>4주 평가</span><strong>{kpi.completed}명</strong></div><div><span>개선 비율</span><strong>{kpi.improvedPercent.toFixed(1)}%</strong></div></div></details>
     </div>}

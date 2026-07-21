@@ -8,6 +8,10 @@ async function run() {
   assert.match(component, /import \{ enrollProPlan, saveProFollowup, type ProOutcomeDataClass \}/);
   assert.match(component, /REAL_WORLD_OUTCOME/);
   assert.match(component, /lastRndActionDecision/);
+  assert.match(component, /maintain: "유지"/);
+  assert.match(component, /reduce: "감량"/);
+  assert.match(component, /stop: "중단"/);
+  assert.match(component, /re_optimize: "재최적화"/);
   assert.match(component, /await enrollProPlan\(/);
   assert.match(component, /await saveProFollowup\(/);
   assert.match(component, /mode: "live"/);
