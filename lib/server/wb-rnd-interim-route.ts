@@ -16,6 +16,7 @@ import {
 import {
   assertWbRndProductOptimizationConstraints,
   attachWbRndProductCandidates,
+  extractWbRndProductCombinationContext,
   listWbRndProductCatalog,
 } from "@/lib/server/wb-rnd-product-candidates";
 import { mapWellnessBoxProfileToWbRndRequest } from "@/lib/server/wb-rnd-profile-adapter";
@@ -112,11 +113,13 @@ export async function runUserInterimRecommendationRoute(
   if (!auth.ok) return auth.response;
   try {
     const body = await readJson(req);
+    const { context: productCombinationContext, upstreamBody } =
+      extractWbRndProductCombinationContext(body);
     const upstream = await callInterim<unknown>(
       "/v1/interim/recommendations",
       "POST",
       {
-        ...body,
+        ...upstreamBody,
         profile_id: pseudonymizeInterimUserId(auth.data.appUserId),
       }
     );
@@ -130,7 +133,8 @@ export async function runUserInterimRecommendationRoute(
     const productCatalog = await listProductCatalog();
     const withProductCandidates = attachWbRndProductCandidates(
       enforced.response,
-      productCatalog
+      productCatalog,
+      productCombinationContext
     );
     return noStore(withProductCandidates, 200);
   } catch (error) {

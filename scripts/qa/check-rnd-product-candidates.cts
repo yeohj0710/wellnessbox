@@ -7,6 +7,7 @@ import { type callWbRndInterim } from "../../lib/server/wb-rnd-interim-client";
 import type { WbRndRecommendationRouteDependencies } from "../../lib/server/wb-rnd-interim-route";
 import { setTipsPostTestDependencies } from "../../lib/server/wb-rnd-tips-route-test-hook";
 import { buildWbRndProductCatalogIdentityForEvidence } from "../../lib/server/wb-rnd-product-candidates";
+import { parseClientCartItems } from "../../lib/client/cart-storage";
 
 process.env.NODE_ENV = "test";
 process.env.WB_RND_INTERIM_ENABLED = "1";
@@ -26,6 +27,9 @@ const productContract = JSON.parse(
   combination_filter_contract_version: string;
   combination_ranking_contract_version: string;
   catalog_version_contract_version: string;
+  inventory_context_contract_version: string;
+  stock_substitution_contract_version: string;
+  cart_candidate_contract_version: string;
   max_product_combinations: number;
   max_product_combination_search_states: number;
   max_ranked_product_combinations: number;
@@ -126,8 +130,8 @@ const sharedCombinationCatalog = [
         pharmacyProductId: 15_000 + index,
         priceKrw: 20_000 + index,
         stockCount: 10,
-        optionType: null,
-        capacity: null,
+        optionType: "30 days",
+        capacity: "30 tablets",
       },
     ],
   })),
@@ -166,18 +170,30 @@ const expectedPrimaryProductIdByServiceIngredient = {
   "ING:ZINC": 29,
 } as const;
 
-async function routeWithCatalog(catalog: unknown, upstream: unknown = readyFixture) {
+async function routeWithCatalog(
+  catalog: unknown,
+  upstream: unknown = readyFixture,
+  requestBody: Record<string, unknown> = { goals: ["sleep_support"] },
+  upstreamCapture?: { payload?: unknown }
+) {
   const requireUserSessionImpl = (async () => ({
     ok: true,
     data: { appUserId: "op050-user" },
   })) as WbRndRecommendationRouteDependencies["requireUserSessionImpl"];
-  const callWbRndInterimImpl = (async () => upstream) as typeof callWbRndInterim;
+  const callWbRndInterimImpl = (async (
+    _path: string,
+    _method: string,
+    payload: unknown
+  ) => {
+    if (upstreamCapture) upstreamCapture.payload = payload;
+    return upstream;
+  }) as typeof callWbRndInterim;
   const listProductCatalogImpl = (async () =>
     catalog) as unknown as WbRndRecommendationRouteDependencies["listProductCatalogImpl"];
   const request = new Request("http://wellnessbox.local/api/tips", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ goals: ["sleep_support"] }),
+    body: JSON.stringify(requestBody),
   });
   setTipsPostTestDependencies(request, {
     requireUserSessionImpl,
@@ -305,6 +321,33 @@ async function run() {
       catalog_version?: string;
       result_sha256?: string;
     };
+    product_combination_stock_substitution?: {
+      schema_version?: string;
+      status?: string;
+      previous_catalog_version?: string | null;
+      current_catalog_version?: string;
+      previous_combination_id?: string | null;
+      current_combination_id?: string | null;
+      missing_pharmacy_product_ids?: number[];
+      safety_constraints_preserved?: boolean | null;
+    };
+    product_combination_cart_candidate?: {
+      schema_version?: string;
+      status?: string;
+      unavailable_reason?: string | null;
+      source_combination_id?: string | null;
+      items?: Array<{
+        productId: number;
+        productName: string;
+        optionType: string;
+        quantity: number;
+      }>;
+      approval_required?: boolean;
+      approval_status?: string;
+      cart_storage_written?: boolean;
+      order_created?: boolean;
+      order_id?: number | null;
+    };
   };
   assert.equal(matchedResponse.status, 200);
   assert.equal(matched.status, "READY");
@@ -359,6 +402,18 @@ async function run() {
     "product_catalog_content_sha256_v1"
   );
   assert.equal(productContract.max_ranked_product_combinations, 3);
+  assert.equal(
+    productContract.inventory_context_contract_version,
+    "product_combination_inventory_context_v1"
+  );
+  assert.equal(
+    productContract.stock_substitution_contract_version,
+    "product_combination_stock_substitution_v1"
+  );
+  assert.equal(
+    productContract.cart_candidate_contract_version,
+    "product_combination_cart_candidate_v1"
+  );
   assert.equal(
     matched.product_candidate_resolution?.catalog_contract_version,
     "wb_rnd_selling_product_catalog_v1"
@@ -491,6 +546,30 @@ async function run() {
     matched.product_combination_replay?.result_sha256 ?? "",
     /^[a-f0-9]{64}$/
   );
+  assert.equal(
+    matched.product_combination_stock_substitution?.status,
+    "NOT_REQUESTED"
+  );
+  assert.equal(matched.product_combination_cart_candidate?.status, "READY");
+  assert.equal(
+    matched.product_combination_cart_candidate?.source_combination_id,
+    matched.product_combination_top_k?.[0]?.combination_id
+  );
+  assert.deepEqual(
+    parseClientCartItems(matched.product_combination_cart_candidate?.items),
+    matched.product_combination_cart_candidate?.items
+  );
+  assert.equal(matched.product_combination_cart_candidate?.approval_required, true);
+  assert.equal(
+    matched.product_combination_cart_candidate?.approval_status,
+    "NOT_APPROVED"
+  );
+  assert.equal(
+    matched.product_combination_cart_candidate?.cart_storage_written,
+    false
+  );
+  assert.equal(matched.product_combination_cart_candidate?.order_created, false);
+  assert.equal(matched.product_combination_cart_candidate?.order_id, null);
   const repeatedResponse = await routeWithCatalog(combinationProductCatalog);
   const repeated = (await repeatedResponse.json()) as typeof matched;
   const reorderedResponse = await routeWithCatalog(
@@ -560,8 +639,8 @@ async function run() {
         pharmacyProductId: 30_000 + mappingIndex * 10 + candidateIndex,
         priceKrw: candidateIndex === 4 ? 1_000 : 10_000 + candidateIndex,
         stockCount: 10,
-        optionType: null,
-        capacity: null,
+        optionType: "30 days",
+        capacity: "30 tablets",
       }],
     }))
   );
@@ -574,6 +653,105 @@ async function run() {
   assert.equal(globalRanking.product_combination_top_k?.[0]?.ranking_tuple?.[0], 3_000);
   assert.equal(globalRanking.product_combination_resolution?.search_truncated, false);
   assert.equal(globalRanking.product_combination_resolution?.combination_limit_reached, true);
+  const previousTopIdentity = globalRanking.product_combination_top_k?.[0]
+    ?.combination_id;
+  const previousTop = globalRanking.product_combinations?.find(
+    (item) => item.combination_id === previousTopIdentity
+  );
+  assert.ok(previousTop);
+  const previousSelections = previousTop?.selected_products?.map((product) => ({
+    product_id: Number(product.product_id),
+    pharmacy_product_id: Number(product.offer?.pharmacy_product_id),
+  }));
+  assert.equal(previousSelections?.length, 3);
+  const removedOfferId = previousSelections?.[0]?.pharmacy_product_id;
+  const stockChangedCatalog = globalRankingCatalog.filter(
+    (product) => product.offers[0].pharmacyProductId !== removedOfferId
+  );
+  const upstreamCapture: { payload?: unknown } = {};
+  const inventoryContext = {
+    schema_version: productContract.inventory_context_contract_version,
+    previous_catalog_version:
+      globalRanking.product_combination_replay?.catalog_version,
+    previous_combination_id: previousTopIdentity,
+    previous_selections: previousSelections,
+  };
+  const substitutedResponse = await routeWithCatalog(
+    stockChangedCatalog,
+    {
+      ...readyFixture,
+      recommendations: readyFixture.recommendations.slice(0, 3),
+    },
+    {
+      goals: ["sleep_support"],
+      product_combination_context: inventoryContext,
+    },
+    upstreamCapture
+  );
+  const substituted = (await substitutedResponse.json()) as typeof matched;
+  assert.equal(substitutedResponse.status, 200);
+  assert.equal(
+    substituted.product_combination_stock_substitution?.status,
+    "SUBSTITUTED"
+  );
+  assert.equal(
+    substituted.product_combination_stock_substitution?.previous_combination_id,
+    previousTopIdentity
+  );
+  assert.notEqual(
+    substituted.product_combination_stock_substitution?.current_combination_id,
+    previousTopIdentity
+  );
+  assert.deepEqual(
+    substituted.product_combination_stock_substitution
+      ?.missing_pharmacy_product_ids,
+    [removedOfferId]
+  );
+  assert.equal(
+    substituted.product_combination_stock_substitution
+      ?.safety_constraints_preserved,
+    true
+  );
+  assert.equal(
+    JSON.stringify(upstreamCapture.payload).includes(
+      "product_combination_context"
+    ),
+    false
+  );
+  assert.equal(substituted.product_combination_cart_candidate?.status, "READY");
+  assert.deepEqual(
+    parseClientCartItems(substituted.product_combination_cart_candidate?.items),
+    substituted.product_combination_cart_candidate?.items
+  );
+  assert.equal(substituted.product_combination_cart_candidate?.order_created, false);
+  assert.equal(substituted.product_combination_cart_candidate?.order_id, null);
+  assert.ok(
+    substituted.product_combinations?.every((combination) =>
+      combination.selected_products?.every(
+        (product) => product.offer?.pharmacy_product_id !== removedOfferId
+      )
+    )
+  );
+  const invalidContextResponse = await routeWithCatalog(
+    stockChangedCatalog,
+    readyFixture,
+    {
+      product_combination_context: { ...inventoryContext, unexpected: true },
+    }
+  );
+  assert.equal(invalidContextResponse.status, 502);
+  const routeSource = readFileSync(
+    resolve("lib/server/wb-rnd-interim-route.ts"),
+    "utf8"
+  );
+  const productAdapterSource = readFileSync(
+    resolve("lib/server/wb-rnd-product-candidates.ts"),
+    "utf8"
+  );
+  for (const source of [routeSource, productAdapterSource]) {
+    assert.doesNotMatch(source, /prisma\.(?:order|orderItem)\.(?:create|update)/i);
+    assert.doesNotMatch(source, /createOrder|createOrderItem/);
+  }
 
   const constrainedPolicy = {
     schema_version: "product_optimization_constraints_v1",
@@ -924,6 +1102,10 @@ async function run() {
       "duplicate_offer_identity_fails_closed",
       "top_k_ranks_all_eligible_combinations_before_output_limit",
       "truncated_search_fails_closed_without_top_k",
+      "stock_change_recomputes_safe_substitute_with_existing_optimizer",
+      "inventory_context_is_not_forwarded_to_rnd",
+      "rank_one_combination_is_existing_cart_contract_compatible",
+      "cart_candidate_requires_approval_and_creates_no_order",
     ],
     observed: {
       service_route: "POST /api/tips",
@@ -1006,6 +1188,13 @@ async function run() {
         reordered.product_combination_non_selection,
       reordered_catalog_replay_identity:
         reordered.product_combination_replay,
+      stock_substitution: substituted.product_combination_stock_substitution,
+      substituted_cart_candidate:
+        substituted.product_combination_cart_candidate,
+      inventory_context_forwarded_to_rnd: JSON.stringify(
+        upstreamCapture.payload
+      ).includes("product_combination_context"),
+      order_created: substituted.product_combination_cart_candidate?.order_created,
       ...(process.env.WB_RND_INCLUDE_PRODUCT_COMBINATION_EVIDENCE === "1"
         ? {
             verified_product_combinations: [
@@ -1026,6 +1215,22 @@ async function run() {
         : {}),
       ...(process.env.WB_RND_INCLUDE_PRODUCT_COMBINATION_RANKING_EVIDENCE === "1"
         ? { catalog_identity: buildWbRndProductCatalogIdentityForEvidence(combinationProductCatalog) }
+        : {}),
+      ...(process.env.WB_RND_INCLUDE_PRODUCT_COMBINATION_STOCK_CART_EVIDENCE ===
+      "1"
+        ? {
+            inventory_context: inventoryContext,
+            previous_catalog_identity:
+              buildWbRndProductCatalogIdentityForEvidence(globalRankingCatalog),
+            current_catalog_identity:
+              buildWbRndProductCatalogIdentityForEvidence(stockChangedCatalog),
+            previous_combinations: globalRanking.product_combinations,
+            previous_top_k: globalRanking.product_combination_top_k,
+            previous_replay_identity: globalRanking.product_combination_replay,
+            current_combinations: substituted.product_combinations,
+            current_top_k: substituted.product_combination_top_k,
+            current_replay_identity: substituted.product_combination_replay,
+          }
         : {}),
     },
   };
