@@ -441,15 +441,16 @@ async function run() {
     }
   );
 
+  const constrainedPolicy = {
+    schema_version: "product_optimization_constraints_v1",
+    max_total_cost_krw: 65_000,
+    max_products: 5,
+    excluded_ingredient_keys: [] as string[],
+    safety_rule_ids: [] as string[],
+  };
   const constrainedResponse = await routeWithCatalog(combinationProductCatalog, {
     ...readyFixture,
-    product_optimization_constraints: {
-      schema_version: "product_optimization_constraints_v1",
-      max_total_cost_krw: 65_000,
-      max_products: 5,
-      excluded_ingredient_keys: [],
-      safety_rule_ids: [],
-    },
+    product_optimization_constraints: constrainedPolicy,
   });
   const constrained = (await constrainedResponse.json()) as {
     product_combinations?: Array<{
@@ -486,11 +487,31 @@ async function run() {
     0
   );
 
-  const safetyFilteredResponse = await routeWithCatalog(combinationProductCatalog, {
+  const safetyControlFixture = {
     ...readyFixture,
     recommendations: readyFixture.recommendations.filter(
       (item) => item.ingredient === "magnesium_glycinate"
     ),
+    product_optimization_constraints: {
+      schema_version: "product_optimization_constraints_v1",
+      max_total_cost_krw: 100_000,
+      max_products: 5,
+      excluded_ingredient_keys: [],
+      safety_rule_ids: [],
+    },
+  };
+  const safetyControlResponse = await routeWithCatalog(
+    combinationProductCatalog,
+    safetyControlFixture
+  );
+  const safetyControl = (await safetyControlResponse.json()) as {
+    product_combinations?: unknown[];
+  };
+  assert.equal(safetyControlResponse.status, 200);
+  assert.equal(safetyControl.product_combinations?.length, 1);
+
+  const safetyFilteredResponse = await routeWithCatalog(combinationProductCatalog, {
+    ...safetyControlFixture,
     product_optimization_constraints: {
       schema_version: "product_optimization_constraints_v1",
       max_total_cost_krw: 100_000,
@@ -780,8 +801,17 @@ async function run() {
         matched.product_combination_resolution?.filter_schema_version,
       unfiltered_resolution: matched.product_combination_resolution,
       constrained_resolution: constrained.product_combination_resolution,
+      constrained_policy: constrainedPolicy,
       safety_filtered_resolution:
         safetyFiltered.product_combination_resolution,
+      safety_filter_policy: {
+        schema_version: "product_optimization_constraints_v1",
+        max_total_cost_krw: 100_000,
+        max_products: 5,
+        excluded_ingredient_keys: ["zinc"],
+        excluded_service_ingredient_ids: ["ING:ZINC"],
+        safety_rule_ids: ["SAFE-OP066-TEST"],
+      },
       contradictory_safety_reentry_http_status: contradictoryResponse.status,
       contradictory_safety_reentry_reason:
         contradictory.safety_authority?.reason,
@@ -795,8 +825,12 @@ async function run() {
         : {}),
       ...(process.env.WB_RND_INCLUDE_PRODUCT_COMBINATION_FILTER_EVIDENCE === "1"
         ? {
+            verified_filter_input_combinations:
+              matched.product_combinations,
             verified_eligible_product_combinations:
               constrained.product_combinations,
+            verified_safety_filter_input_combinations:
+              safetyControl.product_combinations,
           }
         : {}),
     },
