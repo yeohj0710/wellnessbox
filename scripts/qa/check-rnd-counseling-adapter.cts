@@ -80,6 +80,16 @@ async function run() {
       agent_run_id: "run_123",
       answer: { answer_text: "Verified answer", status: "supported" },
       verification: { passed: true },
+      answer_execution: {
+        schema_version: "counseling_answer_execution_v1",
+        provider: "deterministic_template_fallback",
+        fallback_reason: "live_api_disabled",
+        attempted_live_call: false,
+        model: "gpt-5-mini",
+        evidence_chunk_ids: ["chunk-1"],
+        evidence_reference_ids: ["reference-1"],
+        live_failure: null,
+      },
       recommendation_execution: {
         run_id: "rec_123",
         status: "READY",

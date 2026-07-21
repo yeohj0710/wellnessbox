@@ -60,6 +60,22 @@ export type WbRndCounselingTurn = {
   agent_run_id: string;
   answer: { answer_text: string; status: string; [key: string]: unknown };
   verification: { passed: boolean; [key: string]: unknown };
+  answer_execution: {
+    schema_version: "counseling_answer_execution_v1";
+    provider: "openai_responses_api" | "deterministic_template_fallback";
+    fallback_reason: string | null;
+    attempted_live_call: boolean;
+    model: string | null;
+    evidence_chunk_ids: string[];
+    evidence_reference_ids: string[];
+    live_failure: null | {
+      failure_stage: "http_request" | "response_parse";
+      exception_class: string;
+      exception_message: string;
+      status_code: number | null;
+      response_body_excerpt: string | null;
+    };
+  };
   recommendation_execution: null | {
     run_id: string;
     status: string;
@@ -79,16 +95,47 @@ function validateCounselingTurn(value: unknown): WbRndCounselingTurn {
   }
   const answer = value.answer;
   const verification = value.verification;
+  const answerExecution = value.answer_execution;
   if (
     !isRecord(answer) ||
     typeof answer.answer_text !== "string" ||
     !answer.answer_text ||
     !isRecord(verification) ||
     verification.passed !== true ||
+    !isRecord(answerExecution) ||
+    answerExecution.schema_version !== "counseling_answer_execution_v1" ||
+    !["openai_responses_api", "deterministic_template_fallback"].includes(
+      String(answerExecution.provider)
+    ) ||
+    !(
+      answerExecution.fallback_reason === null ||
+      typeof answerExecution.fallback_reason === "string"
+    ) ||
+    typeof answerExecution.attempted_live_call !== "boolean" ||
+    !(answerExecution.model === null || typeof answerExecution.model === "string") ||
+    !Array.isArray(answerExecution.evidence_chunk_ids) ||
+    answerExecution.evidence_chunk_ids.some((item) => typeof item !== "string") ||
+    !Array.isArray(answerExecution.evidence_reference_ids) ||
+    answerExecution.evidence_reference_ids.some((item) => typeof item !== "string") ||
     typeof value.service_session_id !== "string" ||
     typeof value.turn_id !== "string" ||
     typeof value.agent_run_id !== "string" ||
     typeof value.session_binding_sha256 !== "string"
+  ) {
+    throw new Error("WB_RND_COUNSELING_invalid_contract");
+  }
+  const liveFailure = answerExecution.live_failure;
+  if (
+    liveFailure !== null &&
+    (!isRecord(liveFailure) ||
+      !["http_request", "response_parse"].includes(String(liveFailure.failure_stage)) ||
+      typeof liveFailure.exception_class !== "string" ||
+      typeof liveFailure.exception_message !== "string" ||
+      !(liveFailure.status_code === null || typeof liveFailure.status_code === "number") ||
+      !(
+        liveFailure.response_body_excerpt === null ||
+        typeof liveFailure.response_body_excerpt === "string"
+      ))
   ) {
     throw new Error("WB_RND_COUNSELING_invalid_contract");
   }
