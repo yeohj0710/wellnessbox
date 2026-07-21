@@ -653,9 +653,19 @@ async function run() {
   assert.equal(globalRanking.product_combination_top_k?.[0]?.ranking_tuple?.[0], 3_000);
   assert.equal(globalRanking.product_combination_resolution?.search_truncated, false);
   assert.equal(globalRanking.product_combination_resolution?.combination_limit_reached, true);
-  const previousTopIdentity = globalRanking.product_combination_top_k?.[0]
+  const stockBaselineCatalog = globalRankingCatalog.filter(
+    (product) => product.id % 10 === 0 || product.id % 10 === 4
+  );
+  const stockBaselineResponse = await routeWithCatalog(stockBaselineCatalog, {
+    ...readyFixture,
+    recommendations: readyFixture.recommendations.slice(0, 3),
+  });
+  const stockBaseline = (await stockBaselineResponse.json()) as typeof matched;
+  assert.equal(stockBaselineResponse.status, 200);
+  assert.equal(stockBaseline.product_combinations?.length, 8);
+  const previousTopIdentity = stockBaseline.product_combination_top_k?.[0]
     ?.combination_id;
-  const previousTop = globalRanking.product_combinations?.find(
+  const previousTop = stockBaseline.product_combinations?.find(
     (item) => item.combination_id === previousTopIdentity
   );
   assert.ok(previousTop);
@@ -665,14 +675,14 @@ async function run() {
   }));
   assert.equal(previousSelections?.length, 3);
   const removedOfferId = previousSelections?.[0]?.pharmacy_product_id;
-  const stockChangedCatalog = globalRankingCatalog.filter(
+  const stockChangedCatalog = stockBaselineCatalog.filter(
     (product) => product.offers[0].pharmacyProductId !== removedOfferId
   );
   const upstreamCapture: { payload?: unknown } = {};
   const inventoryContext = {
     schema_version: productContract.inventory_context_contract_version,
     previous_catalog_version:
-      globalRanking.product_combination_replay?.catalog_version,
+      stockBaseline.product_combination_replay?.catalog_version,
     previous_combination_id: previousTopIdentity,
     previous_selections: previousSelections,
   };
@@ -1221,14 +1231,19 @@ async function run() {
         ? {
             inventory_context: inventoryContext,
             previous_catalog_identity:
-              buildWbRndProductCatalogIdentityForEvidence(globalRankingCatalog),
+              buildWbRndProductCatalogIdentityForEvidence(stockBaselineCatalog),
             current_catalog_identity:
               buildWbRndProductCatalogIdentityForEvidence(stockChangedCatalog),
-            previous_combinations: globalRanking.product_combinations,
-            previous_top_k: globalRanking.product_combination_top_k,
-            previous_replay_identity: globalRanking.product_combination_replay,
+            previous_combinations: stockBaseline.product_combinations,
+            previous_top_k: stockBaseline.product_combination_top_k,
+            previous_non_selection:
+              stockBaseline.product_combination_non_selection,
+            previous_replay_identity:
+              stockBaseline.product_combination_replay,
             current_combinations: substituted.product_combinations,
             current_top_k: substituted.product_combination_top_k,
+            current_non_selection:
+              substituted.product_combination_non_selection,
             current_replay_identity: substituted.product_combination_replay,
           }
         : {}),
