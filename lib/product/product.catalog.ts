@@ -41,6 +41,18 @@ export async function getProductCandidateCatalog() {
       id: true,
       name: true,
       categories: { select: { name: true } },
+      detailFacts: true,
+      pharmacyProducts: {
+        where: { stock: { gt: 0 }, price: { not: null } },
+        select: {
+          id: true,
+          price: true,
+          stock: true,
+          optionType: true,
+          capacity: true,
+        },
+        orderBy: [{ price: "asc" }, { id: "asc" }],
+      },
     },
     orderBy: DEFAULT_PRODUCT_ORDER,
   });

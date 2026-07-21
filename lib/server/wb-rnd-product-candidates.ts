@@ -2,6 +2,7 @@ import "server-only";
 
 import contractJson from "@/contracts/wb-rnd/product-candidate-match-v1.json";
 import { getProductCandidateCatalog } from "@/lib/product/product.catalog";
+import { normalizeProductDetailFacts } from "@/lib/product/product-detail-facts";
 import { WB_RND_INGREDIENT_MAPPING_VERSION } from "@/lib/server/wb-rnd-ingredient-map";
 
 type JsonRecord = Record<string, unknown>;
@@ -10,6 +11,15 @@ export type WbRndProductCatalogItem = {
   id: number;
   name: string;
   categories: string[];
+  ingredientDeclarations: Array<{ label: string; value: string }>;
+  formulation: string | null;
+  offers: Array<{
+    pharmacyProductId: number;
+    priceKrw: number;
+    stockCount: number;
+    optionType: string | null;
+    capacity: string | null;
+  }>;
 };
 
 type ProductMatchMapping = {
@@ -21,6 +31,7 @@ type ProductCandidateContract = {
   schemaVersion: "wb_rnd_product_candidate_match_v1";
   mappingVersion: string;
   ingredientMappingVersion: string;
+  catalogContractVersion: "wb_rnd_selling_product_catalog_v1";
   productCatalogSource: string;
   maxCandidatesPerIngredient: number;
   mappings: ProductMatchMapping[];
@@ -32,6 +43,14 @@ function isRecord(value: unknown): value is JsonRecord {
 
 function nonEmptyString(value: unknown): value is string {
   return typeof value === "string" && value.trim().length > 0;
+}
+
+function isIngredientFactText(value: string) {
+  return /(?:성분|원료|함량|ingredient|active)/i.test(value);
+}
+
+function hasDeclaredAmount(value: string) {
+  return /(?:\d\s*(?:mg|mcg|ug|μg|iu|g\b))/i.test(value);
 }
 
 function normalize(value: string) {
@@ -47,6 +66,7 @@ function loadContract(value: unknown): ProductCandidateContract {
   if (
     value.schema_version !== "wb_rnd_product_candidate_match_v1" ||
     !nonEmptyString(value.mapping_version) ||
+    value.catalog_contract_version !== "wb_rnd_selling_product_catalog_v1" ||
     value.ingredient_mapping_version !== WB_RND_INGREDIENT_MAPPING_VERSION ||
     !nonEmptyString(value.product_catalog_source) ||
     !Number.isInteger(value.max_candidates_per_ingredient) ||
@@ -87,6 +107,7 @@ function loadContract(value: unknown): ProductCandidateContract {
     schemaVersion: value.schema_version,
     mappingVersion: value.mapping_version,
     ingredientMappingVersion: value.ingredient_mapping_version,
+    catalogContractVersion: value.catalog_contract_version,
     productCatalogSource: value.product_catalog_source,
     maxCandidatesPerIngredient: Number(value.max_candidates_per_ingredient),
     mappings,
@@ -107,21 +128,68 @@ function validateCatalog(value: unknown): WbRndProductCatalogItem[] {
     const id = raw.id;
     const name = raw.name;
     const categories = raw.categories;
+    const ingredientDeclarations = raw.ingredientDeclarations;
+    const formulation = raw.formulation;
+    const offers = raw.offers;
     if (
       !Number.isInteger(id) ||
       Number(id) < 1 ||
       seenProductIds.has(Number(id)) ||
       !nonEmptyString(name) ||
       !Array.isArray(categories) ||
-      !categories.every(nonEmptyString)
+      categories.length === 0 ||
+      !categories.every(nonEmptyString) ||
+      !Array.isArray(ingredientDeclarations) ||
+      !Array.isArray(offers) ||
+      offers.length === 0 ||
+      !(formulation === null || nonEmptyString(formulation))
     ) {
       throw new Error("WB_RND_PRODUCT_MATCH_invalid_catalog");
     }
     seenProductIds.add(Number(id));
+    const declarations = ingredientDeclarations.map((entry) => {
+      if (
+        !isRecord(entry) ||
+        !nonEmptyString(entry.label) ||
+        !nonEmptyString(entry.value)
+      ) {
+        throw new Error("WB_RND_PRODUCT_MATCH_invalid_catalog");
+      }
+      return { label: entry.label.trim(), value: entry.value.trim() };
+    });
+    const normalizedOffers = offers.map((entry) => {
+      if (
+        !isRecord(entry) ||
+        !Number.isInteger(entry.pharmacyProductId) ||
+        Number(entry.pharmacyProductId) < 1 ||
+        !Number.isInteger(entry.priceKrw) ||
+        Number(entry.priceKrw) < 0 ||
+        !Number.isInteger(entry.stockCount) ||
+        Number(entry.stockCount) < 1 ||
+        !(entry.optionType === null || nonEmptyString(entry.optionType)) ||
+        !(entry.capacity === null || nonEmptyString(entry.capacity))
+      ) {
+        throw new Error("WB_RND_PRODUCT_MATCH_invalid_catalog");
+      }
+      return {
+        pharmacyProductId: Number(entry.pharmacyProductId),
+        priceKrw: Number(entry.priceKrw),
+        stockCount: Number(entry.stockCount),
+        optionType: entry.optionType === null ? null : entry.optionType.trim(),
+        capacity: entry.capacity === null ? null : entry.capacity.trim(),
+      };
+    });
     return {
       id: Number(id),
       name: name.trim(),
       categories: categories.map((item) => item.trim()),
+      ingredientDeclarations: declarations,
+      formulation: formulation === null ? null : formulation.trim(),
+      offers: normalizedOffers.sort(
+        (left, right) =>
+          left.priceKrw - right.priceKrw ||
+          left.pharmacyProductId - right.pharmacyProductId
+      ),
     };
   });
 }
@@ -160,6 +228,19 @@ function candidatesForIngredient(
             ? ("product_name" as const)
             : ("category" as const),
           matched_term: matched.raw,
+          ingredients: product.categories,
+          ingredient_declarations: product.ingredientDeclarations.map((item) => ({
+            label: item.label,
+            value: item.value,
+          })),
+          formulation: product.formulation,
+          offers: product.offers.map((offer) => ({
+            pharmacy_product_id: offer.pharmacyProductId,
+            price_krw: offer.priceKrw,
+            stock_count: offer.stockCount,
+            option_type: offer.optionType,
+            capacity: offer.capacity,
+          })),
           match_rank: nameTerm ? 2 : 1,
         },
       ];
@@ -178,15 +259,47 @@ export async function listWbRndProductCatalog(): Promise<
   const products = await getProductCandidateCatalog();
   return products
     .filter((product): product is typeof product & { name: string } =>
-      nonEmptyString(product.name)
+      nonEmptyString(product.name) && product.pharmacyProducts.length > 0
     )
-    .map((product) => ({
-      id: product.id,
-      name: product.name.trim(),
-      categories: product.categories
-        .map((category) => category.name?.trim() ?? "")
-        .filter(Boolean),
-    }));
+    .map((product) => {
+      const facts = normalizeProductDetailFacts(product.detailFacts);
+      const factRows = [
+        ...(facts?.highlights ?? []),
+        ...(facts?.groups.flatMap((group) => group.rows) ?? []),
+      ];
+      const ingredientDeclarations = [
+        ...(facts?.highlights ?? []).filter((row) =>
+          isIngredientFactText(row.label)
+        ),
+        ...(facts?.groups.flatMap((group) =>
+          group.rows.filter(
+            (row) =>
+              isIngredientFactText(group.title) ||
+              isIngredientFactText(row.label)
+          )
+        ) ?? []),
+      ].filter((row) => hasDeclaredAmount(row.value));
+      const formulation =
+        factRows.find((row) =>
+          /(?:제형|형태|formulation|dosage form)/i.test(row.label)
+        )?.value ?? null;
+      return {
+        id: product.id,
+        name: product.name.trim(),
+        categories: product.categories
+          .map((category) => category.name?.trim() ?? "")
+          .filter(Boolean),
+        ingredientDeclarations,
+        formulation,
+        offers: product.pharmacyProducts.map((offer) => ({
+          pharmacyProductId: offer.id,
+          priceKrw: offer.price ?? -1,
+          stockCount: offer.stock ?? -1,
+          optionType: offer.optionType,
+          capacity: offer.capacity,
+        })),
+      };
+    });
 }
 
 export function attachWbRndProductCandidates(
@@ -215,6 +328,15 @@ export function attachWbRndProductCandidates(
   const matchedRecommendationCount = recommendations.filter(
     (item) => item.product_candidate_status === "MATCHED"
   ).length;
+  const factCompleteRecommendationCount = recommendations.filter((item) =>
+    item.product_candidates.some(
+      (product) =>
+        product.ingredients.length > 0 &&
+        product.ingredient_declarations.length > 0 &&
+        product.formulation !== null &&
+        product.offers.length > 0
+    )
+  ).length;
   return {
     ...value,
     recommendations,
@@ -224,9 +346,19 @@ export function attachWbRndProductCandidates(
       ingredient_mapping_version: contract.ingredientMappingVersion,
       product_catalog_source: contract.productCatalogSource,
       catalog_product_count: catalog.length,
+      catalog_contract_version: contract.catalogContractVersion,
+      complete_fact_product_count: catalog.filter(
+        (product) =>
+          product.ingredientDeclarations.length > 0 &&
+          product.formulation !== null &&
+          product.offers.length > 0
+      ).length,
       recommendation_count: recommendations.length,
       matched_recommendation_count: matchedRecommendationCount,
-      complete: matchedRecommendationCount === recommendations.length,
+      fact_complete_recommendation_count: factCompleteRecommendationCount,
+      complete:
+        matchedRecommendationCount === recommendations.length &&
+        factCompleteRecommendationCount === recommendations.length,
     },
   };
 }

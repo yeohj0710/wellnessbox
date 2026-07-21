@@ -24,6 +24,25 @@ const productCatalogSnapshot = JSON.parse(
 ) as {
   products: Array<{ id: number; name: string; categories: string[] }>;
 };
+const productCatalog = productCatalogSnapshot.products.map((product, index) => ({
+  ...product,
+  ingredientDeclarations: [
+    {
+      label: "기능 성분 함량",
+      value: `${product.categories[0]} ${100 + index * 10} mg`,
+    },
+  ],
+  formulation: index % 2 === 0 ? "캡슐" : "정제",
+  offers: [
+    {
+      pharmacyProductId: 20_000 + product.id,
+      priceKrw: 10_000 + index * 1_000,
+      stockCount: 5 + index,
+      optionType: "30일분",
+      capacity: "30정",
+    },
+  ],
+}));
 
 async function run() {
   const serviceBaseUrl = (process.env.WB_RND_INTERIM_BASE_URL ?? "").trim();
@@ -111,7 +130,7 @@ async function run() {
     uncertainty: "mapping fixture",
   };
   const readyUpstream = (async () => readyFixture) as typeof callWbRndInterim;
-  const listProductCatalogImpl = async () => productCatalogSnapshot.products;
+  const listProductCatalogImpl = async () => productCatalog;
   const readyRequest = new Request("http://wellnessbox.local/api/tips", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
