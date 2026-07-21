@@ -62,6 +62,11 @@ export type WbRndRecommendationRouteDependencies = {
   listProductCatalogImpl: typeof listWbRndProductCatalog;
 };
 
+export type WbRndProCorrectionRouteDependencies = {
+  requireUserSessionImpl: typeof requireUserSession;
+  callWbRndInterimImpl: typeof callWbRndInterim;
+};
+
 export async function runUserInterimStatusRoute() {
   if (!isWbRndInterimEnabled()) return disabled();
   const auth = await requireUserSession();
@@ -125,6 +130,32 @@ export async function runUserInterimRecommendationRoute(
     return noStore(withProductCandidates, 200);
   } catch (error) {
     return recommendationProxyError(error);
+  }
+}
+
+export async function runUserInterimProCorrectionRoute(
+  req: Request,
+  dependencies: Partial<WbRndProCorrectionRouteDependencies> = {}
+) {
+  if (!isWbRndInterimEnabled()) return disabled();
+  const authenticate = dependencies.requireUserSessionImpl ?? requireUserSession;
+  const callInterim = dependencies.callWbRndInterimImpl ?? callWbRndInterim;
+  const auth = await authenticate();
+  if (!auth.ok) return auth.response;
+  try {
+    const body = await readJson(req);
+    return noStore(
+      await callInterim(
+        "/v1/interim/pro/followups/correct-and-recalculate",
+        "POST",
+        {
+          ...body,
+          profile_id: pseudonymizeInterimUserId(auth.data.appUserId),
+        }
+      )
+    );
+  } catch (error) {
+    return proxyError(error);
   }
 }
 
