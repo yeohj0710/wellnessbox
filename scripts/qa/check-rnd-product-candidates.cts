@@ -891,6 +891,14 @@ async function run() {
         productContract.optimization_constraints_contract_version,
       combination_filter_contract_version:
         matched.product_combination_resolution?.filter_schema_version,
+      unfiltered_policy: {
+        schema_version: "product_optimization_constraints_v1",
+        max_total_cost_krw: 1_000_000_000,
+        max_products: 20,
+        excluded_ingredient_keys: [],
+        excluded_service_ingredient_ids: [],
+        safety_rule_ids: [],
+      },
       unfiltered_resolution: matched.product_combination_resolution,
       constrained_resolution: constrained.product_combination_resolution,
       constrained_policy: constrainedPolicy,
