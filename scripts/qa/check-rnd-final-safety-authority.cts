@@ -33,6 +33,7 @@ const productCatalog = productCatalogSnapshot.products.map((product, index) => (
     },
   ],
   formulation: index % 2 === 0 ? "캡슐" : "정제",
+  formulationKind: index % 2 === 0 ? "capsule" : "tablet",
   offers: [
     {
       pharmacyProductId: 20_000 + product.id,

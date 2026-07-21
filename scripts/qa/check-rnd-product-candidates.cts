@@ -73,6 +73,7 @@ const productCatalog = catalogSnapshot.products.map((product, index) => ({
     },
   ],
   formulation: index % 2 === 0 ? "캡슐" : "정제",
+  formulationKind: index % 2 === 0 ? "capsule" : "tablet",
   offers: [
     {
       pharmacyProductId: 10_000 + product.id,
@@ -158,6 +159,7 @@ async function run() {
         ingredients?: string[];
         ingredient_declarations?: Array<{ label?: string; value?: string }>;
         formulation?: string | null;
+        formulation_kind?: string;
         offers?: Array<{
           pharmacy_product_id?: number;
           price_krw?: number;
@@ -224,6 +226,7 @@ async function run() {
         (candidate?.ingredients?.length ?? 0) > 0 &&
         (candidate?.ingredient_declarations?.length ?? 0) > 0 &&
         Boolean(candidate?.formulation) &&
+        ["capsule", "tablet"].includes(candidate?.formulation_kind ?? "") &&
         (candidate?.offers?.length ?? 0) > 0 &&
         Number(candidate?.offers?.[0]?.price_krw) >= 0 &&
         Number(candidate?.offers?.[0]?.stock_count) > 0
@@ -294,6 +297,25 @@ async function run() {
     "WB_RND_PRODUCT_MATCH_invalid_catalog"
   );
 
+  const invalidFactsResponse = await routeWithCatalog([
+    {
+      ...productCatalog[0],
+      ingredientDeclarations: [{ label: "설명", value: "많이 들어 있음" }],
+      formulation: "",
+      formulationKind: "other",
+    },
+  ]);
+  const invalidFacts = (await invalidFactsResponse.json()) as {
+    status?: string;
+    safety_authority?: { reason?: string | null };
+  };
+  assert.equal(invalidFactsResponse.status, 502);
+  assert.equal(invalidFacts.status, "BLOCKED");
+  assert.equal(
+    invalidFacts.safety_authority?.reason,
+    "WB_RND_PRODUCT_MATCH_invalid_catalog"
+  );
+
   const report = {
     ok: true,
     schema_version: "op062_service_selling_product_catalog_contract_v1",
@@ -305,6 +327,7 @@ async function run() {
       "invalid_product_catalog_fails_closed",
       "selling_product_facts_include_ingredients_amount_price_stock_and_formulation",
       "invalid_selling_offer_fails_closed",
+      "missing_or_non_amount_product_facts_fail_closed",
     ],
     observed: {
       service_route: "POST /api/tips",
@@ -326,6 +349,7 @@ async function run() {
       no_match_complete: noMatch.product_candidate_resolution?.complete,
       invalid_catalog_http_status: invalidCatalogResponse.status,
       invalid_offer_http_status: invalidOfferResponse.status,
+      invalid_facts_http_status: invalidFactsResponse.status,
     },
   };
   const serialized = `${JSON.stringify(report, null, 2)}\n`;

@@ -6,13 +6,21 @@ import { normalizeProductDetailFacts } from "@/lib/product/product-detail-facts"
 import { WB_RND_INGREDIENT_MAPPING_VERSION } from "@/lib/server/wb-rnd-ingredient-map";
 
 type JsonRecord = Record<string, unknown>;
+type ProductFormulationKind =
+  | "capsule"
+  | "tablet"
+  | "powder"
+  | "liquid"
+  | "gummy"
+  | "other";
 
 export type WbRndProductCatalogItem = {
   id: number;
   name: string;
   categories: string[];
   ingredientDeclarations: Array<{ label: string; value: string }>;
-  formulation: string | null;
+  formulation: string;
+  formulationKind: ProductFormulationKind;
   offers: Array<{
     pharmacyProductId: number;
     priceKrw: number;
@@ -51,6 +59,16 @@ function isIngredientFactText(value: string) {
 
 function hasDeclaredAmount(value: string) {
   return /(?:\d\s*(?:mg|mcg|ug|μg|iu|g\b))/i.test(value);
+}
+
+function classifyFormulation(value: string): ProductFormulationKind {
+  const normalized = value.trim().toLowerCase();
+  if (/(?:캡슐|capsule)/i.test(normalized)) return "capsule";
+  if (/(?:정제|tablet)/i.test(normalized)) return "tablet";
+  if (/(?:분말|powder)/i.test(normalized)) return "powder";
+  if (/(?:액상|액체|liquid)/i.test(normalized)) return "liquid";
+  if (/(?:구미|gummy)/i.test(normalized)) return "gummy";
+  return "other";
 }
 
 function normalize(value: string) {
@@ -130,6 +148,7 @@ function validateCatalog(value: unknown): WbRndProductCatalogItem[] {
     const categories = raw.categories;
     const ingredientDeclarations = raw.ingredientDeclarations;
     const formulation = raw.formulation;
+    const formulationKind = raw.formulationKind;
     const offers = raw.offers;
     if (
       !Number.isInteger(id) ||
@@ -140,9 +159,11 @@ function validateCatalog(value: unknown): WbRndProductCatalogItem[] {
       categories.length === 0 ||
       !categories.every(nonEmptyString) ||
       !Array.isArray(ingredientDeclarations) ||
+      ingredientDeclarations.length === 0 ||
       !Array.isArray(offers) ||
       offers.length === 0 ||
-      !(formulation === null || nonEmptyString(formulation))
+      !nonEmptyString(formulation) ||
+      formulationKind !== classifyFormulation(formulation)
     ) {
       throw new Error("WB_RND_PRODUCT_MATCH_invalid_catalog");
     }
@@ -151,7 +172,9 @@ function validateCatalog(value: unknown): WbRndProductCatalogItem[] {
       if (
         !isRecord(entry) ||
         !nonEmptyString(entry.label) ||
-        !nonEmptyString(entry.value)
+        !nonEmptyString(entry.value) ||
+        !isIngredientFactText(entry.label) ||
+        !hasDeclaredAmount(entry.value)
       ) {
         throw new Error("WB_RND_PRODUCT_MATCH_invalid_catalog");
       }
@@ -184,7 +207,8 @@ function validateCatalog(value: unknown): WbRndProductCatalogItem[] {
       name: name.trim(),
       categories: categories.map((item) => item.trim()),
       ingredientDeclarations: declarations,
-      formulation: formulation === null ? null : formulation.trim(),
+      formulation: formulation.trim(),
+      formulationKind: classifyFormulation(formulation),
       offers: normalizedOffers.sort(
         (left, right) =>
           left.priceKrw - right.priceKrw ||
@@ -234,6 +258,7 @@ function candidatesForIngredient(
             value: item.value,
           })),
           formulation: product.formulation,
+          formulation_kind: product.formulationKind,
           offers: product.offers.map((offer) => ({
             pharmacy_product_id: offer.pharmacyProductId,
             price_krw: offer.priceKrw,
@@ -291,6 +316,7 @@ export async function listWbRndProductCatalog(): Promise<
           .filter(Boolean),
         ingredientDeclarations,
         formulation,
+        formulationKind: formulation ? classifyFormulation(formulation) : null,
         offers: product.pharmacyProducts.map((offer) => ({
           pharmacyProductId: offer.id,
           priceKrw: offer.price ?? -1,
@@ -299,7 +325,18 @@ export async function listWbRndProductCatalog(): Promise<
           capacity: offer.capacity,
         })),
       };
-    });
+    })
+    .filter(
+      (
+        product
+      ): product is typeof product & {
+        formulation: string;
+        formulationKind: ProductFormulationKind;
+      } =>
+        product.ingredientDeclarations.length > 0 &&
+        nonEmptyString(product.formulation) &&
+        product.formulationKind !== null
+    );
 }
 
 export function attachWbRndProductCandidates(
@@ -333,7 +370,7 @@ export function attachWbRndProductCandidates(
       (product) =>
         product.ingredients.length > 0 &&
         product.ingredient_declarations.length > 0 &&
-        product.formulation !== null &&
+        nonEmptyString(product.formulation) &&
         product.offers.length > 0
     )
   ).length;
@@ -350,7 +387,7 @@ export function attachWbRndProductCandidates(
       complete_fact_product_count: catalog.filter(
         (product) =>
           product.ingredientDeclarations.length > 0 &&
-          product.formulation !== null &&
+          nonEmptyString(product.formulation) &&
           product.offers.length > 0
       ).length,
       recommendation_count: recommendations.length,
