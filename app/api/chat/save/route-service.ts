@@ -19,6 +19,8 @@ import {
 } from "@/lib/chat/session-route";
 import { ensureClient } from "@/lib/server/client";
 import { NextRequest, NextResponse } from "next/server";
+import type { WbRndCounselingTurn } from "@/lib/server/wb-rnd-interim-client";
+import { DEFAULT_CHAT_TITLE } from "@/lib/chat/constants";
 
 const UNKNOWN_ERROR = "Unknown error";
 
@@ -85,6 +87,57 @@ export async function persistChatSession(input: {
   }
 
   return { ok: true as const };
+}
+
+export async function persistRndCounselingTurn(input: {
+  identity: ChatWriteIdentity;
+  sessionId: string;
+  turn: WbRndCounselingTurn;
+  userAgent: string | null;
+}) {
+  await ensureClient(input.identity.clientId, { userAgent: input.userAgent });
+  const existing = await db.chatSession.findUnique({
+    where: { id: input.sessionId },
+    select: { clientId: true, appUserId: true, meta: true },
+  });
+  if (existing && !canWriteChatSession(existing, input.identity)) {
+    throw new Error("Forbidden");
+  }
+  const execution = input.turn.recommendation_execution;
+  const rndMeta = {
+    schemaVersion: "rndCounselingSessionBindingV1",
+    agentRunId: input.turn.agent_run_id,
+    recommendationRunId: execution?.run_id ?? null,
+    recommendationStatus: execution?.status ?? null,
+    simulation: execution?.simulation ?? true,
+    bindingSha256: input.turn.session_binding_sha256,
+  };
+  await db.chatSession.upsert({
+    where: { id: input.sessionId },
+    create: {
+      id: input.sessionId,
+      clientId: input.identity.clientId,
+      appUserId: input.identity.loggedIn ? input.identity.appUserId ?? undefined : undefined,
+      title: DEFAULT_CHAT_TITLE,
+      status: "active",
+      meta: { rndCounseling: rndMeta },
+    },
+    update: { meta: { rndCounseling: rndMeta } },
+  });
+  await db.chatMessage.upsert({
+    where: { id: `rnd:${input.turn.turn_id}` },
+    create: {
+      id: `rnd:${input.turn.turn_id}`,
+      sessionId: input.sessionId,
+      role: "assistant",
+      content: input.turn.answer.answer_text,
+      meta: { rndCounseling: rndMeta },
+    },
+    update: {
+      content: input.turn.answer.answer_text,
+      meta: { rndCounseling: rndMeta },
+    },
+  });
 }
 
 export async function loadChatSessions(input: { identity: ChatReadIdentity }) {

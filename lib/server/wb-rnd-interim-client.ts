@@ -43,10 +43,72 @@ function token() {
   return value;
 }
 
-export function pseudonymizeInterimUserId(appUserId: string) {
+export function pseudonymizeInterimSubjectId(subjectId: string) {
   const salt = (process.env.WB_RND_INTERIM_PSEUDONYM_SALT ?? "").trim();
   if (!salt) throw new Error("WB_RND_INTERIM_PSEUDONYM_SALT_missing");
-  return `usr_${createHmac("sha256", salt).update(appUserId).digest("hex").slice(0, 32)}`;
+  return `usr_${createHmac("sha256", salt).update(subjectId).digest("hex").slice(0, 32)}`;
+}
+
+export function pseudonymizeInterimUserId(appUserId: string) {
+  return pseudonymizeInterimSubjectId(appUserId);
+}
+
+export type WbRndCounselingTurn = {
+  schema_version: "counseling_turn_response_v1";
+  service_session_id: string;
+  turn_id: string;
+  agent_run_id: string;
+  answer: { answer_text: string; status: string; [key: string]: unknown };
+  verification: { passed: boolean; [key: string]: unknown };
+  recommendation_execution: null | {
+    run_id: string;
+    status: string;
+    simulation: boolean;
+  };
+  session_binding_sha256: string;
+  deduplicated: boolean;
+};
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return !!value && typeof value === "object" && !Array.isArray(value);
+}
+
+function validateCounselingTurn(value: unknown): WbRndCounselingTurn {
+  if (!isRecord(value) || value.schema_version !== "counseling_turn_response_v1") {
+    throw new Error("WB_RND_COUNSELING_invalid_contract");
+  }
+  const answer = value.answer;
+  const verification = value.verification;
+  if (
+    !isRecord(answer) ||
+    typeof answer.answer_text !== "string" ||
+    !answer.answer_text ||
+    !isRecord(verification) ||
+    verification.passed !== true ||
+    typeof value.service_session_id !== "string" ||
+    typeof value.turn_id !== "string" ||
+    typeof value.agent_run_id !== "string" ||
+    typeof value.session_binding_sha256 !== "string"
+  ) {
+    throw new Error("WB_RND_COUNSELING_invalid_contract");
+  }
+  const execution = value.recommendation_execution;
+  if (
+    execution !== null &&
+    (!isRecord(execution) ||
+      typeof execution.run_id !== "string" ||
+      typeof execution.status !== "string" ||
+      typeof execution.simulation !== "boolean")
+  ) {
+    throw new Error("WB_RND_COUNSELING_invalid_contract");
+  }
+  return value as WbRndCounselingTurn;
+}
+
+export async function callWbRndCounselingTurn(body: unknown) {
+  return validateCounselingTurn(
+    await callWbRndInterim<unknown>("/v1/interim/counseling/turns", "POST", body)
+  );
 }
 
 export async function callWbRndInterim<T>(

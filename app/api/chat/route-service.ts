@@ -4,6 +4,13 @@ import { applyActorCookie } from "@/lib/chat/session-route";
 import type { RequestActor } from "@/lib/server/actor";
 import { resolveActorForRequest } from "@/lib/server/actor";
 import type { ChatRequestBody } from "@/types/chat";
+import { createHash } from "node:crypto";
+import {
+  callWbRndCounselingTurn,
+  isWbRndInterimEnabled,
+  pseudonymizeInterimSubjectId,
+} from "@/lib/server/wb-rnd-interim-client";
+import { persistRndCounselingTurn } from "./save/route-service";
 
 const STREAM_HEADERS = {
   "Content-Type": "text/plain; charset=utf-8",
@@ -63,6 +70,65 @@ function setActorCookie(response: NextResponse, actor: RequestActor) {
   return applyActorCookie(response, actor);
 }
 
+function stringList(value: unknown) {
+  return Array.isArray(value)
+    ? value.filter((item): item is string => typeof item === "string" && !!item.trim())
+    : [];
+}
+
+async function runRndCounseling(input: {
+  body: ChatRequestBody;
+  actor: RequestActor;
+  userAgent: string | null;
+}) {
+  const body = asRecord(input.body);
+  const sessionId = typeof body.sessionId === "string" ? body.sessionId.trim() : "";
+  const messages = Array.isArray(body.messages) ? body.messages : [];
+  const last = [...messages].reverse().find((message) => asRecord(message).role === "user");
+  const query = typeof asRecord(last).content === "string" ? String(asRecord(last).content).trim() : "";
+  if (!sessionId || !query) return null;
+  const subject = input.actor.appUserId ?? input.actor.deviceClientId;
+  if (!subject || !input.actor.deviceClientId) throw new Error("Missing chat actor identity");
+  const profile = asRecord(body.profile);
+  const goals = stringList(profile.goals).length
+    ? stringList(profile.goals)
+    : stringList(body.localAssessCats).length
+    ? stringList(body.localAssessCats)
+    : ["general_wellness"];
+  const turnId =
+    typeof body.turnId === "string" && body.turnId.trim()
+      ? body.turnId.trim()
+      : createHash("sha256").update(`${sessionId}\n${query}`).digest("hex").slice(0, 32);
+  const turn = await callWbRndCounselingTurn({
+    schema_version: "counseling_turn_request_v1",
+    service_session_id: sessionId,
+    turn_id: turnId,
+    profile_id: pseudonymizeInterimSubjectId(subject),
+    query,
+    answered_at:
+      typeof body.answeredAt === "string" ? body.answeredAt : new Date().toISOString(),
+    profile: { ...profile, goals },
+    consent_scopes: ["counseling:write", "recommendation:write"],
+    goals,
+    ingredients: stringList(body.ingredients),
+    safety: asRecord(body.safety),
+  });
+  if (turn.service_session_id !== sessionId || turn.turn_id !== turnId) {
+    throw new Error("WB_RND_COUNSELING_session_binding_mismatch");
+  }
+  await persistRndCounselingTurn({
+    identity: {
+      clientId: input.actor.deviceClientId,
+      appUserId: input.actor.appUserId,
+      loggedIn: input.actor.loggedIn,
+    },
+    sessionId,
+    turn,
+    userAgent: input.userAgent,
+  });
+  return turn.answer.answer_text;
+}
+
 export function validateChatRouteActor(actor: RequestActor) {
   if (actor.loggedIn && !actor.appUserId) {
     return NextResponse.json({ error: "Missing appUserId" }, { status: 500 });
@@ -101,10 +167,18 @@ export async function buildChatStreamResponse(input: {
       try {
         // Flush stream headers quickly while upstream context/model bootstraps.
         controller.enqueue(encoder.encode("\u200b"));
-        const iterable = (await streamChat(
-          patchedBody,
-          input.headers
-        )) as AsyncIterable<string>;
+        const rndAnswer = isWbRndInterimEnabled()
+          ? await runRndCounseling({
+              body: patchedBody,
+              actor: input.actor,
+              userAgent: input.headers.get("user-agent"),
+            })
+          : null;
+        const iterable = rndAnswer
+          ? (async function* () {
+              yield rndAnswer;
+            })()
+          : ((await streamChat(patchedBody, input.headers)) as AsyncIterable<string>);
 
         for await (const token of iterable) {
           if (token == null) continue;
