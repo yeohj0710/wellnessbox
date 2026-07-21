@@ -639,6 +639,7 @@ function canonicalRecommendationInput(
       max_total_cost_krw: constraints.maxTotalCostKrw,
       max_products: constraints.maxProducts,
       excluded_ingredient_keys: constraints.excludedRndIngredientKeys,
+      excluded_service_ingredient_ids: [...constraints.excludedServiceIngredientIds].sort(),
       safety_rule_ids: constraints.safetyRuleIds,
     },
   };
