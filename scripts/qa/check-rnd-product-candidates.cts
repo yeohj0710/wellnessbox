@@ -20,6 +20,8 @@ const productContract = JSON.parse(
   schema_version: string;
   mapping_version: string;
   ingredient_mapping_version: string;
+  combination_contract_version: string;
+  max_product_combinations: number;
   mappings: Array<{ service_ingredient_id: string; match_terms: string[] }>;
 };
 const ingredientContract = JSON.parse(
@@ -84,6 +86,14 @@ const productCatalog = catalogSnapshot.products.map((product, index) => ({
     },
   ],
 }));
+const combinationProductCatalog = productCatalog.map((product, index) => ({
+  ...product,
+  ingredientDeclarations: product.categories.map((category, categoryIndex) => ({
+    label: "ingredient amount",
+    value: `${category} ${100 + index * 10 + categoryIndex} mg`,
+  })),
+}));
+
 const expectedPrimaryProductIdByServiceIngredient = {
   "ING:CALCIUM": 29,
   "ING:COQ10": 44,
@@ -147,7 +157,7 @@ async function run() {
     )
   );
 
-  const matchedResponse = await routeWithCatalog(productCatalog);
+  const matchedResponse = await routeWithCatalog(combinationProductCatalog);
   const matched = (await matchedResponse.json()) as {
     status?: string;
     recommendations?: Array<{
@@ -175,6 +185,35 @@ async function run() {
       catalog_contract_version?: string;
       complete_fact_product_count?: number;
       fact_complete_recommendation_count?: number;
+    };
+    product_combinations?: Array<{
+      schema_version?: string;
+      combination_id?: string;
+      recommendation_service_ingredient_ids?: string[];
+      selected_products?: Array<{
+        product_id?: number;
+        offer?: { pharmacy_product_id?: number; price_krw?: number };
+        ingredient_amounts?: Array<{
+          service_ingredient_id?: string;
+          normalized_amount?: number;
+          normalized_unit?: string;
+        }>;
+      }>;
+      product_count?: number;
+      total_cost_krw?: number;
+      ingredient_totals?: Array<{
+        service_ingredient_id?: string;
+        total_daily_amount?: number;
+        unit?: string;
+        product_ids?: number[];
+        duplicate_across_products?: boolean;
+      }>;
+      duplicate_ingredient_ids?: string[];
+    }>;
+    product_combination_resolution?: {
+      schema_version?: string;
+      combination_count?: number;
+      complete?: boolean;
     };
   };
   assert.equal(matchedResponse.status, 200);
@@ -208,6 +247,11 @@ async function run() {
   );
   assert.equal(matched.product_candidate_resolution?.complete, true);
   assert.equal(
+    productContract.combination_contract_version,
+    "wb_rnd_product_combination_v1"
+  );
+  assert.equal(productContract.max_product_combinations, 64);
+  assert.equal(
     matched.product_candidate_resolution?.catalog_contract_version,
     "wb_rnd_selling_product_catalog_v1"
   );
@@ -240,6 +284,67 @@ async function run() {
   assert.equal(
     matched.product_candidate_resolution?.matched_recommendation_count,
     ingredientContract.mappings.length
+  );
+  assert.equal(
+    matched.product_combination_resolution?.schema_version,
+    "wb_rnd_product_combination_v1"
+  );
+  assert.equal(matched.product_combination_resolution?.complete, true);
+  assert.ok((matched.product_combinations?.length ?? 0) > 0);
+  assert.ok(
+    (matched.product_combinations?.length ?? 0) <=
+      productContract.max_product_combinations
+  );
+  const sharedProductCombination = matched.product_combinations?.find(
+    (item) =>
+      JSON.stringify(item.selected_products?.map((product) => product.product_id)) ===
+      JSON.stringify([29, 30, 31, 35, 44])
+  );
+  assert.ok(sharedProductCombination);
+  assert.equal(sharedProductCombination?.product_count, 5);
+  assert.equal(
+    sharedProductCombination?.recommendation_service_ingredient_ids?.length,
+    ingredientContract.mappings.length
+  );
+  assert.deepEqual(sharedProductCombination?.duplicate_ingredient_ids, []);
+  assert.deepEqual(
+    sharedProductCombination?.ingredient_totals?.find(
+      (item) => item.service_ingredient_id === "ING:MAGNESIUM"
+    ),
+    {
+      service_ingredient_id: "ING:MAGNESIUM",
+      total_daily_amount: 102_000,
+      unit: "mcg",
+      product_ids: [29],
+      duplicate_across_products: false,
+    }
+  );
+  assert.equal(
+    sharedProductCombination?.total_cost_krw,
+    sharedProductCombination?.selected_products?.reduce(
+      (total, item) => total + Number(item.offer?.price_krw),
+      0
+    )
+  );
+  assert.match(
+    sharedProductCombination?.combination_id ?? "",
+    /^combo_[a-f0-9]{16}$/
+  );
+  const duplicateZincCombination = matched.product_combinations?.find((item) =>
+    item.duplicate_ingredient_ids?.includes("ING:ZINC")
+  );
+  assert.ok(duplicateZincCombination);
+  assert.deepEqual(
+    duplicateZincCombination?.ingredient_totals?.find(
+      (item) => item.service_ingredient_id === "ING:ZINC"
+    ),
+    {
+      service_ingredient_id: "ING:ZINC",
+      total_daily_amount: 253_000,
+      unit: "mcg",
+      product_ids: [29, 42],
+      duplicate_across_products: true,
+    }
   );
 
   const noMatchResponse = await routeWithCatalog([]);
@@ -316,9 +421,31 @@ async function run() {
     "WB_RND_PRODUCT_MATCH_invalid_catalog"
   );
 
+  const ambiguousAmountResponse = await routeWithCatalog([
+    {
+      ...combinationProductCatalog[0],
+      ingredientDeclarations: [
+        {
+          label: "ingredient amount",
+          value: `${combinationProductCatalog[0].categories[0]} 100-200 mg`,
+        },
+      ],
+    },
+  ]);
+  const ambiguousAmount = (await ambiguousAmountResponse.json()) as {
+    status?: string;
+    safety_authority?: { reason?: string | null };
+  };
+  assert.equal(ambiguousAmountResponse.status, 502);
+  assert.equal(ambiguousAmount.status, "BLOCKED");
+  assert.equal(
+    ambiguousAmount.safety_authority?.reason,
+    "WB_RND_PRODUCT_MATCH_ambiguous_ingredient_amount"
+  );
+
   const report = {
     ok: true,
-    schema_version: "op062_service_selling_product_catalog_contract_v1",
+    schema_version: "op063_op064_service_product_combination_contract_v1",
     checks: [
       "product_match_contract_covers_every_mapped_service_ingredient",
       "api_tips_maps_rnd_ingredients_to_service_ingredients",
@@ -328,6 +455,11 @@ async function run() {
       "selling_product_facts_include_ingredients_amount_price_stock_and_formulation",
       "invalid_selling_offer_fails_closed",
       "missing_or_non_amount_product_facts_fail_closed",
+      "actual_product_candidates_form_deterministic_combinations",
+      "same_product_is_deduplicated_across_recommendations",
+      "ingredient_amounts_are_normalized_and_summed_by_product",
+      "duplicate_ingredients_require_multiple_distinct_products",
+      "ambiguous_amounts_fail_closed",
     ],
     observed: {
       service_route: "POST /api/tips",
@@ -350,6 +482,14 @@ async function run() {
       invalid_catalog_http_status: invalidCatalogResponse.status,
       invalid_offer_http_status: invalidOfferResponse.status,
       invalid_facts_http_status: invalidFactsResponse.status,
+      ambiguous_amount_http_status: ambiguousAmountResponse.status,
+      combination_contract_version:
+        matched.product_combination_resolution?.schema_version,
+      combination_count: matched.product_combination_resolution?.combination_count,
+      shared_product_combination_id: sharedProductCombination?.combination_id,
+      shared_product_combination_product_count:
+        sharedProductCombination?.product_count,
+      duplicate_zinc_combination_id: duplicateZincCombination?.combination_id,
     },
   };
   const serialized = `${JSON.stringify(report, null, 2)}\n`;

@@ -1,5 +1,7 @@
 import "server-only";
 
+import { createHash } from "node:crypto";
+
 import contractJson from "@/contracts/wb-rnd/product-candidate-match-v1.json";
 import { getProductCandidateCatalog } from "@/lib/product/product.catalog";
 import { normalizeProductDetailFacts } from "@/lib/product/product-detail-facts";
@@ -19,6 +21,7 @@ export type WbRndProductCatalogItem = {
   name: string;
   categories: string[];
   ingredientDeclarations: Array<{ label: string; value: string }>;
+  ingredientAmounts: NormalizedIngredientAmount[];
   formulation: string;
   formulationKind: ProductFormulationKind;
   offers: Array<{
@@ -40,8 +43,10 @@ type ProductCandidateContract = {
   mappingVersion: string;
   ingredientMappingVersion: string;
   catalogContractVersion: "wb_rnd_selling_product_catalog_v1";
+  combinationContractVersion: "wb_rnd_product_combination_v1";
   productCatalogSource: string;
   maxCandidatesPerIngredient: number;
+  maxProductCombinations: number;
   mappings: ProductMatchMapping[];
 };
 
@@ -85,11 +90,15 @@ function loadContract(value: unknown): ProductCandidateContract {
     value.schema_version !== "wb_rnd_product_candidate_match_v1" ||
     !nonEmptyString(value.mapping_version) ||
     value.catalog_contract_version !== "wb_rnd_selling_product_catalog_v1" ||
+    value.combination_contract_version !== "wb_rnd_product_combination_v1" ||
     value.ingredient_mapping_version !== WB_RND_INGREDIENT_MAPPING_VERSION ||
     !nonEmptyString(value.product_catalog_source) ||
     !Number.isInteger(value.max_candidates_per_ingredient) ||
     Number(value.max_candidates_per_ingredient) < 1 ||
     Number(value.max_candidates_per_ingredient) > 20 ||
+    !Number.isInteger(value.max_product_combinations) ||
+    Number(value.max_product_combinations) < 1 ||
+    Number(value.max_product_combinations) > 256 ||
     !Array.isArray(value.mappings)
   ) {
     throw new Error("WB_RND_PRODUCT_MATCH_invalid_contract");
@@ -126,8 +135,10 @@ function loadContract(value: unknown): ProductCandidateContract {
     mappingVersion: value.mapping_version,
     ingredientMappingVersion: value.ingredient_mapping_version,
     catalogContractVersion: value.catalog_contract_version,
+    combinationContractVersion: value.combination_contract_version,
     productCatalogSource: value.product_catalog_source,
     maxCandidatesPerIngredient: Number(value.max_candidates_per_ingredient),
+    maxProductCombinations: Number(value.max_product_combinations),
     mappings,
   };
 }
@@ -136,6 +147,52 @@ const contract = loadContract(contractJson);
 const mappingByServiceIngredient = new Map(
   contract.mappings.map((mapping) => [mapping.serviceIngredientId, mapping])
 );
+
+type NormalizedIngredientAmount = {
+  service_ingredient_id: string;
+  normalized_amount: number;
+  normalized_unit: "mcg" | "IU";
+  source_label: string;
+  source_value: string;
+};
+
+function parseIngredientAmount(
+  declaration: { label: string; value: string }
+): NormalizedIngredientAmount {
+  const combined = normalize(`${declaration.label} ${declaration.value}`);
+  const matchedServiceIds = contract.mappings
+    .filter((mapping) =>
+      mapping.matchTerms.some((term) => combined.includes(normalize(term)))
+    )
+    .map((mapping) => mapping.serviceIngredientId);
+  if (new Set(matchedServiceIds).size !== 1) {
+    throw new Error("WB_RND_PRODUCT_MATCH_ambiguous_ingredient_amount");
+  }
+  const amounts = Array.from(
+    declaration.value.matchAll(/(\d+(?:\.\d+)?)\s*(mcg|ug|µg|μg|mg|g|iu)\b/gi)
+  );
+  if (amounts.length !== 1 || /(?:-|~|to|per\s+day|daily|x\s*\d)/i.test(declaration.value)) {
+    throw new Error("WB_RND_PRODUCT_MATCH_ambiguous_ingredient_amount");
+  }
+  const rawAmount = Number(amounts[0][1]);
+  const rawUnit = amounts[0][2].toLowerCase();
+  if (!Number.isFinite(rawAmount) || rawAmount <= 0) {
+    throw new Error("WB_RND_PRODUCT_MATCH_ambiguous_ingredient_amount");
+  }
+  const normalizedUnit = rawUnit === "iu" ? "IU" : "mcg";
+  const multiplier = rawUnit === "g" ? 1_000_000 : rawUnit === "mg" ? 1_000 : 1;
+  const normalizedAmount = rawAmount * multiplier;
+  if (!Number.isSafeInteger(normalizedAmount)) {
+    throw new Error("WB_RND_PRODUCT_MATCH_ambiguous_ingredient_amount");
+  }
+  return {
+    service_ingredient_id: matchedServiceIds[0],
+    normalized_amount: normalizedAmount,
+    normalized_unit: normalizedUnit,
+    source_label: declaration.label,
+    source_value: declaration.value,
+  };
+}
 
 function validateCatalog(value: unknown): WbRndProductCatalogItem[] {
   if (!Array.isArray(value))
@@ -180,6 +237,13 @@ function validateCatalog(value: unknown): WbRndProductCatalogItem[] {
       }
       return { label: entry.label.trim(), value: entry.value.trim() };
     });
+    const ingredientAmounts = declarations.map(parseIngredientAmount);
+    if (
+      new Set(ingredientAmounts.map((item) => item.service_ingredient_id)).size !==
+      ingredientAmounts.length
+    ) {
+      throw new Error("WB_RND_PRODUCT_MATCH_ambiguous_ingredient_amount");
+    }
     const normalizedOffers = offers.map((entry) => {
       if (
         !isRecord(entry) ||
@@ -207,6 +271,7 @@ function validateCatalog(value: unknown): WbRndProductCatalogItem[] {
       name: name.trim(),
       categories: categories.map((item) => item.trim()),
       ingredientDeclarations: declarations,
+      ingredientAmounts,
       formulation: formulation.trim(),
       formulationKind: classifyFormulation(formulation),
       offers: normalizedOffers.sort(
@@ -257,6 +322,7 @@ function candidatesForIngredient(
             label: item.label,
             value: item.value,
           })),
+          ingredient_amounts: product.ingredientAmounts.map((item) => ({ ...item })),
           formulation: product.formulation,
           formulation_kind: product.formulationKind,
           offers: product.offers.map((offer) => ({
@@ -276,6 +342,114 @@ function candidatesForIngredient(
     )
     .slice(0, contract.maxCandidatesPerIngredient)
     .map(({ match_rank: _matchRank, ...candidate }) => candidate);
+}
+
+type ProductCandidate = ReturnType<typeof candidatesForIngredient>[number];
+
+function buildProductCombinations(
+  recommendations: Array<JsonRecord & { product_candidates: ProductCandidate[] }>
+) {
+  if (
+    recommendations.length === 0 ||
+    recommendations.some((item) => item.product_candidates.length === 0)
+  ) {
+    return [];
+  }
+  const rawChoices: ProductCandidate[][] = [];
+  const visit = (index: number, selected: ProductCandidate[]) => {
+    if (rawChoices.length >= contract.maxProductCombinations) return;
+    if (index === recommendations.length) {
+      rawChoices.push([...selected]);
+      return;
+    }
+    for (const candidate of recommendations[index].product_candidates) {
+      visit(index + 1, [...selected, candidate]);
+      if (rawChoices.length >= contract.maxProductCombinations) break;
+    }
+  };
+  visit(0, []);
+
+  const unique = new Map<string, ReturnType<typeof materializeCombination>>();
+  for (const choices of rawChoices) {
+    const combination = materializeCombination(recommendations, choices);
+    unique.set(combination.combination_id, combination);
+  }
+  return [...unique.values()].sort((left, right) =>
+    left.combination_id.localeCompare(right.combination_id)
+  );
+}
+
+function materializeCombination(
+  recommendations: Array<JsonRecord & { product_candidates: ProductCandidate[] }>,
+  choices: ProductCandidate[]
+) {
+  const productById = new Map<number, ProductCandidate>();
+  choices.forEach((choice) => productById.set(choice.product_id, choice));
+  const selectedProducts = [...productById.values()]
+    .sort((left, right) => left.product_id - right.product_id)
+    .map((product) => ({
+      product_id: product.product_id,
+      product_name: product.product_name,
+      formulation_kind: product.formulation_kind,
+      offer: product.offers[0],
+      ingredient_amounts: product.ingredient_amounts,
+    }));
+  const aggregate = new Map<
+    string,
+    { serviceIngredientId: string; unit: "mcg" | "IU"; amount: number; productIds: Set<number> }
+  >();
+  for (const product of selectedProducts) {
+    for (const amount of product.ingredient_amounts) {
+      const key = `${amount.service_ingredient_id}:${amount.normalized_unit}`;
+      const current = aggregate.get(key) ?? {
+        serviceIngredientId: amount.service_ingredient_id,
+        unit: amount.normalized_unit,
+        amount: 0,
+        productIds: new Set<number>(),
+      };
+      current.amount += amount.normalized_amount;
+      current.productIds.add(product.product_id);
+      aggregate.set(key, current);
+    }
+  }
+  const ingredientTotals = [...aggregate.values()]
+    .sort(
+      (left, right) =>
+        left.serviceIngredientId.localeCompare(right.serviceIngredientId) ||
+        left.unit.localeCompare(right.unit)
+    )
+    .map((item) => ({
+      service_ingredient_id: item.serviceIngredientId,
+      total_daily_amount: item.amount,
+      unit: item.unit,
+      product_ids: [...item.productIds].sort((left, right) => left - right),
+      duplicate_across_products: item.productIds.size > 1,
+    }));
+  const identity = selectedProducts.map((product) => ({
+    product_id: product.product_id,
+    pharmacy_product_id: product.offer.pharmacy_product_id,
+  }));
+  const combinationId = `combo_${createHash("sha256")
+    .update(JSON.stringify(identity))
+    .digest("hex")
+    .slice(0, 16)}`;
+  return {
+    schema_version: contract.combinationContractVersion,
+    combination_id: combinationId,
+    recommendation_service_ingredient_ids: recommendations.map(
+      (item) => item.service_ingredient_id
+    ),
+    selected_products: selectedProducts,
+    product_count: selectedProducts.length,
+    total_cost_krw: selectedProducts.reduce(
+      (total, product) => total + product.offer.price_krw,
+      0
+    ),
+    ingredient_totals: ingredientTotals,
+    duplicate_ingredient_ids: ingredientTotals
+      .filter((item) => item.duplicate_across_products)
+      .map((item) => item.service_ingredient_id),
+  };
 }
 
 export async function listWbRndProductCatalog(): Promise<
@@ -304,6 +478,9 @@ export async function listWbRndProductCatalog(): Promise<
           )
         ) ?? []),
       ].filter((row) => hasDeclaredAmount(row.value));
+      const ingredientAmounts = ingredientDeclarations.map((row) =>
+        parseIngredientAmount({ label: row.label, value: row.value })
+      );
       const formulation =
         factRows.find((row) =>
           /(?:제형|형태|formulation|dosage form)/i.test(row.label)
@@ -315,6 +492,7 @@ export async function listWbRndProductCatalog(): Promise<
           .map((category) => category.name?.trim() ?? "")
           .filter(Boolean),
         ingredientDeclarations,
+        ingredientAmounts,
         formulation,
         formulationKind: formulation ? classifyFormulation(formulation) : null,
         offers: product.pharmacyProducts.map((offer) => ({
@@ -365,6 +543,9 @@ export function attachWbRndProductCandidates(
   const matchedRecommendationCount = recommendations.filter(
     (item) => item.product_candidate_status === "MATCHED"
   ).length;
+  const productCombinations = buildProductCombinations(
+    recommendations as Array<JsonRecord & { product_candidates: ProductCandidate[] }>
+  );
   const factCompleteRecommendationCount = recommendations.filter((item) =>
     item.product_candidates.some(
       (product) =>
@@ -377,6 +558,19 @@ export function attachWbRndProductCandidates(
   return {
     ...value,
     recommendations,
+    product_combinations: productCombinations,
+    product_combination_resolution: {
+      schema_version: contract.combinationContractVersion,
+      combination_count: productCombinations.length,
+      complete:
+        recommendations.length > 0 &&
+        productCombinations.length > 0 &&
+        productCombinations.every(
+          (item) =>
+            item.recommendation_service_ingredient_ids.length ===
+            recommendations.length
+        ),
+    },
     product_candidate_resolution: {
       schema_version: contract.schemaVersion,
       mapping_version: contract.mappingVersion,

@@ -2,9 +2,11 @@
   "schema_version": "wb_rnd_product_candidate_match_v1",
   "mapping_version": "2026-07-16.1",
   "catalog_contract_version": "wb_rnd_selling_product_catalog_v1",
+  "combination_contract_version": "wb_rnd_product_combination_v1",
   "ingredient_mapping_version": "2026-07-16.1",
   "product_catalog_source": "wellnessbox Prisma Product + in-stock PharmacyProduct",
   "max_candidates_per_ingredient": 5,
+  "max_product_combinations": 64,
   "mappings": [
     {
       "service_ingredient_id": "ING:CALCIUM",
