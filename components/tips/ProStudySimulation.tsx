@@ -28,6 +28,14 @@ const INGREDIENTS: Record<string, string> = {
   zinc: "아연",
 };
 
+function proRequestError(cause: unknown, fallback: string) {
+  const detail = cause instanceof Error ? cause.message.toLowerCase() : "";
+  if (detail.includes("disabled")) return "PRO 연구 연결이 꺼져 있습니다. 관리자에게 문의하세요.";
+  if (detail.includes("unauthorized") || detail.includes("401")) return "로그인이 만료됐습니다. 다시 로그인한 뒤 저장하세요.";
+  if (detail.includes("upstream_409") || detail.includes("conflict")) return "다른 변경사항과 충돌했습니다. 화면을 새로고침한 뒤 다시 저장하세요.";
+  return fallback;
+}
+
 function csv(participants: StudyParticipant[]) {
   const rows = [["tester_id", "mode", "plan_id", "instrument", "timepoint", "raw_score", "responses", "adherence_percent", "adverse_event", "recommendation"]];
   for (const participant of participants) {
@@ -151,8 +159,8 @@ const ProStudySimulation = forwardRef<ProStudySimulationHandle, Props>(function 
       setWeek(2);
       setStep(2);
       return true;
-    } catch {
-      setError("PRO 계획을 등록하지 못했습니다. 입력값과 저장 동의를 확인한 뒤 다시 시도하세요.");
+    } catch (cause) {
+      setError(proRequestError(cause, "PRO 계획을 등록하지 못했습니다. 입력값과 저장 동의를 확인한 뒤 다시 시도하세요."));
       return false;
     } finally {
       setBusy(false);
@@ -192,8 +200,8 @@ const ProStudySimulation = forwardRef<ProStudySimulationHandle, Props>(function 
       setStep(3);
       requestAnimationFrame(() => resultRef.current?.scrollIntoView({ behavior: "smooth", block: "center" }));
       return true;
-    } catch {
-      setError("PRO 결과를 저장하지 못했습니다. 잠시 후 다시 시도하세요.");
+    } catch (cause) {
+      setError(proRequestError(cause, "PRO 결과를 저장하지 못했습니다. 잠시 후 다시 시도하세요."));
       return false;
     } finally {
       setBusy(false);
