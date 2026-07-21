@@ -586,6 +586,18 @@ type ProductCombinationInventoryContext = {
   schema_version: "product_combination_inventory_context_v1";
   previous_catalog_version: string;
   previous_combination_id: string;
+  previous_replay_identity: {
+    schema_version: "product_combination_replay_identity_v1";
+    input_sha256: string;
+    catalog_version: string;
+    catalog_version_contract: string;
+    result_sha256: string;
+    optimization_input: JsonRecord;
+  };
+  previous_safety_constraints: {
+    excluded_ingredient_keys: string[];
+    safety_rule_ids: string[];
+  };
   previous_selections: Array<{
     product_id: number;
     pharmacy_product_id: number;
@@ -602,6 +614,8 @@ function validateProductCombinationInventoryContext(
   const expectedKeys = [
     "previous_catalog_version",
     "previous_combination_id",
+    "previous_replay_identity",
+    "previous_safety_constraints",
     "previous_selections",
     "schema_version",
   ];
@@ -612,6 +626,33 @@ function validateProductCombinationInventoryContext(
     !/^catalog_[a-f0-9]{64}$/.test(value.previous_catalog_version) ||
     !nonEmptyString(value.previous_combination_id) ||
     !/^combo_[a-f0-9]{16}$/.test(value.previous_combination_id) ||
+    !isRecord(value.previous_replay_identity) ||
+    JSON.stringify(Object.keys(value.previous_replay_identity).sort()) !==
+      JSON.stringify([
+        "catalog_version",
+        "catalog_version_contract",
+        "input_sha256",
+        "optimization_input",
+        "result_sha256",
+        "schema_version",
+      ]) ||
+    value.previous_replay_identity.schema_version !==
+      "product_combination_replay_identity_v1" ||
+    value.previous_replay_identity.catalog_version !== value.previous_catalog_version ||
+    value.previous_replay_identity.catalog_version_contract !==
+      contract.catalogVersionContractVersion ||
+    !/^[a-f0-9]{64}$/.test(String(value.previous_replay_identity.input_sha256)) ||
+    !/^[a-f0-9]{64}$/.test(String(value.previous_replay_identity.result_sha256)) ||
+    !isRecord(value.previous_replay_identity.optimization_input) ||
+    canonicalSha256(value.previous_replay_identity.optimization_input) !==
+      value.previous_replay_identity.input_sha256 ||
+    !isRecord(value.previous_safety_constraints) ||
+    JSON.stringify(Object.keys(value.previous_safety_constraints).sort()) !==
+      JSON.stringify(["excluded_ingredient_keys", "safety_rule_ids"]) ||
+    !Array.isArray(value.previous_safety_constraints.excluded_ingredient_keys) ||
+    !value.previous_safety_constraints.excluded_ingredient_keys.every(nonEmptyString) ||
+    !Array.isArray(value.previous_safety_constraints.safety_rule_ids) ||
+    !value.previous_safety_constraints.safety_rule_ids.every(nonEmptyString) ||
     !Array.isArray(value.previous_selections) ||
     value.previous_selections.length === 0
   ) {
@@ -649,13 +690,49 @@ function validateProductCombinationInventoryContext(
     throw new Error("WB_RND_PRODUCT_MATCH_invalid_inventory_context");
   }
   const expectedCombinationId = `combo_${canonicalSha256(previousSelections).slice(0, 16)}`;
+  const previousExcludedIngredientKeys =
+    value.previous_safety_constraints.excluded_ingredient_keys.map(String);
+  const previousSafetyRuleIds = value.previous_safety_constraints.safety_rule_ids.map(String);
+  const previousOptimizationConstraints = isRecord(
+    value.previous_replay_identity.optimization_input.constraints
+  )
+    ? value.previous_replay_identity.optimization_input.constraints
+    : null;
   if (value.previous_combination_id !== expectedCombinationId) {
+    throw new Error("WB_RND_PRODUCT_MATCH_invalid_inventory_context");
+  }
+  if (
+    JSON.stringify(previousExcludedIngredientKeys) !==
+      JSON.stringify([...new Set(previousExcludedIngredientKeys)].sort()) ||
+    JSON.stringify(previousSafetyRuleIds) !==
+      JSON.stringify([...new Set(previousSafetyRuleIds)].sort()) ||
+    (previousExcludedIngredientKeys.length > 0 && previousSafetyRuleIds.length === 0)
+    || previousOptimizationConstraints === null
+    || JSON.stringify(previousOptimizationConstraints.excluded_ingredient_keys) !==
+      JSON.stringify(previousExcludedIngredientKeys)
+    || JSON.stringify(previousOptimizationConstraints.safety_rule_ids) !==
+      JSON.stringify(previousSafetyRuleIds)
+  ) {
     throw new Error("WB_RND_PRODUCT_MATCH_invalid_inventory_context");
   }
   return {
     schema_version: contract.inventoryContextContractVersion,
     previous_catalog_version: value.previous_catalog_version,
     previous_combination_id: value.previous_combination_id,
+    previous_replay_identity: {
+      schema_version: "product_combination_replay_identity_v1",
+      input_sha256: String(value.previous_replay_identity.input_sha256),
+      catalog_version: String(value.previous_replay_identity.catalog_version),
+      catalog_version_contract: String(
+        value.previous_replay_identity.catalog_version_contract
+      ),
+      result_sha256: String(value.previous_replay_identity.result_sha256),
+      optimization_input: value.previous_replay_identity.optimization_input,
+    },
+    previous_safety_constraints: {
+      excluded_ingredient_keys: previousExcludedIngredientKeys,
+      safety_rule_ids: previousSafetyRuleIds,
+    },
     previous_selections: previousSelections,
   };
 }
@@ -1003,7 +1080,9 @@ function buildStockSubstitution(
   catalog: WbRndProductCatalogItem[],
   currentTop: ReturnType<typeof materializeCombination> | undefined,
   currentCatalogVersion: string,
-  searchTruncated: boolean
+  searchTruncated: boolean,
+  constraints: ProductOptimizationConstraints,
+  currentInputSha256: string
 ) {
   if (context === null) {
     return {
@@ -1015,6 +1094,7 @@ function buildStockSubstitution(
       current_combination_id: currentTop?.combination_id ?? null,
       missing_pharmacy_product_ids: [],
       safety_constraints_preserved: null,
+      optimization_input_unchanged: null,
     };
   }
   const currentOfferIds = new Set(
@@ -1031,8 +1111,21 @@ function buildStockSubstitution(
     | "SUBSTITUTED"
     | "UNAVAILABLE"
     | "SEARCH_TRUNCATED"
-    | "CATALOG_CHANGED";
-  if (searchTruncated) {
+    | "CATALOG_CHANGED"
+    | "SAFETY_POLICY_CHANGED"
+    | "OPTIMIZATION_INPUT_CHANGED";
+  const safetyConstraintsPreserved =
+    JSON.stringify(context.previous_safety_constraints.excluded_ingredient_keys) ===
+      JSON.stringify(constraints.excludedRndIngredientKeys) &&
+    JSON.stringify(context.previous_safety_constraints.safety_rule_ids) ===
+      JSON.stringify(constraints.safetyRuleIds);
+  const optimizationInputUnchanged =
+    context.previous_replay_identity.input_sha256 === currentInputSha256;
+  if (!safetyConstraintsPreserved) {
+    status = "SAFETY_POLICY_CHANGED";
+  } else if (!optimizationInputUnchanged) {
+    status = "OPTIMIZATION_INPUT_CHANGED";
+  } else if (searchTruncated) {
     status = "SEARCH_TRUNCATED";
   } else if (!currentTop) {
     status = "UNAVAILABLE";
@@ -1051,23 +1144,32 @@ function buildStockSubstitution(
     previous_combination_id: context.previous_combination_id,
     current_combination_id: currentTop?.combination_id ?? null,
     missing_pharmacy_product_ids: missingOfferIds,
-    safety_constraints_preserved: status === "SUBSTITUTED" ? true : null,
+    safety_constraints_preserved:
+      status === "SAFETY_POLICY_CHANGED" ? false : status === "SUBSTITUTED" ? true : null,
+    optimization_input_unchanged: optimizationInputUnchanged,
   };
 }
 
 function buildCartCandidate(
   currentTop: ReturnType<typeof materializeCombination> | undefined,
-  searchTruncated: boolean
+  searchTruncated: boolean,
+  safetyConstraintsPreserved: boolean
 ) {
   const missingOptionType = currentTop?.selected_products.some(
     (product) => !nonEmptyString(product.offer.option_type)
   );
-  const ready = Boolean(currentTop) && !searchTruncated && !missingOptionType;
+  const ready =
+    Boolean(currentTop) &&
+    !searchTruncated &&
+    safetyConstraintsPreserved &&
+    !missingOptionType;
   return {
     schema_version: contract.cartCandidateContractVersion,
     status: ready ? "READY" : "UNAVAILABLE",
     unavailable_reason: searchTruncated
       ? "SEARCH_TRUNCATED"
+      : !safetyConstraintsPreserved
+        ? "SAFETY_CONSTRAINTS_CHANGED"
       : !currentTop
         ? "NO_ELIGIBLE_COMBINATION"
         : missingOptionType
@@ -1160,6 +1262,15 @@ export function attachWbRndProductCandidates(
         product.offers.length > 0
     )
   ).length;
+  const stockSubstitution = buildStockSubstitution(
+    inventoryContext,
+    catalog,
+    currentTop,
+    catalogVersionValue,
+    combinationResult.searchTruncated,
+    optimizationConstraints,
+    inputSha256
+  );
   return {
     ...value,
     recommendations,
@@ -1174,16 +1285,12 @@ export function attachWbRndProductCandidates(
       result_sha256: ranking.resultSha256,
       optimization_input: optimizationInput,
     },
-    product_combination_stock_substitution: buildStockSubstitution(
-      inventoryContext,
-      catalog,
-      currentTop,
-      catalogVersionValue,
-      combinationResult.searchTruncated
-    ),
+    product_combination_stock_substitution: stockSubstitution,
     product_combination_cart_candidate: buildCartCandidate(
       currentTop,
-      combinationResult.searchTruncated
+      combinationResult.searchTruncated,
+      stockSubstitution.safety_constraints_preserved !== false &&
+        stockSubstitution.optimization_input_unchanged !== false
     ),
     product_combination_resolution: {
       schema_version: contract.combinationContractVersion,

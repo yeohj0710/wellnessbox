@@ -319,7 +319,9 @@ async function run() {
       schema_version?: string;
       input_sha256?: string;
       catalog_version?: string;
+      catalog_version_contract?: string;
       result_sha256?: string;
+      optimization_input?: Record<string, unknown>;
     };
     product_combination_stock_substitution?: {
       schema_version?: string;
@@ -656,9 +658,17 @@ async function run() {
   const stockBaselineCatalog = globalRankingCatalog.filter(
     (product) => product.id % 10 === 0 || product.id % 10 === 4
   );
-  const stockBaselineResponse = await routeWithCatalog(stockBaselineCatalog, {
+  const stockReadyFixture = {
     ...readyFixture,
     recommendations: readyFixture.recommendations.slice(0, 3),
+    product_optimization_constraints: {
+      ...readyFixture.product_optimization_constraints,
+      excluded_ingredient_keys: ["zinc"],
+      safety_rule_ids: ["SAFE-OP069-STOCK-SUBSTITUTION"],
+    },
+  };
+  const stockBaselineResponse = await routeWithCatalog(stockBaselineCatalog, {
+    ...stockReadyFixture,
   });
   const stockBaseline = (await stockBaselineResponse.json()) as typeof matched;
   assert.equal(stockBaselineResponse.status, 200);
@@ -685,12 +695,18 @@ async function run() {
       stockBaseline.product_combination_replay?.catalog_version,
     previous_combination_id: previousTopIdentity,
     previous_selections: previousSelections,
+    previous_replay_identity: stockBaseline.product_combination_replay,
+    previous_safety_constraints: {
+      excluded_ingredient_keys:
+        stockReadyFixture.product_optimization_constraints.excluded_ingredient_keys,
+      safety_rule_ids:
+        stockReadyFixture.product_optimization_constraints.safety_rule_ids,
+    },
   };
   const substitutedResponse = await routeWithCatalog(
     stockChangedCatalog,
     {
-      ...readyFixture,
-      recommendations: readyFixture.recommendations.slice(0, 3),
+      ...stockReadyFixture,
     },
     {
       goals: ["sleep_support"],
@@ -735,6 +751,33 @@ async function run() {
   );
   assert.equal(substituted.product_combination_cart_candidate?.order_created, false);
   assert.equal(substituted.product_combination_cart_candidate?.order_id, null);
+  const changedSafetyPolicyResponse = await routeWithCatalog(
+    stockChangedCatalog,
+    {
+      ...stockReadyFixture,
+      product_optimization_constraints: {
+        ...stockReadyFixture.product_optimization_constraints,
+        excluded_ingredient_keys: [],
+        safety_rule_ids: [],
+      },
+    },
+    { product_combination_context: inventoryContext }
+  );
+  const changedSafetyPolicy = (await changedSafetyPolicyResponse.json()) as typeof matched;
+  assert.equal(changedSafetyPolicyResponse.status, 200);
+  assert.equal(
+    changedSafetyPolicy.product_combination_stock_substitution?.status,
+    "SAFETY_POLICY_CHANGED"
+  );
+  assert.equal(
+    changedSafetyPolicy.product_combination_stock_substitution?.safety_constraints_preserved,
+    false
+  );
+  assert.equal(changedSafetyPolicy.product_combination_cart_candidate?.status, "UNAVAILABLE");
+  assert.equal(
+    changedSafetyPolicy.product_combination_cart_candidate?.unavailable_reason,
+    "SAFETY_CONSTRAINTS_CHANGED"
+  );
   assert.ok(
     substituted.product_combinations?.every((combination) =>
       combination.selected_products?.every(
@@ -759,8 +802,19 @@ async function run() {
     "utf8"
   );
   for (const source of [routeSource, productAdapterSource]) {
-    assert.doesNotMatch(source, /prisma\.(?:order|orderItem)\.(?:create|update)/i);
-    assert.doesNotMatch(source, /createOrder|createOrderItem/);
+    assert.doesNotMatch(
+      source,
+      /prisma\.(?:order|orderItem|payment|paymentAttempt)\.(?:create|createMany|update|updateMany|upsert|delete|deleteMany)\s*\(/i
+    );
+    assert.doesNotMatch(
+      source,
+      /\b(?:createOrder|createOrderItem|createPayment|authorizePayment|capturePayment)\s*\(/
+    );
+    assert.doesNotMatch(source, /\bwriteClientCartItems\s*\(/);
+    assert.doesNotMatch(
+      source,
+      /\blocalStorage\s*\.\s*(?:setItem|removeItem|clear)\s*\(/
+    );
   }
 
   const constrainedPolicy = {
@@ -1205,6 +1259,13 @@ async function run() {
         upstreamCapture.payload
       ).includes("product_combination_context"),
       order_created: substituted.product_combination_cart_candidate?.order_created,
+      preapproval_side_effect_source_scan_passed: true,
+      preapproval_side_effect_forbidden_symbols: [
+        "prisma Order/OrderItem/Payment mutations",
+        "create/authorize/capture order or payment functions",
+        "writeClientCartItems",
+        "localStorage setItem/removeItem/clear",
+      ],
       ...(process.env.WB_RND_INCLUDE_PRODUCT_COMBINATION_EVIDENCE === "1"
         ? {
             verified_product_combinations: [
