@@ -80,7 +80,11 @@ async function run() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         goals: ["heart_health"],
-        ingredients: [],
+        ingredients: ["magnesium_glycinate"],
+        product_constraints: {
+          max_total_cost_krw: 54_321,
+          max_products: 3,
+        },
         safety: { symptoms: ["chest pain"] },
       }),
     });
@@ -92,6 +96,13 @@ async function run() {
     findings?: Array<{ rule_id?: string; action?: string }>;
     recommendations?: unknown[];
     product_candidate_resolution?: unknown;
+    product_optimization_constraints?: {
+      schema_version?: string;
+      max_total_cost_krw?: number;
+      max_products?: number;
+      excluded_ingredient_keys?: string[];
+      safety_rule_ids?: string[];
+    };
     safety_authority?: { final?: boolean; mode?: string; reason?: string | null };
   };
 
@@ -107,6 +118,13 @@ async function run() {
   );
   assert.deepEqual(response.recommendations, []);
   assert.equal(response.product_candidate_resolution, undefined);
+  assert.deepEqual(response.product_optimization_constraints, {
+    schema_version: "product_optimization_constraints_v1",
+    max_total_cost_krw: 54_321,
+    max_products: 3,
+    excluded_ingredient_keys: ["magnesium_glycinate"],
+    safety_rule_ids: ["SAFE-EMERGENCY-001"],
+  });
   assert.equal(response.safety_authority?.final, true);
   assert.equal(response.safety_authority?.mode, "rnd_final");
 
@@ -126,6 +144,13 @@ async function run() {
         evidence_ids: ["EV-1"],
       },
     ],
+    product_optimization_constraints: {
+      schema_version: "product_optimization_constraints_v1",
+      max_total_cost_krw: 100_000,
+      max_products: 5,
+      excluded_ingredient_keys: [],
+      safety_rule_ids: [],
+    },
     uncertainty: "mapping fixture",
   };
   const readyUpstream = (async () => readyFixture) as typeof callWbRndInterim;
@@ -271,6 +296,7 @@ async function run() {
       "rnd_final_authority",
       "top_level_blocked",
       "zero_recommendations",
+      "actual_rnd_product_constraints_validated_by_service",
       "mapped_ready_identifier_enriched",
       "mapped_ready_service_product_candidate_resolved",
       "unmapped_ready_identifier_fail_closed",
@@ -285,6 +311,8 @@ async function run() {
       safety_action: response.safety_action,
       matched_rule_id: "SAFE-EMERGENCY-001",
       recommendation_count: response.recommendations?.length,
+      product_optimization_constraints:
+        response.product_optimization_constraints,
       mapping_version: ready.ingredient_identifier_mapping?.mapping_version,
       mapped_service_ingredient_id:
         ready.recommendations?.[0]?.service_ingredient_id,

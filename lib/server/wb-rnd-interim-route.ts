@@ -14,6 +14,7 @@ import {
   enforceWbRndInterimSafetyAuthority,
 } from "@/lib/server/wb-rnd-interim-safety-authority";
 import {
+  assertWbRndProductOptimizationConstraints,
   attachWbRndProductCandidates,
   listWbRndProductCatalog,
 } from "@/lib/server/wb-rnd-product-candidates";
@@ -121,6 +122,7 @@ export async function runUserInterimRecommendationRoute(
     );
     const enforced = enforceWbRndInterimSafetyAuthority(upstream);
     if (!enforced.ok) return noStore(enforced.response, 502);
+    assertWbRndProductOptimizationConstraints(enforced.response);
     const recommendationCount = Array.isArray(enforced.response.recommendations)
       ? enforced.response.recommendations.length
       : 0;

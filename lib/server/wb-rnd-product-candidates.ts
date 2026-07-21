@@ -450,6 +450,10 @@ function validateProductOptimizationConstraints(
   };
 }
 
+export function assertWbRndProductOptimizationConstraints(value: JsonRecord) {
+  validateProductOptimizationConstraints(value.product_optimization_constraints);
+}
+
 function buildProductCombinations(
   recommendations: Array<JsonRecord & { product_candidates: ProductCandidate[] }>,
   constraints: ProductOptimizationConstraints
