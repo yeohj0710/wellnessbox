@@ -47,6 +47,7 @@ type ProductCandidateContract = {
   productCatalogSource: string;
   maxCandidatesPerIngredient: number;
   maxProductCombinations: number;
+  maxProductCombinationSearchStates: number;
   mappings: ProductMatchMapping[];
 };
 
@@ -99,6 +100,9 @@ function loadContract(value: unknown): ProductCandidateContract {
     !Number.isInteger(value.max_product_combinations) ||
     Number(value.max_product_combinations) < 1 ||
     Number(value.max_product_combinations) > 256 ||
+    !Number.isInteger(value.max_product_combination_search_states) ||
+    Number(value.max_product_combination_search_states) < 1 ||
+    Number(value.max_product_combination_search_states) > 100_000 ||
     !Array.isArray(value.mappings)
   ) {
     throw new Error("WB_RND_PRODUCT_MATCH_invalid_contract");
@@ -139,6 +143,9 @@ function loadContract(value: unknown): ProductCandidateContract {
     productCatalogSource: value.product_catalog_source,
     maxCandidatesPerIngredient: Number(value.max_candidates_per_ingredient),
     maxProductCombinations: Number(value.max_product_combinations),
+    maxProductCombinationSearchStates: Number(
+      value.max_product_combination_search_states
+    ),
     mappings,
   };
 }
@@ -151,7 +158,7 @@ const mappingByServiceIngredient = new Map(
 type NormalizedIngredientAmount = {
   service_ingredient_id: string;
   normalized_amount: number;
-  normalized_unit: "mcg" | "IU";
+  normalized_unit: "ng" | "milli_IU";
   source_label: string;
   source_value: string;
 };
@@ -174,17 +181,32 @@ function parseIngredientAmount(
   if (amounts.length !== 1 || /(?:-|~|to|per\s+day|daily|x\s*\d)/i.test(declaration.value)) {
     throw new Error("WB_RND_PRODUCT_MATCH_ambiguous_ingredient_amount");
   }
-  const rawAmount = Number(amounts[0][1]);
+  const rawAmountText = amounts[0][1];
+  const rawAmount = Number(rawAmountText);
   const rawUnit = amounts[0][2].toLowerCase();
   if (!Number.isFinite(rawAmount) || rawAmount <= 0) {
     throw new Error("WB_RND_PRODUCT_MATCH_ambiguous_ingredient_amount");
   }
-  const normalizedUnit = rawUnit === "iu" ? "IU" : "mcg";
-  const multiplier = rawUnit === "g" ? 1_000_000 : rawUnit === "mg" ? 1_000 : 1;
-  const normalizedAmount = rawAmount * multiplier;
-  if (!Number.isSafeInteger(normalizedAmount)) {
+  const normalizedUnit = rawUnit === "iu" ? "milli_IU" : "ng";
+  const multiplier =
+    rawUnit === "g"
+      ? BigInt(1_000_000_000)
+      : rawUnit === "mg"
+        ? BigInt(1_000_000)
+        : rawUnit === "iu"
+          ? BigInt(1_000)
+          : BigInt(1_000);
+  const [whole, fraction = ""] = rawAmountText.split(".");
+  const numerator = BigInt(`${whole}${fraction}`) * multiplier;
+  const denominator = BigInt(10) ** BigInt(fraction.length);
+  if (numerator % denominator !== BigInt(0)) {
     throw new Error("WB_RND_PRODUCT_MATCH_ambiguous_ingredient_amount");
   }
+  const normalizedBigInt = numerator / denominator;
+  if (normalizedBigInt > BigInt(Number.MAX_SAFE_INTEGER)) {
+    throw new Error("WB_RND_PRODUCT_MATCH_ambiguous_ingredient_amount");
+  }
+  const normalizedAmount = Number(normalizedBigInt);
   return {
     service_ingredient_id: matchedServiceIds[0],
     normalized_amount: normalizedAmount,
@@ -307,7 +329,14 @@ function candidatesForIngredient(
         )
       );
       const matched = nameTerm ?? categoryTerm;
-      if (!matched) return [];
+      if (
+        !matched ||
+        !product.ingredientAmounts.some(
+          (item) => item.service_ingredient_id === serviceIngredientId
+        )
+      ) {
+        return [];
+      }
       return [
         {
           product_id: product.id,
@@ -353,30 +382,49 @@ function buildProductCombinations(
     recommendations.length === 0 ||
     recommendations.some((item) => item.product_candidates.length === 0)
   ) {
-    return [];
+    return {
+      combinations: [],
+      searchStateCount: 0,
+      searchTruncated: false,
+      combinationLimitReached: false,
+    };
   }
-  const rawChoices: ProductCandidate[][] = [];
+  const unique = new Map<string, ReturnType<typeof materializeCombination>>();
+  const visitedStates = new Set<string>();
+  let searchStateCount = 0;
+  let searchTruncated = false;
   const visit = (index: number, selected: ProductCandidate[]) => {
-    if (rawChoices.length >= contract.maxProductCombinations) return;
+    if (unique.size >= contract.maxProductCombinations) return;
+    const selectedIdentity = [...new Set(selected.map((item) => item.product_id))]
+      .sort((left, right) => left - right)
+      .join(",");
+    const stateKey = `${index}|${selectedIdentity}`;
+    if (visitedStates.has(stateKey)) return;
+    if (searchStateCount >= contract.maxProductCombinationSearchStates) {
+      searchTruncated = true;
+      return;
+    }
+    visitedStates.add(stateKey);
+    searchStateCount += 1;
     if (index === recommendations.length) {
-      rawChoices.push([...selected]);
+      const combination = materializeCombination(recommendations, selected);
+      unique.set(combination.combination_id, combination);
       return;
     }
     for (const candidate of recommendations[index].product_candidates) {
       visit(index + 1, [...selected, candidate]);
-      if (rawChoices.length >= contract.maxProductCombinations) break;
+      if (unique.size >= contract.maxProductCombinations) break;
     }
   };
   visit(0, []);
-
-  const unique = new Map<string, ReturnType<typeof materializeCombination>>();
-  for (const choices of rawChoices) {
-    const combination = materializeCombination(recommendations, choices);
-    unique.set(combination.combination_id, combination);
-  }
-  return [...unique.values()].sort((left, right) =>
-    left.combination_id.localeCompare(right.combination_id)
-  );
+  return {
+    combinations: [...unique.values()].sort((left, right) =>
+      left.combination_id.localeCompare(right.combination_id)
+    ),
+    searchStateCount,
+    searchTruncated,
+    combinationLimitReached: unique.size >= contract.maxProductCombinations,
+  };
 }
 
 function materializeCombination(
@@ -396,8 +444,9 @@ function materializeCombination(
     }));
   const aggregate = new Map<
     string,
-    { serviceIngredientId: string; unit: "mcg" | "IU"; amount: number; productIds: Set<number> }
+    { serviceIngredientId: string; unit: "ng" | "milli_IU"; amount: number; productIds: Set<number> }
   >();
+  const ingredientProductIds = new Map<string, Set<number>>();
   for (const product of selectedProducts) {
     for (const amount of product.ingredient_amounts) {
       const key = `${amount.service_ingredient_id}:${amount.normalized_unit}`;
@@ -410,6 +459,10 @@ function materializeCombination(
       current.amount += amount.normalized_amount;
       current.productIds.add(product.product_id);
       aggregate.set(key, current);
+      const allProductIds =
+        ingredientProductIds.get(amount.service_ingredient_id) ?? new Set<number>();
+      allProductIds.add(product.product_id);
+      ingredientProductIds.set(amount.service_ingredient_id, allProductIds);
     }
   }
   const ingredientTotals = [...aggregate.values()]
@@ -420,10 +473,11 @@ function materializeCombination(
     )
     .map((item) => ({
       service_ingredient_id: item.serviceIngredientId,
-      total_daily_amount: item.amount,
+      total_declared_amount: item.amount,
       unit: item.unit,
       product_ids: [...item.productIds].sort((left, right) => left - right),
-      duplicate_across_products: item.productIds.size > 1,
+      duplicate_across_products:
+        (ingredientProductIds.get(item.serviceIngredientId)?.size ?? 0) > 1,
     }));
   const identity = selectedProducts.map((product) => ({
     product_id: product.product_id,
@@ -446,9 +500,13 @@ function materializeCombination(
       0
     ),
     ingredient_totals: ingredientTotals,
-    duplicate_ingredient_ids: ingredientTotals
-      .filter((item) => item.duplicate_across_products)
-      .map((item) => item.service_ingredient_id),
+    duplicate_ingredient_ids: [
+      ...new Set(
+        ingredientTotals
+          .filter((item) => item.duplicate_across_products)
+          .map((item) => item.service_ingredient_id)
+      ),
+    ].sort(),
   };
 }
 
@@ -543,9 +601,10 @@ export function attachWbRndProductCandidates(
   const matchedRecommendationCount = recommendations.filter(
     (item) => item.product_candidate_status === "MATCHED"
   ).length;
-  const productCombinations = buildProductCombinations(
+  const combinationResult = buildProductCombinations(
     recommendations as Array<JsonRecord & { product_candidates: ProductCandidate[] }>
   );
+  const productCombinations = combinationResult.combinations;
   const factCompleteRecommendationCount = recommendations.filter((item) =>
     item.product_candidates.some(
       (product) =>
@@ -562,6 +621,9 @@ export function attachWbRndProductCandidates(
     product_combination_resolution: {
       schema_version: contract.combinationContractVersion,
       combination_count: productCombinations.length,
+      search_state_count: combinationResult.searchStateCount,
+      search_truncated: combinationResult.searchTruncated,
+      combination_limit_reached: combinationResult.combinationLimitReached,
       complete:
         recommendations.length > 0 &&
         productCombinations.length > 0 &&

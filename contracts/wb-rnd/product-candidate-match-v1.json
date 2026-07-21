@@ -7,6 +7,7 @@
   "product_catalog_source": "wellnessbox Prisma Product + in-stock PharmacyProduct",
   "max_candidates_per_ingredient": 5,
   "max_product_combinations": 64,
+  "max_product_combination_search_states": 4096,
   "mappings": [
     {
       "service_ingredient_id": "ING:CALCIUM",

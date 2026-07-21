@@ -22,6 +22,7 @@ const productContract = JSON.parse(
   ingredient_mapping_version: string;
   combination_contract_version: string;
   max_product_combinations: number;
+  max_product_combination_search_states: number;
   mappings: Array<{ service_ingredient_id: string; match_terms: string[] }>;
 };
 const ingredientContract = JSON.parse(
@@ -93,6 +94,53 @@ const combinationProductCatalog = productCatalog.map((product, index) => ({
     value: `${category} ${100 + index * 10 + categoryIndex} mg`,
   })),
 }));
+
+const sharedCombinationCatalog = [
+  ...Array.from({ length: 4 }, (_, index) => ({
+    id: 5_000 + index,
+    name: productContract.mappings
+      .map((mapping) => mapping.match_terms[0])
+      .join(" "),
+    categories: productContract.mappings.map((mapping) => mapping.match_terms[0]),
+    ingredientDeclarations: productContract.mappings.map((mapping) => ({
+      label: "ingredient amount",
+      value: `${mapping.match_terms[0]} ${100 + index} mg`,
+    })),
+    formulation: "capsule",
+    formulationKind: "capsule",
+    offers: [
+      {
+        pharmacyProductId: 15_000 + index,
+        priceKrw: 20_000 + index,
+        stockCount: 10,
+        optionType: null,
+        capacity: null,
+      },
+    ],
+  })),
+  ...productContract.mappings.map((mapping, index) => ({
+    id: 6_000 + index,
+    name: mapping.match_terms[0],
+    categories: [mapping.match_terms[0]],
+    ingredientDeclarations: [
+      {
+        label: "ingredient amount",
+        value: `${mapping.match_terms[0]} ${200 + index} mg`,
+      },
+    ],
+    formulation: "tablet",
+    formulationKind: "tablet",
+    offers: [
+      {
+        pharmacyProductId: 16_000 + index,
+        priceKrw: 30_000 + index,
+        stockCount: 10,
+        optionType: null,
+        capacity: null,
+      },
+    ],
+  })),
+];
 
 const expectedPrimaryProductIdByServiceIngredient = {
   "ING:CALCIUM": 29,
@@ -168,6 +216,13 @@ async function run() {
         match_basis?: string;
         ingredients?: string[];
         ingredient_declarations?: Array<{ label?: string; value?: string }>;
+        ingredient_amounts?: Array<{
+          service_ingredient_id?: string;
+          normalized_amount?: number;
+          normalized_unit?: "ng" | "milli_IU";
+          source_label?: string;
+          source_value?: string;
+        }>;
         formulation?: string | null;
         formulation_kind?: string;
         offers?: Array<{
@@ -196,14 +251,14 @@ async function run() {
         ingredient_amounts?: Array<{
           service_ingredient_id?: string;
           normalized_amount?: number;
-          normalized_unit?: string;
+      normalized_unit?: "ng" | "milli_IU";
         }>;
       }>;
       product_count?: number;
       total_cost_krw?: number;
       ingredient_totals?: Array<{
         service_ingredient_id?: string;
-        total_daily_amount?: number;
+        total_declared_amount?: number;
         unit?: string;
         product_ids?: number[];
         duplicate_across_products?: boolean;
@@ -214,6 +269,9 @@ async function run() {
       schema_version?: string;
       combination_count?: number;
       complete?: boolean;
+      search_state_count?: number;
+      search_truncated?: boolean;
+      combination_limit_reached?: boolean;
     };
   };
   assert.equal(matchedResponse.status, 200);
@@ -251,6 +309,7 @@ async function run() {
     "wb_rnd_product_combination_v1"
   );
   assert.equal(productContract.max_product_combinations, 64);
+  assert.equal(productContract.max_product_combination_search_states, 4096);
   assert.equal(
     matched.product_candidate_resolution?.catalog_contract_version,
     "wb_rnd_selling_product_catalog_v1"
@@ -313,8 +372,8 @@ async function run() {
     ),
     {
       service_ingredient_id: "ING:MAGNESIUM",
-      total_daily_amount: 102_000,
-      unit: "mcg",
+      total_declared_amount: 102_000_000,
+      unit: "ng",
       product_ids: [29],
       duplicate_across_products: false,
     }
@@ -340,10 +399,68 @@ async function run() {
     ),
     {
       service_ingredient_id: "ING:ZINC",
-      total_daily_amount: 253_000,
-      unit: "mcg",
+      total_declared_amount: 253_000_000,
+      unit: "ng",
       product_ids: [29, 42],
       duplicate_across_products: true,
+    }
+  );
+
+  const boundedSearchResponse = await routeWithCatalog(sharedCombinationCatalog);
+  const boundedSearch = (await boundedSearchResponse.json()) as {
+    product_combination_resolution?: {
+      combination_count?: number;
+      search_state_count?: number;
+      search_truncated?: boolean;
+      combination_limit_reached?: boolean;
+    };
+  };
+  assert.equal(boundedSearchResponse.status, 200);
+  assert.equal(
+    boundedSearch.product_combination_resolution?.combination_count,
+    productContract.max_product_combinations
+  );
+  assert.ok(
+    Number(boundedSearch.product_combination_resolution?.search_state_count) <=
+      productContract.max_product_combination_search_states
+  );
+  assert.equal(
+    boundedSearch.product_combination_resolution?.search_truncated,
+    false
+  );
+  assert.equal(
+    boundedSearch.product_combination_resolution?.combination_limit_reached,
+    true
+  );
+
+  const fractionalCatalog = combinationProductCatalog.map((product) =>
+    product.id === 29
+      ? {
+          ...product,
+          ingredientDeclarations: product.ingredientDeclarations.map((item) =>
+            item.value.startsWith(product.categories[1])
+              ? { ...item, value: `${product.categories[1]} 12.5 mcg` }
+              : item
+          ),
+        }
+      : product
+  );
+  const fractionalResponse = await routeWithCatalog(fractionalCatalog);
+  const fractional = (await fractionalResponse.json()) as typeof matched;
+  assert.equal(fractionalResponse.status, 200);
+  assert.deepEqual(
+    fractional.recommendations
+      ?.find((item) => item.service_ingredient_id === "ING:VITAMIN_D")
+      ?.product_candidates?.find((item) => item.product_id === 29)
+      ?.ingredient_amounts?.find(
+        (item) => item.service_ingredient_id === "ING:VITAMIN_D"
+      ),
+    {
+      service_ingredient_id: "ING:VITAMIN_D",
+      normalized_amount: 12_500,
+      normalized_unit: "ng",
+      source_label: "ingredient amount",
+      source_value: `${combinationProductCatalog[0].categories[1]} 12.5 mcg`,
     }
   );
 
@@ -443,6 +560,26 @@ async function run() {
     "WB_RND_PRODUCT_MATCH_ambiguous_ingredient_amount"
   );
 
+  const missingMatchedAmountResponse = await routeWithCatalog([
+    {
+      ...combinationProductCatalog[0],
+      ingredientDeclarations: [combinationProductCatalog[0].ingredientDeclarations[0]],
+    },
+  ]);
+  const missingMatchedAmount = (await missingMatchedAmountResponse.json()) as {
+    recommendations?: Array<{
+      service_ingredient_id?: string;
+      product_candidate_status?: string;
+    }>;
+  };
+  assert.equal(missingMatchedAmountResponse.status, 200);
+  assert.equal(
+    missingMatchedAmount.recommendations?.find(
+      (item) => item.service_ingredient_id === "ING:MAGNESIUM"
+    )?.product_candidate_status,
+    "NO_MATCH"
+  );
+
   const report = {
     ok: true,
     schema_version: "op063_op064_service_product_combination_contract_v1",
@@ -460,6 +597,9 @@ async function run() {
       "ingredient_amounts_are_normalized_and_summed_by_product",
       "duplicate_ingredients_require_multiple_distinct_products",
       "ambiguous_amounts_fail_closed",
+      "name_match_without_target_ingredient_amount_is_not_a_candidate",
+      "shared_candidate_search_is_memoized_and_bounded",
+      "fractional_micrograms_use_exact_integer_nanograms",
     ],
     observed: {
       service_route: "POST /api/tips",
@@ -483,6 +623,12 @@ async function run() {
       invalid_offer_http_status: invalidOfferResponse.status,
       invalid_facts_http_status: invalidFactsResponse.status,
       ambiguous_amount_http_status: ambiguousAmountResponse.status,
+      missing_matched_amount_http_status: missingMatchedAmountResponse.status,
+      bounded_search_state_count:
+        boundedSearch.product_combination_resolution?.search_state_count,
+      bounded_search_combination_count:
+        boundedSearch.product_combination_resolution?.combination_count,
+      fractional_micrograms_normalized_to_nanograms: 12_500,
       combination_contract_version:
         matched.product_combination_resolution?.schema_version,
       combination_count: matched.product_combination_resolution?.combination_count,
