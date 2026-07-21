@@ -176,8 +176,12 @@ export async function runUserInterimProPlanRoute(
     if (body.consentAccepted !== true) {
       return noStore({ error: "PRO 설문 저장에 동의해야 합니다." }, 400);
     }
+    if (typeof body.requestId !== "string" || !/^pro_[a-f0-9]{32}$/.test(body.requestId)) {
+      return noStore({ error: "PRO 등록 요청 ID가 올바르지 않습니다." }, 400);
+    }
     const subjectId = pseudonymizeInterimUserId(auth.data.appUserId);
     const recommendationRequest = mapWellnessBoxProfileToWbRndRequest(body.profile, {
+      requestId: body.requestId,
       subjectId,
       surveyConsent: {
         useForRecommendation: true,

@@ -43,12 +43,14 @@ function requiredString(value: unknown, field: string) {
 }
 
 export async function enrollProPlan(input: {
+  requestId: string;
   profile: { name?: string; age: number; sex: "male" | "female" | "other"; goals: string[] };
   baseline: ProAnswers;
   observedAt: string;
   consentAccepted: boolean;
 }): Promise<ProPlanEnrollmentResult> {
   const value = await postJson("/api/tips/pro/plans", {
+    requestId: input.requestId,
     profile: input.profile,
     baseline: { instrument: input.baseline.instrument, item_scores: input.baseline.responses },
     observedAt: input.observedAt,

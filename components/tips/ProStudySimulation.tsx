@@ -125,6 +125,7 @@ const ProStudySimulation = forwardRef<ProStudySimulationHandle, Props>(function 
     try {
       const observedAt = new Date().toISOString();
       const enrolled = await enrollProPlan({
+        requestId: `pro_${crypto.randomUUID().replaceAll("-", "")}`,
         profile: { name: name.trim() || "테스터", age, sex: "other", goals: [goal] },
         baseline,
         observedAt,

@@ -26,6 +26,7 @@ async function run() {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
+          requestId: `pro_${"a".repeat(32)}`,
           profile: { name: "테스터", age: 41, sex: "other", goals: ["sleep quality"] },
           baseline: { instrument: "PSQI", item_scores: [2, 2, 2, 2, 2, 2, 2] },
           observedAt: "2026-01-01T00:00:00Z",

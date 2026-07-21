@@ -36,6 +36,7 @@ async function run() {
   }) as typeof fetch;
   try {
     const enrolled = await enrollProPlan({
+      requestId: `pro_${"a".repeat(32)}`,
       profile: { age: 41, sex: "other", goals: ["sleep quality"] },
       baseline: { instrument: "PSQI", responses: [2, 2, 2, 2, 2, 2, 2] },
       observedAt: "2026-01-01T00:00:00Z",
