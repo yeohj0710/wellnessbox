@@ -5,10 +5,41 @@ import { createHmac } from "node:crypto";
 const DEFAULT_TIMEOUT_MS = 7_500;
 const MIN_TIMEOUT_MS = 500;
 const MAX_TIMEOUT_MS = 15_000;
+const RETRYABLE_STATUS_CODES = new Set([429, 502, 503, 504]);
+const CIRCUIT_FAILURE_THRESHOLD = 3;
+const CIRCUIT_OPEN_MS = 30_000;
+const GET_MAX_ATTEMPTS = 2;
+
+type CircuitState = { consecutiveFailures: number; openedAt: number | null };
+const circuitStates = new Map<string, CircuitState>();
 
 export const WB_RND_INTERIM_MODE = "PROXY_GOLD_SIMULATION" as const;
 
 type InterimMethod = "GET" | "POST";
+
+type InterimCallDependencies = {
+  fetchImpl?: typeof fetch;
+  now?: () => number;
+  sleep?: (milliseconds: number) => Promise<void>;
+};
+
+function stateFor(origin: string) {
+  const current = circuitStates.get(origin) ?? { consecutiveFailures: 0, openedAt: null };
+  circuitStates.set(origin, current);
+  return current;
+}
+
+export function resetWbRndInterimCircuitForTests() {
+  circuitStates.clear();
+}
+
+function isRetryableFailure(error: unknown) {
+  if (error instanceof Error && error.name === "AbortError") return true;
+  if (error instanceof TypeError) return true;
+  const code = error instanceof Error ? error.message : "";
+  const match = /^WB_RND_INTERIM_upstream_(\d{3})$/.exec(code);
+  return !!match && RETRYABLE_STATUS_CODES.has(Number(match[1]));
+}
 
 function truthy(value: string | undefined) {
   return ["1", "true", "yes"].includes((value ?? "").trim().toLowerCase());
@@ -161,7 +192,8 @@ export async function callWbRndCounselingTurn(body: unknown) {
 export async function callWbRndInterim<T>(
   path: string,
   method: InterimMethod,
-  body?: unknown
+  body?: unknown,
+  dependencies: InterimCallDependencies = {}
 ): Promise<T> {
   if (!isWbRndInterimEnabled()) throw new Error("WB_RND_INTERIM_disabled");
   if (!path.startsWith("/v1/interim/") || path.includes("..") || path.includes("//")) {
@@ -169,26 +201,53 @@ export async function callWbRndInterim<T>(
   }
   const origin = baseUrl();
   const url = new URL(path, `${origin.origin}/`);
-  const controller = new AbortController();
-  const handle = setTimeout(() => controller.abort(), timeoutMs());
-  try {
-    const response = await fetch(url, {
-      method,
-      cache: "no-store",
-      signal: controller.signal,
-      headers: {
-        "Content-Type": "application/json",
-        "x-wb-rnd-token": token(),
-      },
-      body: body === undefined ? undefined : JSON.stringify(body),
-    });
-    const text = await response.text();
-    const parsed = text ? JSON.parse(text) : null;
-    if (!response.ok) {
-      throw new Error(`WB_RND_INTERIM_upstream_${response.status}`);
+  const now = dependencies.now ?? Date.now;
+  const sleep = dependencies.sleep ?? ((milliseconds) => new Promise((resolve) => setTimeout(resolve, milliseconds)));
+  const fetchImpl = dependencies.fetchImpl ?? fetch;
+  const circuit = stateFor(origin.origin);
+  if (circuit.openedAt !== null) {
+    if (now() - circuit.openedAt < CIRCUIT_OPEN_MS) {
+      throw new Error("WB_RND_INTERIM_circuit_open");
     }
-    return parsed as T;
-  } finally {
-    clearTimeout(handle);
+    circuit.openedAt = null;
+    circuit.consecutiveFailures = 0;
   }
+
+  const maxAttempts = method === "GET" ? GET_MAX_ATTEMPTS : 1;
+  let lastError: unknown;
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+    const controller = new AbortController();
+    const handle = setTimeout(() => controller.abort(), timeoutMs());
+    try {
+      const response = await fetchImpl(url, {
+        method,
+        cache: "no-store",
+        signal: controller.signal,
+        headers: {
+          "Content-Type": "application/json",
+          "x-wb-rnd-token": token(),
+        },
+        body: body === undefined ? undefined : JSON.stringify(body),
+      });
+      const text = await response.text();
+      const parsed = text ? JSON.parse(text) : null;
+      if (!response.ok) throw new Error(`WB_RND_INTERIM_upstream_${response.status}`);
+      circuit.consecutiveFailures = 0;
+      circuit.openedAt = null;
+      return parsed as T;
+    } catch (error) {
+      lastError = error;
+      if (attempt < maxAttempts && isRetryableFailure(error)) {
+        await sleep(50 * attempt);
+        continue;
+      }
+      break;
+    } finally {
+      clearTimeout(handle);
+    }
+  }
+
+  circuit.consecutiveFailures += 1;
+  if (circuit.consecutiveFailures >= CIRCUIT_FAILURE_THRESHOLD) circuit.openedAt = now();
+  throw lastError;
 }

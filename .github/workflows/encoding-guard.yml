@@ -32,6 +32,12 @@ jobs:
       - name: Verify R&D profile adapter contract
         run: npm run qa:rnd:profile-adapter
 
+      - name: Verify R&D timeout retry circuit and fallback contract
+        run: node --conditions=react-server --import tsx scripts/qa/check-rnd-resilience-contract.cts
+
+      - name: Verify R&D OpenAPI and TypeScript operation contract
+        run: node --conditions=react-server --import tsx scripts/qa/check-rnd-openapi-contract.cts
+
       - name: Verify R&D recommendation fail-closed contract
         run: npm run qa:rnd:preview-route
 
