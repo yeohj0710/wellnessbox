@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 
 import { resolveWbRndEnvironmentContract } from "../../lib/server/wb-rnd-environment";
 import { resolveWbRndResultOrigin } from "../../lib/wb-rnd-result-origin";
+import { callWbRndRecommendPreview, WB_RND_RECOMMEND_PREVIEW_SAMPLE } from "../../lib/server/wb-rnd-client";
 
 assert.deepEqual(resolveWbRndEnvironmentContract({}), {
   enabled: false,
@@ -62,6 +63,15 @@ assert.equal(snapshot.kind, "local_snapshot");
 assert.throws(
   () => resolveWbRndResultOrigin({ source: "fallback", response: {}, requestedAt: "x", fallbackReason: null }),
   /missing_fallback_reason/
+);
+
+process.env.WB_RND_RECOMMEND_ENABLED = "1";
+process.env.WB_RND_SERVICE_BASE_URL = "http://rnd.example.test";
+process.env.WB_RND_SERVICE_TOKEN = "x".repeat(32);
+process.env.NODE_ENV = "production";
+await assert.rejects(
+  callWbRndRecommendPreview(WB_RND_RECOMMEND_PREVIEW_SAMPLE),
+  /https_required/
 );
 
 console.log("WB_RND environment and result-origin contract: PASS");

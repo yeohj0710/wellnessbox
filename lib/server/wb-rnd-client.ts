@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 
 import type { UserProfile } from "@/types/chat";
 import { resolveWbRndResultOrigin, type WbRndResultOrigin } from "@/lib/wb-rnd-result-origin";
+import { resolveWbRndEnvironmentContract } from "@/lib/server/wb-rnd-environment";
 
 const DEFAULT_RND_RECOMMEND_TIMEOUT_MS = 4_000;
 const MIN_RND_RECOMMEND_TIMEOUT_MS = 500;
@@ -515,8 +516,15 @@ export async function callWbRndRecommendPreview(
     fetchImpl?: typeof fetch;
   }
 ): Promise<WbRndPreviewCallResult> {
-  const timeoutMs = resolveWbRndRecommendTimeoutMs();
-  const serviceBaseUrl = resolveWbRndServiceBaseUrl();
+  const strictContract = isTruthyFlag(process.env.WB_RND_RECOMMEND_ENABLED)
+    ? resolveWbRndEnvironmentContract()
+    : null;
+  const timeoutMs = strictContract?.enabled
+    ? strictContract.timeoutMs
+    : resolveWbRndRecommendTimeoutMs();
+  const serviceBaseUrl = strictContract?.enabled
+    ? strictContract.baseUrl
+    : resolveWbRndServiceBaseUrl();
   const requestedAt = new Date().toISOString();
   const serviceConfigured = Boolean(serviceBaseUrl);
 
@@ -553,7 +561,9 @@ export async function callWbRndRecommendPreview(
   const controller = new AbortController();
   const timeoutHandle = setTimeout(() => controller.abort(), timeoutMs);
   const fetchImpl = options?.fetchImpl ?? fetch;
-  const token = resolveWbRndServiceToken();
+  const token = strictContract?.enabled
+    ? strictContract.token
+    : resolveWbRndServiceToken();
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
   };

@@ -45,10 +45,16 @@ export function resolveWbRndResultOrigin(input: OriginInput): WbRndResultOrigin 
   if (!input.fallbackReason) {
     throw new Error("WB_RND_RESULT_ORIGIN_missing_fallback_reason");
   }
+  const fallbackExecutionId =
+    record(input.response) && typeof input.response.execution_id === "string"
+      ? input.response.execution_id
+      : null;
   return {
     kind: "local_snapshot",
     label: "로컬 스냅샷 결과",
-    snapshotId: `snapshot_${input.requestedAt.replace(/[^0-9]/g, "")}`,
+    snapshotId: fallbackExecutionId
+      ? `snapshot_${fallbackExecutionId.replace(/^exec_/, "")}`
+      : `snapshot_${input.requestedAt.replace(/[^0-9]/g, "")}`,
     generatedAt: input.requestedAt,
     reason: input.fallbackReason,
   };
