@@ -12,6 +12,20 @@ jobs:
   encoding-audit:
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: wellnessbox
+          POSTGRES_PASSWORD: wellnessbox
+          POSTGRES_DB: wellnessbox
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U wellnessbox"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
 
     steps:
       - name: Checkout
@@ -65,8 +79,16 @@ jobs:
           console.log('NEXT_PUBLIC_VAPID_PUBLIC_KEY='+k.publicKey+'\nVAPID_PRIVATE_KEY='+k.privateKey)"
           >> "$GITHUB_ENV"
 
+      - name: Initialize build database schema
+        env:
+          DATABASE_URL: postgresql://wellnessbox:wellnessbox@127.0.0.1:5432/wellnessbox
+          DIRECT_URL: postgresql://wellnessbox:wellnessbox@127.0.0.1:5432/wellnessbox
+        run: npx prisma db push --skip-generate
+
       - name: Build production application
         env:
+          DATABASE_URL: postgresql://wellnessbox:wellnessbox@127.0.0.1:5432/wellnessbox
+          DIRECT_URL: postgresql://wellnessbox:wellnessbox@127.0.0.1:5432/wellnessbox
           GMAIL_SMTP_USER: build-only@example.invalid
           GMAIL_SMTP_APP_PASSWORD: build-only-not-a-credential
           GMAIL_SMTP_FROM: build-only@example.invalid
