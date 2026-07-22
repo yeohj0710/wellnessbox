@@ -83,12 +83,16 @@ jobs:
         env:
           DATABASE_URL: postgresql://wellnessbox:wellnessbox@127.0.0.1:5432/wellnessbox
           DIRECT_URL: postgresql://wellnessbox:wellnessbox@127.0.0.1:5432/wellnessbox
+          WELLNESSBOX_PRISMA_URL: postgresql://wellnessbox:wellnessbox@127.0.0.1:5432/wellnessbox
+          WELLNESSBOX_URL_NON_POOLING: postgresql://wellnessbox:wellnessbox@127.0.0.1:5432/wellnessbox
         run: npx prisma db push --skip-generate
 
       - name: Build production application
         env:
           DATABASE_URL: postgresql://wellnessbox:wellnessbox@127.0.0.1:5432/wellnessbox
           DIRECT_URL: postgresql://wellnessbox:wellnessbox@127.0.0.1:5432/wellnessbox
+          WELLNESSBOX_PRISMA_URL: postgresql://wellnessbox:wellnessbox@127.0.0.1:5432/wellnessbox
+          WELLNESSBOX_URL_NON_POOLING: postgresql://wellnessbox:wellnessbox@127.0.0.1:5432/wellnessbox
           GMAIL_SMTP_USER: build-only@example.invalid
           GMAIL_SMTP_APP_PASSWORD: build-only-not-a-credential
           GMAIL_SMTP_FROM: build-only@example.invalid
