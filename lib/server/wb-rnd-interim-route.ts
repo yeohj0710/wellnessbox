@@ -20,7 +20,11 @@ import {
   listWbRndProductCatalog,
 } from "@/lib/server/wb-rnd-product-candidates";
 import { mapWellnessBoxProfileToWbRndRequest } from "@/lib/server/wb-rnd-profile-adapter";
-import { publicWbRndErrorCode } from "@/lib/server/wb-rnd-security";
+import {
+  logWbRndOperationalError,
+  minimizeWbRndStoredProfile,
+  publicWbRndErrorCode,
+} from "@/lib/server/wb-rnd-security";
 import { getOrderPlanContextByBinding } from "@/lib/order/queries";
 import { mapOrderToReadOnlyPlanContext } from "@/lib/server/wb-rnd-order-plan-context";
 
@@ -48,6 +52,7 @@ async function readJson(req: Request): Promise<JsonRecord> {
 }
 
 async function proxyError(error: unknown) {
+  logWbRndOperationalError("proxy", error);
   const timeout = error instanceof Error && error.name === "AbortError";
   return noStore({ error: publicWbRndErrorCode(error) }, timeout ? 504 : 502);
 }
@@ -60,6 +65,7 @@ async function reviewProxyError(error: unknown) {
 }
 
 async function recommendationProxyError(error: unknown) {
+  logWbRndOperationalError("recommendation_proxy", error);
   const timeout = error instanceof Error && error.name === "AbortError";
   return noStore(
     buildWbRndInterimFailClosedResponse(publicWbRndErrorCode(error)),
@@ -124,7 +130,7 @@ export async function runUserInterimProfileRoute(
     const payload = {
       profile_id: pseudonymizeInterimUserId(auth.data.appUserId),
       consent_scopes: Array.isArray(body.consent_scopes) ? body.consent_scopes : [],
-      profile: typeof body.profile === "object" && body.profile ? body.profile : {},
+      profile: minimizeWbRndStoredProfile(body.profile),
     };
     return noStore(await callInterim("/v1/interim/profiles", "POST", payload));
   } catch (error) {
@@ -433,9 +439,10 @@ export async function runAdminInterimDashboardRoute(
     try {
       kpis = await callInterim("/v1/interim/kpis", "GET");
     } catch (error) {
+      logWbRndOperationalError("admin_kpi", error);
       kpis = {
         availability: "UNAVAILABLE",
-        error: error instanceof Error ? error.message : "unknown_error",
+        error: publicWbRndErrorCode(error),
       };
     }
     const sources = await callInterim("/v1/interim/admin/sources", "GET");

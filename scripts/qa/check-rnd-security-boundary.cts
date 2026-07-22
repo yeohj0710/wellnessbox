@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import { NextResponse } from "next/server";
 
 import { callWbRndInterim, pseudonymizeInterimUserId } from "../../lib/server/wb-rnd-interim-client";
@@ -44,12 +45,37 @@ async function run() {
     assert.equal(response.status, 401);
   }
 
+  const routeAuthSource = readFileSync("lib/server/route-auth.ts", "utf8");
+  const routeSource = readFileSync("lib/server/wb-rnd-interim-route.ts", "utf8");
+  for (const token of [
+    "requireUserSession",
+    "requirePharmSession",
+    "requireAdminSession",
+    "session.user?.loggedIn",
+    "session.pharm?.loggedIn",
+    "session.admin?.loggedIn",
+  ]) assert.match(`${routeAuthSource}\n${routeSource}`, new RegExp(token.replace("?", "\\?")));
+
+  const directIdentifierResponse = await runUserInterimProfileRoute(
+    new Request("http://service.test/profile", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ profile: { name: "홍길동", email: "person@example.com", phone: "010-1234-5678" } }),
+    }),
+    {
+      requireUserSessionImpl: userAuth,
+      callWbRndInterimImpl: async () => assert.fail("direct identifier reached R&D"),
+    }
+  );
+  assert.equal(directIdentifierResponse.status, 502);
+  assert.deepEqual(await directIdentifierResponse.json(), { error: "invalid_profile_payload" });
+
   let userBody: JsonRecord | undefined;
   const userResponse = await runUserInterimProfileRoute(
     new Request("http://service.test/profile", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ profile_id: "usr_attacker", phone: "010-9999-9999", profile: { age: 44 } }),
+      body: JSON.stringify({ profile_id: "usr_attacker", phone: "010-9999-9999", profile: { age: 44, symptoms: ["fatigue"] } }),
     }),
     {
       requireUserSessionImpl: userAuth,
@@ -91,6 +117,28 @@ async function run() {
   );
   assert.equal(decisionBody?.pharmacy_id, 112);
 
+  const adminCalls: string[] = [];
+  const adminResponse = await runAdminInterimDashboardRoute({
+    requireAdminSessionImpl: async () => ({ ok: true as const, data: null }),
+    callWbRndInterimImpl: async (path) => {
+      adminCalls.push(path);
+      if (path.endsWith("/kpis")) throw new Error("person@example.com");
+      if (path.endsWith("/status")) return { counts: {} };
+      if (path.endsWith("/sources")) return { items: [], adapters: [] };
+      if (path.endsWith("/runtime")) return { rules: {}, models: {}, executions: {} };
+      return assert.fail(`unexpected admin path: ${path}`);
+    },
+  });
+  const adminBody = await adminResponse.json() as JsonRecord;
+  assert.equal(adminResponse.status, 200);
+  assert.deepEqual(adminCalls, [
+    "/v1/interim/status",
+    "/v1/interim/kpis",
+    "/v1/interim/admin/sources",
+    "/v1/interim/admin/runtime",
+  ]);
+  assert.deepEqual(adminBody.kpis, { availability: "UNAVAILABLE", error: "R&D request failed" });
+
   const adapted = mapWellnessBoxProfileToWbRndRequest(
     {
       name: "홍길동",
@@ -121,6 +169,31 @@ async function run() {
   assert.deepEqual(masked.nested, { phone: "[REDACTED]", message: "contact [REDACTED]" });
   assert.equal(publicWbRndErrorCode(new Error("patient person@example.com")), "R&D request failed");
 
+  const warnings: unknown[][] = [];
+  const originalWarn = console.warn;
+  console.warn = (...items: unknown[]) => warnings.push(items);
+  try {
+    const bounded = await runUserInterimProfileRoute(
+      new Request("http://service.test/profile", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ profile: { age: 44 } }),
+      }),
+      {
+        requireUserSessionImpl: userAuth,
+        callWbRndInterimImpl: async () => { throw new Error("person@example.com 010-1234-5678 Bearer secret-token"); },
+      }
+    );
+    assert.deepEqual(await bounded.json(), { error: "R&D request failed" });
+  } finally {
+    console.warn = originalWarn;
+  }
+  const warningText = JSON.stringify(warnings);
+  assert.equal(warningText.includes("person@example.com"), false);
+  assert.equal(warningText.includes("010-1234-5678"), false);
+  assert.equal(warningText.includes("secret-token"), false);
+  assert.match(warningText, /REDACTED/);
+
   const validStatus = await callWbRndInterim<JsonRecord>("/v1/interim/status", "GET");
   assert.equal(typeof validStatus.counts, "object");
   const validToken = process.env.WB_RND_INTERIM_TOKEN;
@@ -141,7 +214,12 @@ async function run() {
     directIdentifierRemoved: !("name" in sourceProfile),
     unusedFieldRemoved: !("caffeineSensitivity" in sourceProfile),
     logsMasked: true,
+    operationalLogCallSiteMasked: true,
     publicErrorsBounded: true,
+    directIdentifierPayloadRejected: directIdentifierResponse.status === 502,
+    roleGuardSourceContractVerified: true,
+    authenticatedAdminBranchExecuted: adminResponse.status === 200,
+    adminFallbackBounded: (adminBody.kpis as JsonRecord).error === "R&D request failed",
     profileId,
   }));
 }

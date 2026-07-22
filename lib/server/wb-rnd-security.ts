@@ -5,6 +5,24 @@ const BEARER = /Bearer\s+[A-Za-z0-9._~+/=-]+/gi;
 
 export const WB_RND_REDACTED = "[REDACTED]" as const;
 
+const profileText = z.string().trim().min(1).max(128);
+const storedProfileSchema = z
+  .object({
+    age: z.number().int().min(18).max(120).optional(),
+    pregnant: z.boolean().optional(),
+    medications: z.array(z.object({ name: profileText }).strict()).max(100).optional(),
+    symptoms: z.array(profileText).max(100).optional(),
+    conditions: z.array(profileText).max(100).optional(),
+    allergies: z.array(profileText).max(100).optional(),
+  })
+  .strict();
+
+export function minimizeWbRndStoredProfile(value: unknown) {
+  const parsed = storedProfileSchema.safeParse(value ?? {});
+  if (!parsed.success) throw new Error("invalid_profile_payload");
+  return parsed.data;
+}
+
 function maskText(value: string) {
   return value
     .replace(BEARER, `Bearer ${WB_RND_REDACTED}`)
@@ -25,6 +43,13 @@ export function sanitizeWbRndLogValue(value: unknown): unknown {
   return typeof value === "string" ? maskText(value) : value;
 }
 
+export function logWbRndOperationalError(scope: string, error: unknown) {
+  const detail = error instanceof Error
+    ? { name: error.name, message: error.message }
+    : { value: error };
+  console.warn("[wb-rnd] request failed", sanitizeWbRndLogValue({ scope, detail }));
+}
+
 export function publicWbRndErrorCode(error: unknown) {
   if (error instanceof Error && error.name === "AbortError") return "R&D timeout";
   const code = error instanceof Error ? error.message : "";
@@ -35,6 +60,7 @@ export function publicWbRndErrorCode(error: unknown) {
       "invalid_request_body",
       "invalid_source_profile",
       "invalid_adapter_options",
+      "invalid_profile_payload",
       "missing_required_profile_fields",
       "survey_recommendation_consent_required",
       "unsupported_profile_goal",
@@ -44,3 +70,4 @@ export function publicWbRndErrorCode(error: unknown) {
   }
   return "R&D request failed";
 }
+import { z } from "zod";
