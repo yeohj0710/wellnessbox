@@ -34,6 +34,14 @@ async function run() {
     }
   );
   assert.equal(deniedProfile.status, 401);
+  const deniedPharm = await runPharmInterimReviewsRoute({
+    requirePharmSessionImpl: async () => ({
+      ok: false as const,
+      response: NextResponse.json({ error: "Unauthorized" }, { status: 401 }),
+    }),
+    callWbRndInterimImpl: async () => assert.fail("unauthorized pharmacy reached R&D"),
+  });
+  assert.equal(deniedPharm.status, 401);
   const profileResponse = await runUserInterimProfileRoute(
     new Request("http://service.test/api/tips/profile", {
       method: "POST",
@@ -105,17 +113,12 @@ async function run() {
     105
   );
 
-  await assert.rejects(
-    runPharmInterimDecisionRoute(
+  const replayResponse = await runPharmInterimDecisionRoute(
       new Request("http://service.test/replay", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ decision: "REJECT" }) }),
       String(review.review_id),
       { requirePharmSessionImpl: pharmAuth, callWbRndInterimImpl: callWbRndInterim }
-    ).then(async (response) => {
-      assert.equal(response.status, 502);
-      throw new Error("replay_rejected");
-    }),
-    /replay_rejected/
   );
+  assert.equal(replayResponse.status, 409);
 
   console.log(
     JSON.stringify({
@@ -127,6 +130,7 @@ async function run() {
       reviewStatus: decision.status,
       immutableReplayRejected: true,
       userAuthDenied: deniedProfile.status === 401,
+      pharmacistAuthDenied: deniedPharm.status === 401,
       browserProfileIdIgnored: profile.profile_id === profileId,
       pharmacyIdOverridden:
         (decision.postconditions as RecordValue).pharmacy_id === 105,

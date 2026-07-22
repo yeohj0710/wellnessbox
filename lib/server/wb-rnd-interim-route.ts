@@ -50,6 +50,13 @@ async function proxyError(error: unknown) {
   return noStore({ error: timeout ? "R&D timeout" : code }, timeout ? 504 : 502);
 }
 
+async function reviewProxyError(error: unknown) {
+  if (error instanceof Error && error.message === "WB_RND_INTERIM_upstream_409") {
+    return noStore({ error: "review_already_completed" }, 409);
+  }
+  return proxyError(error);
+}
+
 async function recommendationProxyError(error: unknown) {
   const code = error instanceof Error ? error.message : "unknown_error";
   const timeout = error instanceof Error && error.name === "AbortError";
@@ -355,7 +362,7 @@ export async function runPharmInterimDecisionRoute(
       )
     );
   } catch (error) {
-    return proxyError(error);
+    return reviewProxyError(error);
   }
 }
 
