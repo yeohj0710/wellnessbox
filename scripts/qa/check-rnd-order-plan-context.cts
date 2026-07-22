@@ -6,6 +6,7 @@ import { NextResponse } from "next/server";
 import { ORDER_STATUS } from "../../lib/order/orderStatus";
 import { callWbRndInterim } from "../../lib/server/wb-rnd-interim-client";
 import { runUserInterimOrderPlanContextRoute } from "../../lib/server/wb-rnd-interim-route";
+import { verifyOrderPayment } from "../../lib/payment/verified-order-payment";
 
 const statuses = [
   ORDER_STATUS.PAYMENT_COMPLETE,
@@ -17,10 +18,40 @@ const statuses = [
 ];
 
 async function run() {
+  const verified = await verifyOrderPayment(
+    { paymentId: "merchant-op109", paymentMethod: "inicis", paymentLookupId: "imp-op109" },
+    async () => ({
+      response: {
+        status: "paid",
+        merchant_uid: "merchant-op109",
+        imp_uid: "imp-op109",
+        amount: 42000,
+      },
+    })
+  );
+  assert.equal(verified.totalPrice, 42000);
+  await assert.rejects(
+    verifyOrderPayment(
+      { paymentId: "merchant-op109", paymentMethod: "inicis", paymentLookupId: "imp-op109" },
+      async () => ({
+        response: {
+          status: "paid",
+          merchant_uid: "different-order",
+          imp_uid: "imp-op109",
+          amount: 42000,
+        },
+      })
+    ),
+    /ORDER_PAYMENT_not_verified/
+  );
   const denied = await runUserInterimOrderPlanContextRoute(
     new Request("http://localhost/api/tips/plan-context", {
       method: "POST",
-      body: JSON.stringify({ execution_id: "execution_op109", plan_id: "plan_op109" }),
+      body: JSON.stringify({
+        execution_id: "execution_op109",
+        plan_id: "plan_op109",
+        order_id: 10900,
+      }),
     }),
     {
       requireUserSessionImpl: async () => ({
@@ -28,7 +59,7 @@ async function run() {
         response: NextResponse.json({ error: "Unauthorized" }, { status: 401 }),
       }),
       callWbRndInterimImpl: async () => assert.fail("unauthorized user reached R&D"),
-      getLatestOrderImpl: async () => assert.fail("unauthorized user reached order query"),
+      getOrderByBindingImpl: async () => assert.fail("unauthorized user reached order query"),
     }
   );
   assert.equal(denied.status, 401);
@@ -39,7 +70,11 @@ async function run() {
       new Request("http://localhost/api/tips/plan-context", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ execution_id: "execution_op109", plan_id: "plan_op109" }),
+        body: JSON.stringify({
+          execution_id: "execution_op109",
+          plan_id: "plan_op109",
+          order_id: 10900 + index,
+        }),
       }),
       {
         requireUserSessionImpl: async () => ({
@@ -47,11 +82,19 @@ async function run() {
           data: { appUserId: "op109-user" },
         }),
         callWbRndInterimImpl: callWbRndInterim,
-        getLatestOrderImpl: async () => ({
-          id: 10900 + index,
-          status,
-          updatedAt: new Date(`2026-07-22T0${index}:00:00Z`),
-        }),
+        getOrderByBindingImpl: async (binding) => {
+          assert.deepEqual(binding, {
+            appUserId: "op109-user",
+            orderId: 10900 + index,
+            executionId: "execution_op109",
+            planId: "plan_op109",
+          });
+          return {
+            id: 10900 + index,
+            status,
+            updatedAt: new Date(`2026-07-22T0${index}:00:00Z`),
+          };
+        },
       }
     );
     const body = (await response.json()) as Record<string, any>;
@@ -85,16 +128,27 @@ async function run() {
     "utf8"
   );
   const mutations = fs.readFileSync(path.resolve("lib/order/mutations.ts"), "utf8");
-  assert.doesNotMatch(
-    recommendationRoute,
-    /\b(?:prisma\.order|prisma\.orderItem|stock:\s*\{\s*decrement)/
-  );
+  for (const forbidden of [
+    /\b(?:prisma|db|tx)\.(?:order|orderItem|pharmacyProduct)\b/,
+    /stock:\s*\{\s*decrement/,
+    /\b(?:createOrder|updateOrder|deleteOrder|updateOrderStatus)\s*\(/,
+    /from\s+["'][^"']*(?:order\/mutations|prisma|\/db)["']/,
+  ]) {
+    assert.doesNotMatch(recommendationRoute, forbidden);
+  }
   assert.match(orderComplete, /const paymentOutcome = resolvePaymentOutcome\(/);
   assert.match(orderComplete, /await createOrderFromPaymentOutcome\(/);
   assert.match(orderComplete, /await createOrder\(\{/);
   assert.match(mutations, /export async function createOrder\(/);
+  assert.match(mutations, /const verifiedPayment = await verifyOrderPayment\(/);
+  assert.match(mutations, /const existing = await tx\.order\.findUnique\(/);
   assert.match(mutations, /stock:\s*\{\s*decrement: item\.quantity\s*\}/);
   assert.match(mutations, /const createdOrder = await tx\.order\.create\(/);
+  assert.match(mutations, /pricedTotal !== verifiedPayment\.totalPrice/);
+  assert.doesNotMatch(
+    mutations,
+    /export async function createOrder[\s\S]*?paymentId\?: string/
+  );
 
   console.log(JSON.stringify({
     ok: true,
@@ -102,6 +156,9 @@ async function run() {
     orderStatuses: observed,
     recommendationRouteOrderMutationSymbols: false,
     existingCreateOrderOwnsStockAndOrderMutation: true,
+    createOrderRequiresServerVerifiedPayment: true,
+    paymentIdUniqueAndTransactionProtected: true,
+    orderPlanBindingRequired: true,
     actualPrismaMutationExecuted: false,
   }));
 }

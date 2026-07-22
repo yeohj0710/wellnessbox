@@ -60,7 +60,11 @@ export function useOrderCompleteBootstrap({
   }, [pushHome]);
 
   const createOrderFromPaymentOutcome = useCallback(
-    async (input: { paymentId: string; txId: string; totalPrice: number }) => {
+    async (input: {
+      paymentId: string;
+      paymentMethod: string;
+      paymentLookupId: string;
+    }) => {
       const draft = prepareOrderDraftFromStorage();
       const validation = validatePreparedOrderDraft(draft);
 
@@ -87,11 +91,11 @@ export function useOrderCompleteBootstrap({
         entrancePassword: draft.entrancePassword,
         directions: draft.directions,
         paymentId: input.paymentId,
-        transactionType: "PAYMENT",
-        txId: input.txId,
-        totalPrice: input.totalPrice,
-        status: ORDER_STATUS.PAYMENT_COMPLETE,
+        paymentMethod: input.paymentMethod,
+        paymentLookupId: input.paymentLookupId,
         pharmacyId: draft.pharmacyId,
+        rndExecutionId: localStorage.getItem("wbRndExecutionId") || undefined,
+        rndPlanId: localStorage.getItem("wbRndPlanId") || undefined,
         orderItems: draft.orderItems,
       });
 
@@ -202,8 +206,8 @@ export function useOrderCompleteBootstrap({
 
         await createOrderFromPaymentOutcome({
           paymentId,
-          txId: paymentOutcome.txId,
-          totalPrice: paymentOutcome.totalPrice,
+          paymentMethod,
+          paymentLookupId: paymentMethod === "inicis" ? impUid : paymentId,
         });
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);

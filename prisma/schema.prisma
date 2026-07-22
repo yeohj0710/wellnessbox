@@ -77,7 +77,7 @@ model Order {
   requestNotes     String?
   entrancePassword String?
   directions       String?
-  paymentId        String?
+  paymentId        String?         @unique
   transactionType  String?
   txId             String?
   totalPrice       Int?
@@ -88,6 +88,8 @@ model Order {
   updatedAt        DateTime       @default(now()) @updatedAt
   endpoint         String?
   appUserId        String?
+  rndExecutionId   String?
+  rndPlanId        String?
   messages         Message[]
   pharmacy         Pharmacy?      @relation(fields: [pharmacyId], references: [id])
   rider            Rider?         @relation(fields: [riderId], references: [id])
@@ -99,7 +101,7 @@ model Order {
   @@index([appUserId, createdAt])
   @@index([phone, createdAt])
   @@index([phone, password, createdAt])
-  @@index([paymentId])
+  @@index([rndExecutionId, rndPlanId])
 }
 
 model OrderItem {

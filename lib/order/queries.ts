@@ -232,10 +232,19 @@ export async function getOrdersByEndpoint(endpoint: string) {
   });
 }
 
-export async function getLatestOrderPlanContextByAppUserId(appUserId: string) {
+export async function getOrderPlanContextByBinding(input: {
+  appUserId: string;
+  orderId: number;
+  executionId: string;
+  planId: string;
+}) {
   return db.order.findFirst({
-    where: { appUserId },
+    where: {
+      id: input.orderId,
+      appUserId: input.appUserId,
+      rndExecutionId: input.executionId,
+      rndPlanId: input.planId,
+    },
     select: { id: true, status: true, updatedAt: true },
-    orderBy: { updatedAt: "desc" },
   });
 }

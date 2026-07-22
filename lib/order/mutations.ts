@@ -9,6 +9,7 @@ import {
 } from "@/lib/notification";
 import getSession from "@/lib/session";
 import { normalizePhone } from "@/lib/otp";
+import { verifyOrderPayment } from "@/lib/payment/verified-order-payment";
 
 const orderWithItemsInclude = {
   pharmacy: true,
@@ -95,34 +96,62 @@ export async function createOrder(data: {
   requestNotes?: string;
   entrancePassword?: string;
   directions?: string;
-  paymentId?: string;
-  transactionType?: string;
-  txId?: string;
+  paymentId: string;
+  paymentMethod: string;
+  paymentLookupId: string;
   endpoint?: string;
-  totalPrice?: number;
-  status?: OrderStatus;
   pharmacyId?: number;
+  rndExecutionId?: string;
+  rndPlanId?: string;
   orderItems: { pharmacyProductId: number; quantity: number }[];
 }) {
-  const { orderItems, endpoint, ...orderData } = data;
+  const {
+    orderItems,
+    endpoint,
+    paymentMethod,
+    paymentLookupId,
+    rndExecutionId,
+    rndPlanId,
+    ...orderData
+  } = data;
   const normalizedItems = normalizeOrderItems(orderItems);
   if (!normalizedItems.length) {
     throw new Error("Order items are required");
   }
 
   const appUserId = await resolveAppUserIdForOrderPhone(orderData.phone);
-  const paymentId = orderData.paymentId?.trim();
+  if (Boolean(rndExecutionId) !== Boolean(rndPlanId)) {
+    throw new Error("R&D execution and plan IDs must be provided together");
+  }
+  const verifiedPayment = await verifyOrderPayment({
+    paymentId: orderData.paymentId,
+    paymentMethod,
+    paymentLookupId,
+  });
+  const paymentId = verifiedPayment.paymentId;
 
   const txResult = await db.$transaction(async (tx) => {
-    if (paymentId) {
-      const existing = await tx.order.findFirst({
-        where: { paymentId },
-        include: orderWithItemsInclude,
-      });
-      if (existing) return { order: existing, created: false };
-    }
+    const existing = await tx.order.findUnique({
+      where: { paymentId },
+      include: orderWithItemsInclude,
+    });
+    if (existing) return { order: existing, created: false };
 
+    let pricedTotal = 0;
     for (const item of normalizedItems) {
+      const offer = await tx.pharmacyProduct.findUnique({
+        where: { id: item.pharmacyProductId },
+        select: { price: true, pharmacyId: true },
+      });
+      if (
+        !offer ||
+        !Number.isInteger(offer.price) ||
+        Number(offer.price) <= 0 ||
+        (orderData.pharmacyId != null && offer.pharmacyId !== orderData.pharmacyId)
+      ) {
+        throw new Error("Invalid pharmacy product offer");
+      }
+      pricedTotal += Number(offer.price) * item.quantity;
       const updated = await tx.pharmacyProduct.updateMany({
         where: {
           id: item.pharmacyProductId,
@@ -136,13 +165,19 @@ export async function createOrder(data: {
         throw new Error("Insufficient stock for one or more items");
       }
     }
+    if (pricedTotal !== verifiedPayment.totalPrice) {
+      throw new Error("Verified payment amount does not match order total");
+    }
 
     const createdOrder = await tx.order.create({
       data: {
         ...orderData,
-        paymentId: paymentId || undefined,
+        ...verifiedPayment,
+        status: ORDER_STATUS.PAYMENT_COMPLETE,
         endpoint,
         appUserId: appUserId ?? undefined,
+        rndExecutionId: rndExecutionId || undefined,
+        rndPlanId: rndPlanId || undefined,
         orderItems: {
           create: normalizedItems.map((item) => ({
             pharmacyProductId: item.pharmacyProductId,
