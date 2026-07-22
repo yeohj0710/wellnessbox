@@ -41,6 +41,9 @@ jobs:
       - name: Verify R&D recommendation fail-closed contract
         run: npm run qa:rnd:preview-route
 
+      - name: Verify R&D health alias
+        run: npm run qa:rnd:health-alias
+
       - name: Verify TIPS final safety authority wiring
         run: npm run qa:tips:interim
 
@@ -52,3 +55,9 @@ jobs:
 
       - name: Verify R&D service product candidates
         run: npm run qa:rnd:product-candidates
+
+      - name: Typecheck application
+        run: npm run typecheck
+
+      - name: Build production application
+        run: npm run build
