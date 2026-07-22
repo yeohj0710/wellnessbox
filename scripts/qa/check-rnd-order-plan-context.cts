@@ -7,6 +7,7 @@ import { ORDER_STATUS } from "../../lib/order/orderStatus";
 import { callWbRndInterim } from "../../lib/server/wb-rnd-interim-client";
 import { runUserInterimOrderPlanContextRoute } from "../../lib/server/wb-rnd-interim-route";
 import { verifyOrderPayment } from "../../lib/payment/verified-order-payment";
+import { validateOwnedWbRndPlanBinding } from "../../lib/server/wb-rnd-order-plan-context";
 
 const statuses = [
   ORDER_STATUS.PAYMENT_COMPLETE,
@@ -18,6 +19,11 @@ const statuses = [
 ];
 
 async function run() {
+  await validateOwnedWbRndPlanBinding({
+    appUserId: "op109-user",
+    executionId: "execution_op109",
+    planId: "plan_op109",
+  });
   const verified = await verifyOrderPayment(
     { paymentId: "merchant-op109", paymentMethod: "inicis", paymentLookupId: "imp-op109" },
     async () => ({
@@ -128,6 +134,10 @@ async function run() {
     "utf8"
   );
   const mutations = fs.readFileSync(path.resolve("lib/order/mutations.ts"), "utf8");
+  const migration = fs.readFileSync(
+    path.resolve("prisma/migrations/20260722043000_secure_rnd_order_binding/migration.sql"),
+    "utf8"
+  );
   for (const forbidden of [
     /\b(?:prisma|db|tx)\.(?:order|orderItem|pharmacyProduct)\b/,
     /stock:\s*\{\s*decrement/,
@@ -145,6 +155,9 @@ async function run() {
   assert.match(mutations, /stock:\s*\{\s*decrement: item\.quantity\s*\}/);
   assert.match(mutations, /const createdOrder = await tx\.order\.create\(/);
   assert.match(mutations, /pricedTotal !== verifiedPayment\.totalPrice/);
+  assert.match(mutations, /await validateOwnedWbRndPlanBinding\(/);
+  assert.match(mutations, /error\.code === "P2002"/);
+  assert.match(migration, /ORDER_PAYMENT_ID_DUPLICATES_REQUIRE_RECONCILIATION/);
   const createOrderSignature = mutations.match(
     /export async function createOrder\(data: \{[\s\S]*?\n\}\) \{/
   )?.[0];
@@ -160,6 +173,9 @@ async function run() {
     createOrderRequiresServerVerifiedPayment: true,
     paymentIdUniqueAndTransactionProtected: true,
     orderPlanBindingRequired: true,
+    orderPlanBindingValidatedByRnd: true,
+    duplicateMigrationPreflightRequired: true,
+    concurrentPaymentReplayReturnsExistingOrder: true,
     actualPrismaMutationExecuted: false,
   }));
 }

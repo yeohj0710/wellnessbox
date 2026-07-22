@@ -10,6 +10,8 @@ import {
 import getSession from "@/lib/session";
 import { normalizePhone } from "@/lib/otp";
 import { verifyOrderPayment } from "@/lib/payment/verified-order-payment";
+import { Prisma } from "@prisma/client";
+import { validateOwnedWbRndPlanBinding } from "@/lib/server/wb-rnd-order-plan-context";
 
 const orderWithItemsInclude = {
   pharmacy: true,
@@ -123,6 +125,16 @@ export async function createOrder(data: {
   if (Boolean(rndExecutionId) !== Boolean(rndPlanId)) {
     throw new Error("R&D execution and plan IDs must be provided together");
   }
+  if (rndExecutionId && rndPlanId) {
+    if (!appUserId) {
+      throw new Error("Authenticated user required for R&D plan binding");
+    }
+    await validateOwnedWbRndPlanBinding({
+      appUserId,
+      executionId: rndExecutionId,
+      planId: rndPlanId,
+    });
+  }
   const verifiedPayment = await verifyOrderPayment({
     paymentId: orderData.paymentId,
     paymentMethod,
@@ -130,7 +142,9 @@ export async function createOrder(data: {
   });
   const paymentId = verifiedPayment.paymentId;
 
-  const txResult = await db.$transaction(async (tx) => {
+  let txResult;
+  try {
+    txResult = await db.$transaction(async (tx) => {
     const existing = await tx.order.findUnique({
       where: { paymentId },
       include: orderWithItemsInclude,
@@ -188,7 +202,20 @@ export async function createOrder(data: {
       include: orderWithItemsInclude,
     });
     return { order: createdOrder, created: true };
-  });
+    });
+  } catch (error) {
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === "P2002"
+    ) {
+      const existing = await db.order.findUnique({
+        where: { paymentId },
+        include: orderWithItemsInclude,
+      });
+      if (existing) return existing;
+    }
+    throw error;
+  }
 
   if (txResult.created) {
     await sendNewOrderNotification(txResult.order.id);

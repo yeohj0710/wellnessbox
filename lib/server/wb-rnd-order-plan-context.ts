@@ -1,4 +1,8 @@
 import { ORDER_STATUS, type OrderStatus } from "@/lib/order/orderStatus";
+import {
+  callWbRndInterim,
+  pseudonymizeInterimUserId,
+} from "@/lib/server/wb-rnd-interim-client";
 
 export type WbRndOrderPlanContext = {
   schema_version: "order_plan_context_request_v1";
@@ -19,6 +23,31 @@ export type OrderPlanContextSource = {
   status: string | null;
   updatedAt: Date;
 };
+
+export async function validateOwnedWbRndPlanBinding(input: {
+  appUserId: string;
+  executionId: string;
+  planId: string;
+}) {
+  const result = await callWbRndInterim<Record<string, unknown>>(
+    "/v1/interim/plans/bindings/validate",
+    "POST",
+    {
+      schema_version: "plan_binding_validation_request_v1",
+      execution_id: input.executionId,
+      profile_id: pseudonymizeInterimUserId(input.appUserId),
+      plan_id: input.planId,
+    }
+  );
+  if (
+    result.valid !== true ||
+    result.read_only !== true ||
+    result.execution_id !== input.executionId ||
+    result.plan_id !== input.planId
+  ) {
+    throw new Error("WB_RND_ORDER_CONTEXT_invalid_plan_binding");
+  }
+}
 
 function requireOrderStatus(value: string | null): OrderStatus {
   if (!value || !(Object.values(ORDER_STATUS) as string[]).includes(value)) {
