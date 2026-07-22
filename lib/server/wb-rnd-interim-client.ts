@@ -10,7 +10,11 @@ const CIRCUIT_FAILURE_THRESHOLD = 3;
 const CIRCUIT_OPEN_MS = 30_000;
 const GET_MAX_ATTEMPTS = 2;
 
-type CircuitState = { consecutiveFailures: number; openedAt: number | null };
+type CircuitState = {
+  consecutiveFailures: number;
+  openedAt: number | null;
+  halfOpenProbeInFlight: boolean;
+};
 const circuitStates = new Map<string, CircuitState>();
 
 export const WB_RND_INTERIM_MODE = "PROXY_GOLD_SIMULATION" as const;
@@ -24,7 +28,11 @@ type InterimCallDependencies = {
 };
 
 function stateFor(origin: string) {
-  const current = circuitStates.get(origin) ?? { consecutiveFailures: 0, openedAt: null };
+  const current = circuitStates.get(origin) ?? {
+    consecutiveFailures: 0,
+    openedAt: null,
+    halfOpenProbeInFlight: false,
+  };
   circuitStates.set(origin, current);
   return current;
 }
@@ -205,12 +213,14 @@ export async function callWbRndInterim<T>(
   const sleep = dependencies.sleep ?? ((milliseconds) => new Promise((resolve) => setTimeout(resolve, milliseconds)));
   const fetchImpl = dependencies.fetchImpl ?? fetch;
   const circuit = stateFor(origin.origin);
+  let halfOpenProbe = false;
   if (circuit.openedAt !== null) {
     if (now() - circuit.openedAt < CIRCUIT_OPEN_MS) {
       throw new Error("WB_RND_INTERIM_circuit_open");
     }
-    circuit.openedAt = null;
-    circuit.consecutiveFailures = 0;
+    if (circuit.halfOpenProbeInFlight) throw new Error("WB_RND_INTERIM_circuit_open");
+    circuit.halfOpenProbeInFlight = true;
+    halfOpenProbe = true;
   }
 
   const maxAttempts = method === "GET" ? GET_MAX_ATTEMPTS : 1;
@@ -230,10 +240,11 @@ export async function callWbRndInterim<T>(
         body: body === undefined ? undefined : JSON.stringify(body),
       });
       const text = await response.text();
-      const parsed = text ? JSON.parse(text) : null;
       if (!response.ok) throw new Error(`WB_RND_INTERIM_upstream_${response.status}`);
+      const parsed = text ? JSON.parse(text) : null;
       circuit.consecutiveFailures = 0;
       circuit.openedAt = null;
+      circuit.halfOpenProbeInFlight = false;
       return parsed as T;
     } catch (error) {
       lastError = error;
@@ -247,7 +258,15 @@ export async function callWbRndInterim<T>(
     }
   }
 
-  circuit.consecutiveFailures += 1;
-  if (circuit.consecutiveFailures >= CIRCUIT_FAILURE_THRESHOLD) circuit.openedAt = now();
+  circuit.halfOpenProbeInFlight = false;
+  if (isRetryableFailure(lastError)) {
+    circuit.consecutiveFailures = halfOpenProbe
+      ? CIRCUIT_FAILURE_THRESHOLD
+      : circuit.consecutiveFailures + 1;
+    if (circuit.consecutiveFailures >= CIRCUIT_FAILURE_THRESHOLD) circuit.openedAt = now();
+  } else if (halfOpenProbe) {
+    circuit.consecutiveFailures = 0;
+    circuit.openedAt = null;
+  }
   throw lastError;
 }

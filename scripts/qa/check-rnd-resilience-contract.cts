@@ -40,6 +40,25 @@ async function run() {
   assert.deepEqual(retrySleeps, [50]);
 
   resetWbRndInterimCircuitForTests();
+  let nonJsonRetryCalls = 0;
+  const nonJsonRecovered = await callWbRndInterim<{ recovered: boolean }>(
+    "/v1/interim/status",
+    "GET",
+    undefined,
+    {
+      fetchImpl: async () => {
+        nonJsonRetryCalls += 1;
+        return nonJsonRetryCalls === 1
+          ? new Response("upstream unavailable", { status: 503 })
+          : response(200, { recovered: true });
+      },
+      sleep: async () => undefined,
+    }
+  );
+  assert.deepEqual(nonJsonRecovered, { recovered: true });
+  assert.equal(nonJsonRetryCalls, 2);
+
+  resetWbRndInterimCircuitForTests();
   let postCalls = 0;
   await assert.rejects(
     () => callWbRndInterim("/v1/interim/profiles", "POST", {}, {
@@ -64,6 +83,43 @@ async function run() {
     /injected timeout/
   );
   assert.equal(publicWbRndErrorCode(timeout), "R&D timeout");
+
+  resetWbRndInterimCircuitForTests();
+  process.env.WB_RND_INTERIM_TIMEOUT_MS = "1";
+  const timerStartedAt = Date.now();
+  await assert.rejects(
+    () => callWbRndInterim("/v1/interim/profiles", "POST", {}, {
+      fetchImpl: async (_input, init) => new Promise((_resolve, reject) => {
+        init?.signal?.addEventListener("abort", () => reject(init.signal?.reason), { once: true });
+      }),
+    }),
+    (error: unknown) => error instanceof Error && error.name === "AbortError"
+  );
+  const timeoutElapsedMs = Date.now() - timerStartedAt;
+  assert.ok(timeoutElapsedMs >= 450 && timeoutElapsedMs < 1_500);
+  delete process.env.WB_RND_INTERIM_TIMEOUT_MS;
+
+  resetWbRndInterimCircuitForTests();
+  let clientErrorCalls = 0;
+  for (let index = 0; index < 3; index += 1) {
+    await assert.rejects(
+      () => callWbRndInterim("/v1/interim/status", "GET", undefined, {
+        fetchImpl: async () => {
+          clientErrorCalls += 1;
+          return response(401, { error: "unauthorized" });
+        },
+      }),
+      /WB_RND_INTERIM_upstream_401/
+    );
+  }
+  const afterClientErrors = await callWbRndInterim<{ healthy: boolean }>(
+    "/v1/interim/status",
+    "GET",
+    undefined,
+    { fetchImpl: async () => { clientErrorCalls += 1; return response(200, { healthy: true }); } }
+  );
+  assert.deepEqual(afterClientErrors, { healthy: true });
+  assert.equal(clientErrorCalls, 4);
 
   resetWbRndInterimCircuitForTests();
   let now = 1_000;
@@ -91,16 +147,30 @@ async function run() {
     /WB_RND_INTERIM_circuit_open/
   );
   now += 30_000;
-  const halfOpen = await callWbRndInterim<{ healthy: boolean }>(
+  let releaseHalfOpen: (() => void) | undefined;
+  const halfOpen = callWbRndInterim<{ healthy: boolean }>(
     "/v1/interim/status",
     "GET",
     undefined,
     {
-      fetchImpl: async () => response(200, { healthy: true }),
+      fetchImpl: async () => {
+        await new Promise<void>((resolve) => { releaseHalfOpen = resolve; });
+        return response(200, { healthy: true });
+      },
       now: () => now,
     }
   );
-  assert.deepEqual(halfOpen, { healthy: true });
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  await assert.rejects(
+    () => callWbRndInterim("/v1/interim/status", "GET", undefined, {
+      fetchImpl: async () => assert.fail("concurrent half-open call reached network"),
+      now: () => now,
+    }),
+    /WB_RND_INTERIM_circuit_open/
+  );
+  assert.ok(releaseHalfOpen);
+  releaseHalfOpen();
+  assert.deepEqual(await halfOpen, { healthy: true });
 
   const adminFallback = await runAdminInterimDashboardRoute({
     requireAdminSessionImpl: async () => ({ ok: true as const, data: null }),
@@ -121,14 +191,24 @@ async function run() {
     ok: true,
     checks: {
       retryable_get_retried_once: true,
+      non_json_retryable_response_retried: true,
       post_not_retried: true,
-      timeout_bounded: true,
+      actual_timeout_timer_clamped_and_aborted: true,
+      non_retryable_4xx_does_not_open_circuit: true,
       circuit_opens_after_three_failed_calls: true,
       open_circuit_skips_network: true,
       half_open_recovers_after_30_seconds: true,
+      half_open_allows_single_probe: true,
       actual_admin_route_fallback_bounded: true,
     },
-    observed: { retryCalls, retrySleeps, postCalls, circuitFetchCalls },
+    observed: {
+      retryCalls,
+      retrySleeps,
+      nonJsonRetryCalls,
+      postCalls,
+      clientErrorCalls,
+      circuitFetchCalls,
+    },
   }));
 }
 
