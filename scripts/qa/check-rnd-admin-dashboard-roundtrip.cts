@@ -24,6 +24,9 @@ async function run() {
   assert.equal(body.kpis?.availability, "UNAVAILABLE");
   assert.ok(Array.isArray(body.sources?.items));
   assert.ok(Array.isArray(body.sources?.adapters));
+  assert.equal(typeof body.runtime?.rules?.safety_rule_version_count, "number");
+  assert.equal(typeof body.runtime?.models?.model_version_count, "number");
+  assert.equal(typeof body.runtime?.executions?.execution_count, "number");
 
   console.log(JSON.stringify({
     ok: true,
@@ -32,6 +35,9 @@ async function run() {
     kpiAvailability: body.kpis.availability,
     sourceCount: body.sources.items.length,
     adapterCount: body.sources.adapters.length,
+    runtimeRuleCount: body.runtime.rules.safety_rule_version_count,
+    runtimeModelCount: body.runtime.models.model_version_count,
+    runtimeExecutionCount: body.runtime.executions.execution_count,
   }));
 }
 

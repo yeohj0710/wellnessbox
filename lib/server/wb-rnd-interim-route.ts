@@ -391,7 +391,8 @@ export async function runAdminInterimDashboardRoute(
       };
     }
     const sources = await callInterim("/v1/interim/admin/sources", "GET");
-    return noStore({ status, kpis, sources });
+    const runtime = await callInterim("/v1/interim/admin/runtime", "GET");
+    return noStore({ status, kpis, sources, runtime });
   } catch (error) {
     return proxyError(error);
   }
