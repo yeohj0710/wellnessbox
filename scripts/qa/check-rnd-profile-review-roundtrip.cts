@@ -12,7 +12,12 @@ async function run() {
     {
       profile_id: profileId,
       consent_scopes: ["recommendation:read"],
-      profile: { age: 41, symptoms: ["fatigue"] },
+      profile: {
+        age: 41,
+        pregnant: true,
+        medications: [{ name: "warfarin" }],
+        symptoms: ["fatigue"],
+      },
     }
   );
   assert.equal(profile.profile_id, profileId);
@@ -22,14 +27,14 @@ async function run() {
     "POST",
     {
       profile_id: profileId,
-      goals: ["sleep"],
-      ingredients: ["magnesium"],
-      current_safety_input: {},
+      goals: ["heart_health"],
+      ingredients: ["omega3"],
+      safety: {},
     }
   );
-  assert.equal(recommendation.profile_id, profileId);
   assert.equal(typeof recommendation.run_id, "string");
-  assert.ok(["READY", "BLOCKED", "NEEDS_REVIEW"].includes(String(recommendation.status)));
+  assert.equal(recommendation.status, "BLOCKED");
+  assert.deepEqual(recommendation.recommendations, []);
 
   const queue = await callWbRndInterim<RecordValue>(
     "/v1/interim/admin/reviews?pharmacy_id=105",
