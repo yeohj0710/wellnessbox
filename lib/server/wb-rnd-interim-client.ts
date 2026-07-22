@@ -264,9 +264,9 @@ export async function callWbRndInterim<T>(
       ? CIRCUIT_FAILURE_THRESHOLD
       : circuit.consecutiveFailures + 1;
     if (circuit.consecutiveFailures >= CIRCUIT_FAILURE_THRESHOLD) circuit.openedAt = now();
-  } else if (halfOpenProbe) {
+  } else {
     circuit.consecutiveFailures = 0;
-    circuit.openedAt = null;
+    if (halfOpenProbe) circuit.openedAt = null;
   }
   throw lastError;
 }
