@@ -85,7 +85,11 @@ jobs:
           DIRECT_URL: postgresql://wellnessbox:wellnessbox@127.0.0.1:5432/wellnessbox
           WELLNESSBOX_PRISMA_URL: postgresql://wellnessbox:wellnessbox@127.0.0.1:5432/wellnessbox
           WELLNESSBOX_URL_NON_POOLING: postgresql://wellnessbox:wellnessbox@127.0.0.1:5432/wellnessbox
-        run: npx prisma db push --skip-generate
+        run: >-
+          docker exec ${{ job.services.postgres.id }}
+          psql -U wellnessbox -d wellnessbox
+          -c 'CREATE EXTENSION IF NOT EXISTS vector'
+          && npx prisma db push --skip-generate
 
       - name: Build production application
         env:
