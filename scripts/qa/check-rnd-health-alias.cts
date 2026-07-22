@@ -2,16 +2,33 @@ import assert from "node:assert/strict";
 import http from "node:http";
 
 import { getWbRndHealthAlias } from "../../lib/server/wb-rnd-health";
+import { GET } from "../../app/api/internal/rnd/health/route";
 
 async function main() {
+  let responseMode = "ready";
   const server = http.createServer((request, response) => {
     assert.equal(request.url, "/health");
+    if (responseMode === "non-2xx") {
+      response.writeHead(503, { "content-type": "application/json" });
+      response.end(JSON.stringify({ status: "unavailable" }));
+      return;
+    }
+    if (responseMode === "invalid-json") {
+      response.writeHead(200, { "content-type": "application/json" });
+      response.end("not-json");
+      return;
+    }
     response.writeHead(200, { "content-type": "application/json" });
     response.end(
       JSON.stringify({
-        status: "ok",
+        status: responseMode === "ready" ? "ok" : "unhealthy",
         environment: "staging",
-        deployment_contract: { status: "READY_FOR_PROVIDER_DEPLOYMENT" },
+        deployment_contract: {
+          status:
+            responseMode === "ready"
+              ? "READY_FOR_PROVIDER_DEPLOYMENT"
+              : "NOT_READY",
+        },
       })
     );
   });
@@ -28,15 +45,24 @@ async function main() {
     WB_RND_SERVICE_TOKEN: "canonical-test-token-material-32-bytes",
     WB_RND_RECOMMEND_TIMEOUT_MS: "1000",
   };
+  Object.assign(process.env, env);
   const healthy = await getWbRndHealthAlias(env);
   assert.equal(healthy.status, 200);
   assert.deepEqual(healthy.body, {
     status: "ok",
     alias: "wellnessbox-rnd",
-    upstreamStatus: "ok",
-    upstreamEnvironment: "staging",
-    deploymentReady: true,
   });
+
+  const routeResponse = await GET();
+  assert.equal(routeResponse.status, 200);
+  assert.deepEqual(await routeResponse.json(), healthy.body);
+
+  for (const mode of ["degraded", "non-2xx", "invalid-json"]) {
+    responseMode = mode;
+    const unavailable = await getWbRndHealthAlias(env);
+    assert.equal(unavailable.status, 503);
+    assert.equal(unavailable.body.status, "unavailable");
+  }
 
   const disabled = await getWbRndHealthAlias({});
   assert.equal(disabled.status, 503);

@@ -3,9 +3,6 @@ import { resolveWbRndEnvironmentContract } from "./wb-rnd-environment";
 export type WbRndHealthAlias = {
   status: "ok" | "unavailable" | "disabled";
   alias: "wellnessbox-rnd";
-  upstreamStatus?: string;
-  upstreamEnvironment?: string;
-  deploymentReady?: boolean;
 };
 
 export async function getWbRndHealthAlias(
@@ -33,15 +30,17 @@ export async function getWbRndHealthAlias(
       | Record<string, unknown>
       | null
       | undefined;
+    if (
+      upstream.status !== "ok" ||
+      deployment?.status !== "READY_FOR_PROVIDER_DEPLOYMENT"
+    ) {
+      throw new Error("upstream_health_not_ready");
+    }
     return {
       status: 200,
       body: {
         status: "ok",
         alias: "wellnessbox-rnd",
-        upstreamStatus: String(upstream.status ?? "unknown"),
-        upstreamEnvironment: String(upstream.environment ?? "unknown"),
-        deploymentReady:
-          deployment?.status === "READY_FOR_PROVIDER_DEPLOYMENT",
       },
     };
   } catch {
