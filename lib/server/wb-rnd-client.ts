@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 
 import type { UserProfile } from "@/types/chat";
+import { resolveWbRndResultOrigin, type WbRndResultOrigin } from "@/lib/wb-rnd-result-origin";
 
 const DEFAULT_RND_RECOMMEND_TIMEOUT_MS = 4_000;
 const MIN_RND_RECOMMEND_TIMEOUT_MS = 500;
@@ -115,6 +116,7 @@ export type WbRndPreviewCallResult = {
   upstreamStatus: number | null;
   requestedAt: string;
   response: unknown;
+  resultOrigin: WbRndResultOrigin;
 };
 
 export const WB_RND_RECOMMEND_PREVIEW_SAMPLE: WbRndRecommendRequest = {
@@ -519,6 +521,10 @@ export async function callWbRndRecommendPreview(
   const serviceConfigured = Boolean(serviceBaseUrl);
 
   if (!serviceConfigured) {
+    const response = buildFallbackRecommendResponse(
+      payload,
+      "service_base_url_missing"
+    );
     return {
       ok: true,
       enabled: true,
@@ -534,10 +540,13 @@ export async function callWbRndRecommendPreview(
       serviceConfigured,
       upstreamStatus: null,
       requestedAt,
-      response: buildFallbackRecommendResponse(
-        payload,
-        "service_base_url_missing"
-      ),
+      response,
+      resultOrigin: resolveWbRndResultOrigin({
+        source: "fallback",
+        response,
+        requestedAt,
+        fallbackReason: "service_base_url_missing",
+      }),
     };
   }
 
@@ -564,6 +573,7 @@ export async function callWbRndRecommendPreview(
     try {
       parsed = rawText ? JSON.parse(rawText) : null;
     } catch {
+      const fallbackResponse = buildFallbackRecommendResponse(payload, "decode_error");
       return {
         ok: true,
         enabled: true,
@@ -579,34 +589,36 @@ export async function callWbRndRecommendPreview(
         serviceConfigured,
         upstreamStatus: response.status,
         requestedAt,
-        response: buildFallbackRecommendResponse(payload, "decode_error"),
+        response: fallbackResponse,
+        resultOrigin: resolveWbRndResultOrigin({ source: "fallback", response: fallbackResponse, requestedAt, fallbackReason: "decode_error" }),
       };
     }
 
     if (!response.ok) {
+      const fallbackReason = `upstream_${response.status}`;
+      const fallbackResponse = buildFallbackRecommendResponse(payload, fallbackReason);
       return {
         ok: true,
         enabled: true,
         source: "fallback",
         usedFallback: true,
-        fallbackReason: `upstream_${response.status}`,
+        fallbackReason,
         safetyAuthority: {
           final: true,
           mode: "service_fail_closed",
-          reason: `upstream_${response.status}`,
+          reason: fallbackReason,
         },
         timeoutMs,
         serviceConfigured,
         upstreamStatus: response.status,
         requestedAt,
-        response: buildFallbackRecommendResponse(
-          payload,
-          `upstream_${response.status}`
-        ),
+        response: fallbackResponse,
+        resultOrigin: resolveWbRndResultOrigin({ source: "fallback", response: fallbackResponse, requestedAt, fallbackReason }),
       };
     }
 
     if (!validateWbRndRecommendResponse(parsed)) {
+      const fallbackResponse = buildFallbackRecommendResponse(payload, "invalid_upstream_contract");
       return {
         ok: true,
         enabled: true,
@@ -622,10 +634,8 @@ export async function callWbRndRecommendPreview(
         serviceConfigured,
         upstreamStatus: response.status,
         requestedAt,
-        response: buildFallbackRecommendResponse(
-          payload,
-          "invalid_upstream_contract"
-        ),
+        response: fallbackResponse,
+        resultOrigin: resolveWbRndResultOrigin({ source: "fallback", response: fallbackResponse, requestedAt, fallbackReason: "invalid_upstream_contract" }),
       };
     }
 
@@ -645,12 +655,18 @@ export async function callWbRndRecommendPreview(
       upstreamStatus: response.status,
       requestedAt,
       response: parsed,
+      resultOrigin: resolveWbRndResultOrigin({ source: "rnd", response: parsed, requestedAt, fallbackReason: null }),
     };
   } catch (error) {
     const isTimeout =
       error instanceof Error &&
       (error.name === "AbortError" || /aborted/i.test(error.message));
     const fallbackReason = isTimeout ? "timeout" : "network_error";
+    const response = buildFallbackRecommendResponse(
+      payload,
+      fallbackReason,
+      normalizeErrorMessage(error)
+    );
     return {
       ok: true,
       enabled: true,
@@ -666,11 +682,8 @@ export async function callWbRndRecommendPreview(
       serviceConfigured,
       upstreamStatus: null,
       requestedAt,
-      response: buildFallbackRecommendResponse(
-        payload,
-        fallbackReason,
-        normalizeErrorMessage(error)
-      ),
+      response,
+      resultOrigin: resolveWbRndResultOrigin({ source: "fallback", response, requestedAt, fallbackReason }),
     };
   } finally {
     clearTimeout(timeoutHandle);

@@ -31,6 +31,14 @@ type PreviewResponse = {
   requestedAt?: string;
   response?: unknown;
   error?: string;
+  resultOrigin?: {
+    kind: "rnd_execution" | "local_snapshot";
+    label: "R&D 실행 결과" | "로컬 스냅샷 결과";
+    generatedAt: string;
+    executionId?: string;
+    snapshotId?: string;
+    reason?: string;
+  };
 };
 
 function stringify(value: unknown) {
@@ -43,6 +51,7 @@ export default function RndPreviewClient() {
   const [resultText, setResultText] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [resultOrigin, setResultOrigin] = useState<PreviewResponse["resultOrigin"]>();
 
   useEffect(() => {
     let active = true;
@@ -86,6 +95,7 @@ export default function RndPreviewClient() {
         body: JSON.stringify(payload),
       });
       const json = (await response.json().catch(() => null)) as PreviewResponse | null;
+      setResultOrigin(json?.resultOrigin);
       setResultText(stringify(json ?? { ok: false, error: "empty_response" }));
       if (!response.ok) {
         setError(`HTTP ${response.status}`);
@@ -166,7 +176,19 @@ export default function RndPreviewClient() {
         </section>
 
         <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-          <h2 className="mb-2 text-sm font-medium text-slate-700">raw response</h2>
+          <div className="mb-3 rounded-xl border border-slate-200 bg-slate-50 p-3" aria-live="polite">
+            <strong className="block text-sm text-slate-900">
+              {resultOrigin?.label ?? "결과 출처를 확인하는 중입니다"}
+            </strong>
+            {resultOrigin ? (
+              <span className="mt-1 block text-xs text-slate-600">
+                {resultOrigin.kind === "rnd_execution"
+                  ? `실행 ID: ${resultOrigin.executionId}`
+                  : `스냅샷 ID: ${resultOrigin.snapshotId} · 사유: ${resultOrigin.reason}`}
+              </span>
+            ) : null}
+          </div>
+          <h2 className="mb-2 text-sm font-medium text-slate-700">원본 응답</h2>
           <pre className="min-h-[580px] overflow-auto rounded-xl bg-slate-950 p-4 text-xs text-slate-100">
             {resultText || "응답 대기 중"}
           </pre>
