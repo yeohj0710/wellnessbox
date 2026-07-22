@@ -69,9 +69,10 @@ process.env.WB_RND_RECOMMEND_ENABLED = "1";
 process.env.WB_RND_SERVICE_BASE_URL = "http://rnd.example.test";
 process.env.WB_RND_SERVICE_TOKEN = "x".repeat(32);
 process.env.NODE_ENV = "production";
-await assert.rejects(
-  callWbRndRecommendPreview(WB_RND_RECOMMEND_PREVIEW_SAMPLE),
-  /https_required/
+void callWbRndRecommendPreview(WB_RND_RECOMMEND_PREVIEW_SAMPLE).then(
+  () => assert.fail("unsafe production URL was accepted"),
+  (error: unknown) => {
+    assert.match(String(error), /https_required/);
+    console.log("WB_RND environment and result-origin contract: PASS");
+  }
 );
-
-console.log("WB_RND environment and result-origin contract: PASS");
