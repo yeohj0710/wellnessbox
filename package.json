@@ -37,7 +37,6 @@
     "qa:cde:regression:local": "node scripts/qa/run-cde-regression-local.cjs",
     "qa:syntax": "node scripts/qa/check-syntax.cjs",
     "qa:route-scroll": "node scripts/qa/check-route-scroll-and-column-card.cjs",
-    "qa:column:test-data-safety": "node scripts/qa/check-column-test-data-safety.cjs",
     "qa:smoke": "npm run qa:syntax && npm run qa:route-scroll && npm run qa:b2b:export-smoke",
     "qa:rnd:preview-route": "node --import tsx scripts/qa/check-rnd-recommend-preview.cts",
     "qa:rnd:health-alias": "node --import tsx scripts/qa/check-rnd-health-alias.cts",
