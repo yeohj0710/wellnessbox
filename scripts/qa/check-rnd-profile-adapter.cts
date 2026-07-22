@@ -327,7 +327,7 @@ async function run() {
         checks: [
           "versioned_contract_snapshot",
           "stable_pseudonymous_subject_id",
-          "all_profile_fields_preserved",
+        "minimum_source_profile_fields_forwarded",
           "operational_fields_mapped",
           "shared_source_validation_cases",
           "exact_request_forwarding",
