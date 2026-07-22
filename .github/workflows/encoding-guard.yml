@@ -66,4 +66,8 @@ jobs:
           >> "$GITHUB_ENV"
 
       - name: Build production application
+        env:
+          GMAIL_SMTP_USER: build-only@example.invalid
+          GMAIL_SMTP_APP_PASSWORD: build-only-not-a-credential
+          GMAIL_SMTP_FROM: build-only@example.invalid
         run: npm run build
