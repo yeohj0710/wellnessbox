@@ -18,6 +18,22 @@ const response = (status: number, body: unknown) =>
   });
 
 async function run() {
+  if (false) {
+    // @ts-expect-error Unregistered paths must fail the TypeScript contract.
+    void callWbRndInterim("/v1/interim/unregistered", "GET");
+    // @ts-expect-error Registered paths must reject the wrong HTTP method.
+    void callWbRndInterim("/v1/interim/status", "POST");
+  }
+  const unsafeCall = callWbRndInterim as (...arguments_: unknown[]) => Promise<unknown>;
+  await assert.rejects(
+    () => unsafeCall("/v1/interim/unregistered", "GET"),
+    /WB_RND_INTERIM_operation_not_registered/
+  );
+  await assert.rejects(
+    () => unsafeCall("/v1/interim/status", "POST"),
+    /WB_RND_INTERIM_operation_not_registered/
+  );
+
   resetWbRndInterimCircuitForTests();
   const retryStatuses = [503, 200];
   const retrySleeps: number[] = [];
@@ -191,6 +207,8 @@ async function run() {
     ok: true,
     checks: {
       retryable_get_retried_once: true,
+      unregistered_operation_rejected_at_type_and_runtime: true,
+      wrong_method_rejected_at_type_and_runtime: true,
       non_json_retryable_response_retried: true,
       post_not_retried: true,
       actual_timeout_timer_clamped_and_aborted: true,

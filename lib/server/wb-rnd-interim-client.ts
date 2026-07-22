@@ -2,6 +2,11 @@ import "server-only";
 
 import { createHmac } from "node:crypto";
 
+import {
+  WB_RND_INTERIM_OPERATIONS,
+  type WbRndInterimOperation,
+} from "@/lib/server/wb-rnd-interim-contract";
+
 const DEFAULT_TIMEOUT_MS = 7_500;
 const MIN_TIMEOUT_MS = 500;
 const MAX_TIMEOUT_MS = 15_000;
@@ -19,7 +24,20 @@ const circuitStates = new Map<string, CircuitState>();
 
 export const WB_RND_INTERIM_MODE = "PROXY_GOLD_SIMULATION" as const;
 
-type InterimMethod = "GET" | "POST";
+type MaterializedPath<Path extends string> =
+  Path extends `${infer Prefix}{${string}}${infer Suffix}`
+    ? `${Prefix}${string}${Suffix}`
+    : Path;
+
+type InterimCallArguments<Operation = WbRndInterimOperation> =
+  Operation extends readonly [infer Method extends "GET" | "POST", infer Path extends string]
+    ? [
+        path: MaterializedPath<Path> | `${MaterializedPath<Path>}?${string}`,
+        method: Method,
+        body?: unknown,
+        dependencies?: InterimCallDependencies,
+      ]
+    : never;
 
 type InterimCallDependencies = {
   fetchImpl?: typeof fetch;
@@ -47,6 +65,18 @@ function isRetryableFailure(error: unknown) {
   const code = error instanceof Error ? error.message : "";
   const match = /^WB_RND_INTERIM_upstream_(\d{3})$/.exec(code);
   return !!match && RETRYABLE_STATUS_CODES.has(Number(match[1]));
+}
+
+function isRegisteredOperation(path: string, method: string) {
+  const pathname = path.split("?", 1)[0];
+  return WB_RND_INTERIM_OPERATIONS.some(([registeredMethod, template]) => {
+    if (registeredMethod !== method) return false;
+    const pattern = template
+      .split(/(\{[^}]+\})/g)
+      .map((part) => part.startsWith("{") ? "[^/]+" : part.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))
+      .join("");
+    return new RegExp(`^${pattern}$`).test(pathname);
+  });
 }
 
 function truthy(value: string | undefined) {
@@ -198,12 +228,12 @@ export async function callWbRndCounselingTurn(body: unknown) {
 }
 
 export async function callWbRndInterim<T>(
-  path: string,
-  method: InterimMethod,
-  body?: unknown,
-  dependencies: InterimCallDependencies = {}
+  ...[path, method, body, dependencies = {}]: InterimCallArguments
 ): Promise<T> {
   if (!isWbRndInterimEnabled()) throw new Error("WB_RND_INTERIM_disabled");
+  if (!isRegisteredOperation(path, method)) {
+    throw new Error("WB_RND_INTERIM_operation_not_registered");
+  }
   if (!path.startsWith("/v1/interim/") || path.includes("..") || path.includes("//")) {
     throw new Error("WB_RND_INTERIM_path_rejected");
   }
