@@ -1,16 +1,45 @@
 import assert from "node:assert/strict";
+import { NextResponse } from "next/server";
 
 import { callWbRndInterim } from "../../lib/server/wb-rnd-interim-client";
+import { pseudonymizeInterimUserId } from "../../lib/server/wb-rnd-interim-client";
+import {
+  runPharmInterimDecisionRoute,
+  runPharmInterimReviewsRoute,
+  runUserInterimProfileRoute,
+  runUserInterimRecommendationRoute,
+} from "../../lib/server/wb-rnd-interim-route";
 
 type RecordValue = Record<string, unknown>;
 
 async function run() {
-  const profileId = "usr_105106abcdef0123456789abcdef";
-  const profile = await callWbRndInterim<RecordValue>(
-    "/v1/interim/profiles",
-    "POST",
+  const appUserId = "service-user-op105";
+  const profileId = pseudonymizeInterimUserId(appUserId);
+  const userAuth = async () => ({
+    ok: true as const,
+    data: { appUserId, kakaoId: "105", phone: null },
+  });
+  const pharmAuth = async () => ({ ok: true as const, data: { pharmacyId: 105 } });
+  const deniedProfile = await runUserInterimProfileRoute(
+    new Request("http://service.test/api/tips/profile", {
+      method: "POST",
+      body: "{}",
+    }),
     {
-      profile_id: profileId,
+      requireUserSessionImpl: async () => ({
+        ok: false as const,
+        response: NextResponse.json({ error: "Unauthorized" }, { status: 401 }),
+      }),
+      callWbRndInterimImpl: async () => assert.fail("unauthorized request reached R&D"),
+    }
+  );
+  assert.equal(deniedProfile.status, 401);
+  const profileResponse = await runUserInterimProfileRoute(
+    new Request("http://service.test/api/tips/profile", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        profile_id: "usr_browser_supplied_id_must_be_ignored",
       consent_scopes: ["recommendation:read"],
       profile: {
         age: 41,
@@ -18,28 +47,39 @@ async function run() {
         medications: [{ name: "warfarin" }],
         symptoms: ["fatigue"],
       },
-    }
+      }),
+    }),
+    { requireUserSessionImpl: userAuth, callWbRndInterimImpl: callWbRndInterim }
   );
+  assert.equal(profileResponse.status, 200);
+  const profile = (await profileResponse.json()) as RecordValue;
   assert.equal(profile.profile_id, profileId);
 
-  const recommendation = await callWbRndInterim<RecordValue>(
-    "/v1/interim/recommendations",
-    "POST",
-    {
-      profile_id: profileId,
+  const recommendationResponse = await runUserInterimRecommendationRoute(
+    new Request("http://service.test/api/tips", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+      profile_id: "usr_browser_supplied_id_must_be_ignored",
       goals: ["heart_health"],
       ingredients: ["omega3"],
       safety: {},
-    }
+      }),
+    }),
+    { requireUserSessionImpl: userAuth, callWbRndInterimImpl: callWbRndInterim }
   );
+  assert.equal(recommendationResponse.status, 200);
+  const recommendation = (await recommendationResponse.json()) as RecordValue;
   assert.equal(typeof recommendation.run_id, "string");
   assert.equal(recommendation.status, "BLOCKED");
   assert.deepEqual(recommendation.recommendations, []);
 
-  const queue = await callWbRndInterim<RecordValue>(
-    "/v1/interim/admin/reviews?pharmacy_id=105",
-    "GET"
-  );
+  const queueResponse = await runPharmInterimReviewsRoute({
+    requirePharmSessionImpl: pharmAuth,
+    callWbRndInterimImpl: callWbRndInterim,
+  });
+  assert.equal(queueResponse.status, 200);
+  const queue = (await queueResponse.json()) as RecordValue;
   assert.equal(queue.mode, "PROXY_GOLD_SIMULATION");
   assert.ok(Array.isArray(queue.items));
   const review = (queue.items as RecordValue[]).find(
@@ -47,11 +87,17 @@ async function run() {
   );
   assert.ok(review, "canonical review must be visible to the pharmacy");
 
-  const decision = await callWbRndInterim<RecordValue>(
-    `/v1/interim/admin/reviews/${review.review_id}/decision`,
-    "POST",
-    { pharmacy_id: 105, decision: "APPROVE", note: "canonical integration" }
+  const decisionResponse = await runPharmInterimDecisionRoute(
+    new Request("http://service.test/api/pharm/tips/reviews", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ pharmacy_id: 999, decision: "APPROVE", note: "canonical integration" }),
+    }),
+    String(review.review_id),
+    { requirePharmSessionImpl: pharmAuth, callWbRndInterimImpl: callWbRndInterim }
   );
+  assert.equal(decisionResponse.status, 200);
+  const decision = (await decisionResponse.json()) as RecordValue;
   assert.equal(decision.status, "COMPLETED");
   assert.equal(decision.immutable, true);
   assert.equal(
@@ -60,12 +106,15 @@ async function run() {
   );
 
   await assert.rejects(
-    callWbRndInterim(
-      `/v1/interim/admin/reviews/${review.review_id}/decision`,
-      "POST",
-      { pharmacy_id: 105, decision: "REJECT" }
-    ),
-    /WB_RND_INTERIM_upstream_409/
+    runPharmInterimDecisionRoute(
+      new Request("http://service.test/replay", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ decision: "REJECT" }) }),
+      String(review.review_id),
+      { requirePharmSessionImpl: pharmAuth, callWbRndInterimImpl: callWbRndInterim }
+    ).then(async (response) => {
+      assert.equal(response.status, 502);
+      throw new Error("replay_rejected");
+    }),
+    /replay_rejected/
   );
 
   console.log(
@@ -77,6 +126,10 @@ async function run() {
       reviewId: review.review_id,
       reviewStatus: decision.status,
       immutableReplayRejected: true,
+      userAuthDenied: deniedProfile.status === 401,
+      browserProfileIdIgnored: profile.profile_id === profileId,
+      pharmacyIdOverridden:
+        (decision.postconditions as RecordValue).pharmacy_id === 105,
     })
   );
 }

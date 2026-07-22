@@ -65,6 +65,16 @@ export type WbRndRecommendationRouteDependencies = {
   listProductCatalogImpl: typeof listWbRndProductCatalog;
 };
 
+export type WbRndProfileRouteDependencies = {
+  requireUserSessionImpl: typeof requireUserSession;
+  callWbRndInterimImpl: typeof callWbRndInterim;
+};
+
+export type WbRndPharmReviewRouteDependencies = {
+  requirePharmSessionImpl: typeof requirePharmSession;
+  callWbRndInterimImpl: typeof callWbRndInterim;
+};
+
 export type WbRndProCorrectionRouteDependencies = {
   requireUserSessionImpl: typeof requireUserSession;
   callWbRndInterimImpl: typeof callWbRndInterim;
@@ -83,9 +93,14 @@ export async function runUserInterimStatusRoute() {
   }
 }
 
-export async function runUserInterimProfileRoute(req: Request) {
+export async function runUserInterimProfileRoute(
+  req: Request,
+  dependencies: Partial<WbRndProfileRouteDependencies> = {}
+) {
   if (!isWbRndInterimEnabled()) return disabled();
-  const auth = await requireUserSession();
+  const authenticate = dependencies.requireUserSessionImpl ?? requireUserSession;
+  const callInterim = dependencies.callWbRndInterimImpl ?? callWbRndInterim;
+  const auth = await authenticate();
   if (!auth.ok) return auth.response;
   try {
     const body = await readJson(req);
@@ -94,7 +109,7 @@ export async function runUserInterimProfileRoute(req: Request) {
       consent_scopes: Array.isArray(body.consent_scopes) ? body.consent_scopes : [],
       profile: typeof body.profile === "object" && body.profile ? body.profile : {},
     };
-    return noStore(await callWbRndInterim("/v1/interim/profiles", "POST", payload));
+    return noStore(await callInterim("/v1/interim/profiles", "POST", payload));
   } catch (error) {
     return proxyError(error);
   }
@@ -301,29 +316,39 @@ export async function runUserInterimConnectorRoute(req: Request) {
   }
 }
 
-export async function runPharmInterimReviewsRoute() {
+export async function runPharmInterimReviewsRoute(
+  dependencies: Partial<WbRndPharmReviewRouteDependencies> = {}
+) {
   if (!isWbRndInterimEnabled()) return disabled();
-  const auth = await requirePharmSession();
+  const authenticate = dependencies.requirePharmSessionImpl ?? requirePharmSession;
+  const callInterim = dependencies.callWbRndInterimImpl ?? callWbRndInterim;
+  const auth = await authenticate();
   if (!auth.ok) return auth.response;
   try {
     const query = new URLSearchParams({ pharmacy_id: String(auth.data.pharmacyId) });
     return noStore(
-      await callWbRndInterim(`/v1/interim/admin/reviews?${query}`, "GET")
+      await callInterim(`/v1/interim/admin/reviews?${query}`, "GET")
     );
   } catch (error) {
     return proxyError(error);
   }
 }
 
-export async function runPharmInterimDecisionRoute(req: Request, reviewId: string) {
+export async function runPharmInterimDecisionRoute(
+  req: Request,
+  reviewId: string,
+  dependencies: Partial<WbRndPharmReviewRouteDependencies> = {}
+) {
   if (!isWbRndInterimEnabled()) return disabled();
-  const auth = await requirePharmSession();
+  const authenticate = dependencies.requirePharmSessionImpl ?? requirePharmSession;
+  const callInterim = dependencies.callWbRndInterimImpl ?? callWbRndInterim;
+  const auth = await authenticate();
   if (!auth.ok) return auth.response;
   if (!/^review_[a-f0-9]+$/.test(reviewId)) return noStore({ error: "invalid review id" }, 400);
   try {
     const body = await readJson(req);
     return noStore(
-      await callWbRndInterim(
+      await callInterim(
         `/v1/interim/admin/reviews/${reviewId}/decision`,
         "POST",
         { ...body, pharmacy_id: auth.data.pharmacyId }
