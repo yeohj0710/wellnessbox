@@ -1,5 +1,4 @@
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
 import { NextResponse } from "next/server";
 
 import { callWbRndInterim, pseudonymizeInterimUserId } from "../../lib/server/wb-rnd-interim-client";
@@ -11,6 +10,11 @@ import {
 } from "../../lib/server/wb-rnd-interim-route";
 import { mapWellnessBoxProfileToWbRndRequest } from "../../lib/server/wb-rnd-profile-adapter";
 import { publicWbRndErrorCode, sanitizeWbRndLogValue } from "../../lib/server/wb-rnd-security";
+import {
+  authorizedPharmacyId,
+  hasAdminSession,
+  loggedInUserKakaoId,
+} from "../../lib/server/route-auth";
 
 type JsonRecord = Record<string, unknown>;
 
@@ -45,16 +49,15 @@ async function run() {
     assert.equal(response.status, 401);
   }
 
-  const routeAuthSource = readFileSync("lib/server/route-auth.ts", "utf8");
-  const routeSource = readFileSync("lib/server/wb-rnd-interim-route.ts", "utf8");
-  for (const token of [
-    "requireUserSession",
-    "requirePharmSession",
-    "requireAdminSession",
-    "session.user?.loggedIn",
-    "session.pharm?.loggedIn",
-    "session.admin?.loggedIn",
-  ]) assert.match(`${routeAuthSource}\n${routeSource}`, new RegExp(token.replace("?", "\\?")));
+  assert.equal(loggedInUserKakaoId({}), null);
+  assert.equal(loggedInUserKakaoId({ user: { loggedIn: false, kakaoId: 111 } }), null);
+  assert.equal(loggedInUserKakaoId({ user: { loggedIn: true, kakaoId: 111 } }), 111);
+  assert.equal(authorizedPharmacyId({}), null);
+  assert.equal(authorizedPharmacyId({ pharm: { loggedIn: true, id: 112 } }, 999), null);
+  assert.equal(authorizedPharmacyId({ pharm: { loggedIn: true, id: 112 } }, 112), 112);
+  assert.equal(hasAdminSession({}), false);
+  assert.equal(hasAdminSession({ admin: { loggedIn: false } }), false);
+  assert.equal(hasAdminSession({ admin: { loggedIn: true } }), true);
 
   const directIdentifierResponse = await runUserInterimProfileRoute(
     new Request("http://service.test/profile", {

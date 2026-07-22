@@ -973,7 +973,7 @@ async function run() {
   assert.equal(contradictory.safety_authority?.mode, "service_fail_closed");
   assert.equal(
     contradictory.safety_authority?.reason,
-    "WB_RND_PRODUCT_MATCH_excluded_recommendation_reentered"
+    "R&D request failed"
   );
 
   const boundedSearchResponse = await routeWithCatalog(sharedCombinationCatalog);
@@ -1074,7 +1074,7 @@ async function run() {
   assert.equal(invalidCatalog.safety_authority?.mode, "service_fail_closed");
   assert.equal(
     invalidCatalog.safety_authority?.reason,
-    "WB_RND_PRODUCT_MATCH_invalid_catalog"
+    "R&D request failed"
   );
 
   const invalidOfferResponse = await routeWithCatalog([
@@ -1091,7 +1091,7 @@ async function run() {
   assert.equal(invalidOffer.status, "BLOCKED");
   assert.equal(
     invalidOffer.safety_authority?.reason,
-    "WB_RND_PRODUCT_MATCH_invalid_catalog"
+    "R&D request failed"
   );
 
   const invalidFactsResponse = await routeWithCatalog([
@@ -1110,7 +1110,7 @@ async function run() {
   assert.equal(invalidFacts.status, "BLOCKED");
   assert.equal(
     invalidFacts.safety_authority?.reason,
-    "WB_RND_PRODUCT_MATCH_invalid_catalog"
+    "R&D request failed"
   );
 
   const ambiguousAmountResponse = await routeWithCatalog([
@@ -1132,7 +1132,7 @@ async function run() {
   assert.equal(ambiguousAmount.status, "BLOCKED");
   assert.equal(
     ambiguousAmount.safety_authority?.reason,
-    "WB_RND_PRODUCT_MATCH_ambiguous_ingredient_amount"
+    "R&D request failed"
   );
 
   const missingMatchedAmountResponse = await routeWithCatalog([

@@ -15,6 +15,35 @@ type GuardFailure = { ok: false; response: NextResponse };
 type GuardResult<T> = GuardSuccess<T> | GuardFailure;
 type AppUserIdentity = { id: string; phone: string | null };
 
+type RouteSessionSnapshot = {
+  admin?: { loggedIn?: boolean };
+  pharm?: { loggedIn?: boolean; id?: number };
+  user?: { loggedIn?: boolean; kakaoId?: number };
+};
+
+export function loggedInUserKakaoId(session: RouteSessionSnapshot): number | null {
+  return session.user?.loggedIn && typeof session.user.kakaoId === "number"
+    ? session.user.kakaoId
+    : null;
+}
+
+export function hasAdminSession(session: RouteSessionSnapshot): boolean {
+  return session.admin?.loggedIn === true;
+}
+
+export function authorizedPharmacyId(
+  session: RouteSessionSnapshot,
+  expectedPharmacyId?: number
+): number | null {
+  const pharmacyId = session.pharm?.id;
+  if (!session.pharm?.loggedIn || !Number.isFinite(pharmacyId)) return null;
+  if (
+    Number.isFinite(expectedPharmacyId) &&
+    Number(pharmacyId) !== Number(expectedPharmacyId)
+  ) return null;
+  return Number(pharmacyId);
+}
+
 function jsonError(status: number, message: string) {
   return NextResponse.json(
     { error: message },
@@ -61,11 +90,12 @@ async function resolveLoggedInAppUser(): Promise<{
   appUser: AppUserIdentity | null;
 }> {
   const session = await getSession();
-  if (!session.user?.loggedIn || typeof session.user.kakaoId !== "number") {
+  const loggedInKakaoId = loggedInUserKakaoId(session);
+  if (loggedInKakaoId === null) {
     return { kakaoId: null, appUser: null };
   }
 
-  const kakaoId = String(session.user.kakaoId);
+  const kakaoId = String(loggedInKakaoId);
   const appUser = await db.appUser.findUnique({
     where: { kakaoId },
     select: { id: true, phone: true },
@@ -94,7 +124,7 @@ async function resolveOrCreateLoggedInAppUser() {
 
 export async function requireAdminSession(): Promise<GuardResult<null>> {
   const session = await getSession();
-  if (!session.admin?.loggedIn) return unauthorized();
+  if (!hasAdminSession(session)) return unauthorized();
   return { ok: true, data: null };
 }
 
@@ -201,17 +231,9 @@ export async function requirePharmSession(
   expectedPharmacyId?: number
 ): Promise<GuardResult<{ pharmacyId: number }>> {
   const session = await getSession();
-  const pharmacyId = session.pharm?.id;
-  if (!session.pharm?.loggedIn || !Number.isFinite(pharmacyId)) {
-    return unauthorized();
-  }
-  if (
-    Number.isFinite(expectedPharmacyId) &&
-    Number(pharmacyId) !== Number(expectedPharmacyId)
-  ) {
-    return unauthorized();
-  }
-  return { ok: true, data: { pharmacyId: Number(pharmacyId) } };
+  const pharmacyId = authorizedPharmacyId(session, expectedPharmacyId);
+  if (pharmacyId === null) return unauthorized();
+  return { ok: true, data: { pharmacyId } };
 }
 
 export async function requireRiderSession(
