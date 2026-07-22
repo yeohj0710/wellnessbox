@@ -231,3 +231,11 @@ export async function getOrdersByEndpoint(endpoint: string) {
     orderBy: { updatedAt: "desc" },
   });
 }
+
+export async function getLatestOrderPlanContextByAppUserId(appUserId: string) {
+  return db.order.findFirst({
+    where: { appUserId },
+    select: { id: true, status: true, updatedAt: true },
+    orderBy: { updatedAt: "desc" },
+  });
+}

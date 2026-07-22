@@ -20,6 +20,8 @@ import {
   listWbRndProductCatalog,
 } from "@/lib/server/wb-rnd-product-candidates";
 import { mapWellnessBoxProfileToWbRndRequest } from "@/lib/server/wb-rnd-profile-adapter";
+import { getLatestOrderPlanContextByAppUserId } from "@/lib/order/queries";
+import { mapOrderToReadOnlyPlanContext } from "@/lib/server/wb-rnd-order-plan-context";
 
 type JsonRecord = Record<string, unknown>;
 
@@ -93,6 +95,10 @@ export type WbRndProCorrectionRouteDependencies = {
 };
 
 export type WbRndProPlanRouteDependencies = WbRndProCorrectionRouteDependencies;
+
+export type WbRndOrderPlanContextRouteDependencies = WbRndProfileRouteDependencies & {
+  getLatestOrderImpl: typeof getLatestOrderPlanContextByAppUserId;
+};
 
 export async function runUserInterimStatusRoute() {
   if (!isWbRndInterimEnabled()) return disabled();
@@ -189,6 +195,39 @@ export async function runUserInterimProCorrectionRoute(
           profile_id: pseudonymizeInterimUserId(auth.data.appUserId),
         }
       )
+    );
+  } catch (error) {
+    return proxyError(error);
+  }
+}
+
+export async function runUserInterimOrderPlanContextRoute(
+  req: Request,
+  dependencies: Partial<WbRndOrderPlanContextRouteDependencies> = {}
+) {
+  if (!isWbRndInterimEnabled()) return disabled();
+  const authenticate = dependencies.requireUserSessionImpl ?? requireUserSession;
+  const callInterim = dependencies.callWbRndInterimImpl ?? callWbRndInterim;
+  const getLatestOrder =
+    dependencies.getLatestOrderImpl ?? getLatestOrderPlanContextByAppUserId;
+  const auth = await authenticate();
+  if (!auth.ok) return auth.response;
+  try {
+    const body = await readJson(req);
+    if (typeof body.execution_id !== "string" || typeof body.plan_id !== "string") {
+      return noStore({ error: "execution_id_and_plan_id_required" }, 400);
+    }
+    const order = await getLatestOrder(auth.data.appUserId);
+    if (!order) return noStore({ error: "order_not_found" }, 404);
+    const profileId = pseudonymizeInterimUserId(auth.data.appUserId);
+    const context = mapOrderToReadOnlyPlanContext({
+      order,
+      executionId: body.execution_id,
+      profileId,
+      planId: body.plan_id,
+    });
+    return noStore(
+      await callInterim("/v1/interim/plans/order-context", "POST", context)
     );
   } catch (error) {
     return proxyError(error);
