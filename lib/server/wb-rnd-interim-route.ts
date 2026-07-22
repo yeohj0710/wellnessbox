@@ -82,6 +82,11 @@ export type WbRndPharmReviewRouteDependencies = {
   callWbRndInterimImpl: typeof callWbRndInterim;
 };
 
+export type WbRndAdminDashboardRouteDependencies = {
+  requireAdminSessionImpl: typeof requireAdminSession;
+  callWbRndInterimImpl: typeof callWbRndInterim;
+};
+
 export type WbRndProCorrectionRouteDependencies = {
   requireUserSessionImpl: typeof requireUserSession;
   callWbRndInterimImpl: typeof callWbRndInterim;
@@ -366,15 +371,19 @@ export async function runPharmInterimDecisionRoute(
   }
 }
 
-export async function runAdminInterimDashboardRoute() {
+export async function runAdminInterimDashboardRoute(
+  dependencies: Partial<WbRndAdminDashboardRouteDependencies> = {}
+) {
   if (!isWbRndInterimEnabled()) return disabled();
-  const auth = await requireAdminSession();
+  const authenticate = dependencies.requireAdminSessionImpl ?? requireAdminSession;
+  const callInterim = dependencies.callWbRndInterimImpl ?? callWbRndInterim;
+  const auth = await authenticate();
   if (!auth.ok) return auth.response;
   try {
     const [status, kpis, sources] = await Promise.all([
-      callWbRndInterim("/v1/interim/status", "GET"),
-      callWbRndInterim("/v1/interim/kpis", "GET"),
-      callWbRndInterim("/v1/interim/admin/sources", "GET"),
+      callInterim("/v1/interim/status", "GET"),
+      callInterim("/v1/interim/kpis", "GET"),
+      callInterim("/v1/interim/admin/sources", "GET"),
     ]);
     return noStore({ status, kpis, sources });
   } catch (error) {
