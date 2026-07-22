@@ -145,10 +145,11 @@ async function run() {
   assert.match(mutations, /stock:\s*\{\s*decrement: item\.quantity\s*\}/);
   assert.match(mutations, /const createdOrder = await tx\.order\.create\(/);
   assert.match(mutations, /pricedTotal !== verifiedPayment\.totalPrice/);
-  assert.doesNotMatch(
-    mutations,
-    /export async function createOrder[\s\S]*?paymentId\?: string/
-  );
+  const createOrderSignature = mutations.match(
+    /export async function createOrder\(data: \{[\s\S]*?\n\}\) \{/
+  )?.[0];
+  assert.ok(createOrderSignature, "createOrder signature must be inspectable");
+  assert.doesNotMatch(createOrderSignature, /paymentId\?: string/);
 
   console.log(JSON.stringify({
     ok: true,
