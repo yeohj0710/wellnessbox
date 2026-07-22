@@ -20,6 +20,7 @@ import {
   listWbRndProductCatalog,
 } from "@/lib/server/wb-rnd-product-candidates";
 import { mapWellnessBoxProfileToWbRndRequest } from "@/lib/server/wb-rnd-profile-adapter";
+import { publicWbRndErrorCode } from "@/lib/server/wb-rnd-security";
 import { getOrderPlanContextByBinding } from "@/lib/order/queries";
 import { mapOrderToReadOnlyPlanContext } from "@/lib/server/wb-rnd-order-plan-context";
 
@@ -47,9 +48,8 @@ async function readJson(req: Request): Promise<JsonRecord> {
 }
 
 async function proxyError(error: unknown) {
-  const code = error instanceof Error ? error.message : "unknown_error";
   const timeout = error instanceof Error && error.name === "AbortError";
-  return noStore({ error: timeout ? "R&D timeout" : code }, timeout ? 504 : 502);
+  return noStore({ error: publicWbRndErrorCode(error) }, timeout ? 504 : 502);
 }
 
 async function reviewProxyError(error: unknown) {
@@ -60,10 +60,9 @@ async function reviewProxyError(error: unknown) {
 }
 
 async function recommendationProxyError(error: unknown) {
-  const code = error instanceof Error ? error.message : "unknown_error";
   const timeout = error instanceof Error && error.name === "AbortError";
   return noStore(
-    buildWbRndInterimFailClosedResponse(timeout ? "R&D timeout" : code),
+    buildWbRndInterimFailClosedResponse(publicWbRndErrorCode(error)),
     timeout ? 504 : 502
   );
 }

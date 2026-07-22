@@ -226,7 +226,12 @@ export function mapWellnessBoxProfileToWbRndRequest(
   const age = profile.age as number;
   const sex = profile.sex as NonNullable<UserProfile["sex"]>;
   const goals = mapGoals(profile.goals as string[]);
-  const sourceProfile = structuredClone(profile);
+  const {
+    name: _directIdentifier,
+    caffeineSensitivity: _unusedCaffeineSensitivity,
+    ...minimumSourceProfile
+  } = profile;
+  const sourceProfile = structuredClone(minimumSourceProfile);
 
   return {
     request_id: options.requestId ?? randomUUID(),
