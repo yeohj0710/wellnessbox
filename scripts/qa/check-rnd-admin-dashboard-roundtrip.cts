@@ -18,10 +18,10 @@ async function run() {
     requireAdminSessionImpl: async () => ({ ok: true as const, data: null }),
     callWbRndInterimImpl: callWbRndInterim,
   });
-  assert.equal(response.status, 200);
   const body = (await response.json()) as Record<string, any>;
+  assert.equal(response.status, 200, JSON.stringify(body));
   assert.equal(typeof body.status?.counts, "object");
-  assert.equal(typeof body.kpis?.macro_average, "number");
+  assert.equal(body.kpis?.availability, "UNAVAILABLE");
   assert.ok(Array.isArray(body.sources?.items));
   assert.ok(Array.isArray(body.sources?.adapters));
 
@@ -29,7 +29,7 @@ async function run() {
     ok: true,
     adminAuthDenied: denied.status === 401,
     statusCountKeys: Object.keys(body.status.counts).sort(),
-    macroAverage: body.kpis.macro_average,
+    kpiAvailability: body.kpis.availability,
     sourceCount: body.sources.items.length,
     adapterCount: body.sources.adapters.length,
   }));

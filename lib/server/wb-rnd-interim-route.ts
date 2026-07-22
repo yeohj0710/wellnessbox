@@ -380,11 +380,17 @@ export async function runAdminInterimDashboardRoute(
   const auth = await authenticate();
   if (!auth.ok) return auth.response;
   try {
-    const [status, kpis, sources] = await Promise.all([
-      callInterim("/v1/interim/status", "GET"),
-      callInterim("/v1/interim/kpis", "GET"),
-      callInterim("/v1/interim/admin/sources", "GET"),
-    ]);
+    const status = await callInterim("/v1/interim/status", "GET");
+    let kpis: unknown;
+    try {
+      kpis = await callInterim("/v1/interim/kpis", "GET");
+    } catch (error) {
+      kpis = {
+        availability: "UNAVAILABLE",
+        error: error instanceof Error ? error.message : "unknown_error",
+      };
+    }
+    const sources = await callInterim("/v1/interim/admin/sources", "GET");
     return noStore({ status, kpis, sources });
   } catch (error) {
     return proxyError(error);
