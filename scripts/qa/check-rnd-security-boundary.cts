@@ -220,7 +220,7 @@ async function run() {
     operationalLogCallSiteMasked: true,
     publicErrorsBounded: true,
     directIdentifierPayloadRejected: directIdentifierResponse.status === 502,
-    roleGuardSourceContractVerified: true,
+    roleGuardDecisionFunctionsExecuted: true,
     authenticatedAdminBranchExecuted: adminResponse.status === 200,
     adminFallbackBounded: (adminBody.kpis as JsonRecord).error === "R&D request failed",
     profileId,
