@@ -83,7 +83,9 @@ export async function runVerifyPasswordPostRoute(req: Request) {
 
 export async function runLocalResearchLoginGetRoute(req: Request) {
   const url = new URL(req.url);
-  const localHost = url.hostname === "127.0.0.1" || url.hostname === "localhost";
+  const requestHost = req.headers.get("host") ?? url.host;
+  const requestHostname = requestHost.split(":")[0];
+  const localHost = requestHostname === "127.0.0.1" || requestHostname === "localhost";
   if (process.env.NODE_ENV === "production" || !localHost) {
     return NextResponse.json({ message: "Not found" }, { status: 404 });
   }
@@ -97,5 +99,5 @@ export async function runLocalResearchLoginGetRoute(req: Request) {
   const redirectPath = requested.startsWith("/") && !requested.startsWith("//")
     ? requested
     : "/tips";
-  return NextResponse.redirect(new URL(redirectPath, url.origin));
+  return NextResponse.redirect(new URL(redirectPath, `${url.protocol}//${requestHost}`));
 }
