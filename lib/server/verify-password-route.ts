@@ -80,3 +80,22 @@ export async function runVerifyPasswordPostRoute(req: Request) {
 
   return NextResponse.json({ success: true });
 }
+
+export async function runLocalResearchLoginGetRoute(req: Request) {
+  const url = new URL(req.url);
+  const localHost = url.hostname === "127.0.0.1" || url.hostname === "localhost";
+  if (process.env.NODE_ENV === "production" || !localHost) {
+    return NextResponse.json({ message: "Not found" }, { status: 404 });
+  }
+
+  const session = await getSession();
+  session.test = { loggedIn: true };
+  session.pharm = { id: 0, loggedIn: true };
+  await session.save();
+
+  const requested = url.searchParams.get("redirect") ?? "/tips";
+  const redirectPath = requested.startsWith("/") && !requested.startsWith("//")
+    ? requested
+    : "/tips";
+  return NextResponse.redirect(new URL(redirectPath, url.origin));
+}
