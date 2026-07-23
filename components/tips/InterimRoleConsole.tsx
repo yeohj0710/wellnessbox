@@ -34,6 +34,8 @@ export default function InterimRoleConsole({ role }: Props) {
   const reviewItems = Array.isArray(payload.items)
     ? (payload.items as Array<Record<string, unknown>>)
     : [];
+  const isLoading = payload.loading === true;
+  const loadError = typeof payload.error === "string" ? payload.error : null;
 
   async function decide(
     draftId: string,
@@ -133,9 +135,31 @@ export default function InterimRoleConsole({ role }: Props) {
                 </div>
               </div>
             ))}
-          <pre className={styles.output} aria-live="polite">
-            {JSON.stringify(payload, null, 2)}
-          </pre>
+          {!isAdmin && isLoading && (
+            <p className={styles.empty} aria-live="polite">
+              검토 대기 목록을 불러오고 있습니다.
+            </p>
+          )}
+          {!isAdmin && loadError && (
+            <div className={`${styles.feedback} ${styles.error}`} role="alert">
+              <strong>검토 대기 목록을 불러오지 못했습니다.</strong>
+              <p>운영 화면으로 돌아간 뒤 약사 검토 화면을 다시 여세요.</p>
+            </div>
+          )}
+          {!isAdmin && !isLoading && !loadError && reviewItems.length === 0 && (
+            <div className={styles.emptyState} aria-live="polite">
+              <strong>지금 처리할 AI 초안이 없습니다.</strong>
+              <p>검토 대기 건수가 0건입니다. 이 화면에서 입력하거나 승인할 내용은 없습니다.</p>
+              <a className={styles.returnButton} href="http://127.0.0.1:8765/">
+                운영 화면으로 돌아가기
+              </a>
+            </div>
+          )}
+          {isAdmin && (
+            <pre className={styles.output} aria-live="polite">
+              {JSON.stringify(payload, null, 2)}
+            </pre>
+          )}
         </section>
       </div>
     </div>

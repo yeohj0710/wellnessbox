@@ -50,6 +50,9 @@ assert.match(userPage, /실행 버전 일치/);
 assert.match(userPage, /추천 결과 일치/);
 assert.match(rolePage, /실제 연구 완료/);
 assert.match(rolePage, /simulation badge/);
+assert.match(rolePage, /지금 처리할 AI 초안이 없습니다/);
+assert.match(rolePage, /운영 화면으로 돌아가기/);
+assert.match(rolePage, /\{isAdmin && \(\s*<pre className=\{styles\.output\}/);
 
 console.log(
   JSON.stringify(

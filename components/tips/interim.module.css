@@ -34,6 +34,11 @@
 .stopBanner { background: #fff1f0; color: #b42318; }
 .safetyBanner p,.stopBanner p { margin: 8px 0 0; line-height: 1.6; }
 .empty { color: #8b95a1; font-size: 18px; }
+.emptyState { margin-top:24px; padding:28px; border:1px solid #e5e8eb; border-radius:18px; background:#f9fafb; }
+.emptyState strong { display:block; color:#191f28; font-size:21px; line-height:1.4; }
+.emptyState p { margin:10px 0 22px; color:#6b7684; font-size:15px; line-height:1.65; }
+.returnButton { display:inline-flex; align-items:center; justify-content:center; min-height:46px; padding:0 18px; border-radius:12px; background:#3182f6; color:#fff; font-size:14px; font-weight:750; text-decoration:none; }
+.returnButton:focus-visible { outline:3px solid #b7d6ff; outline-offset:3px; }
 .feedback { margin: 0 0 28px; padding: 20px 22px; border-radius: 16px; background: #edfff5; color: #166534; }
 .feedback strong { display: block; font-size: 18px; }
 .feedback p { margin: 7px 0 0; line-height: 1.6; }
