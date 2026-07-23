@@ -184,7 +184,12 @@ async function main() {
     assert.equal(disabled.connected, false);
     assert.equal(disabled.availability, "DISABLED");
     assert.equal(disabled.totalSavedSessions, 0);
-    assert.equal(requests.length, 7);
+    assert.equal(requests.length, 9);
+    assert.equal(
+      requests.filter((request) => request.method === "GET").length,
+      7,
+      "GET 503 and timeout cases must each include one bounded retry"
+    );
   } finally {
     for (const [key, value] of Object.entries({
       WB_RND_INTERIM_ENABLED: original.enabled,
