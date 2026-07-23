@@ -114,6 +114,14 @@ export function useColumnHomeBrowse(input: {
     setColumns((prev) => prev.filter((item) => item.postId !== deletedPostId));
   };
 
+  const hasActiveFilters = selectedTag !== ALL_TAG || query.trim().length > 0;
+
+  const resetFilters = () => {
+    setQuery("");
+    setSelectedTag(ALL_TAG);
+    setPage(1);
+  };
+
   return {
     columns,
     query,
@@ -137,6 +145,8 @@ export function useColumnHomeBrowse(input: {
     pageWindow,
     startIndex,
     pagedColumns,
+    hasActiveFilters,
+    resetFilters,
     moveToPage,
     handleDelete,
   };
