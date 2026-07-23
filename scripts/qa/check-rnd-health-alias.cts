@@ -57,6 +57,24 @@ async function main() {
   assert.equal(routeResponse.status, 200);
   assert.deepEqual(await routeResponse.json(), healthy.body);
 
+  responseMode = "local";
+  const localFetch: typeof fetch = async () =>
+    new Response(JSON.stringify({ status: "ok", deployment_contract: null }), {
+      status: 200,
+      headers: { "content-type": "application/json" },
+    });
+  const local = await getWbRndHealthAlias(env, localFetch);
+  assert.equal(local.status, 200);
+  const production = await getWbRndHealthAlias(
+    {
+      ...env,
+      NODE_ENV: "production",
+      WB_RND_SERVICE_BASE_URL: "https://rnd.example.test",
+    },
+    localFetch
+  );
+  assert.equal(production.status, 503);
+
   for (const mode of ["degraded", "non-2xx", "invalid-json"]) {
     responseMode = mode;
     const unavailable = await getWbRndHealthAlias(env);

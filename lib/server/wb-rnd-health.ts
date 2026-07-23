@@ -30,9 +30,10 @@ export async function getWbRndHealthAlias(
       | Record<string, unknown>
       | null
       | undefined;
+    const localOnDemand = env.NODE_ENV !== "production" && deployment == null;
     if (
       upstream.status !== "ok" ||
-      deployment?.status !== "READY_FOR_PROVIDER_DEPLOYMENT"
+      (!localOnDemand && deployment?.status !== "READY_FOR_PROVIDER_DEPLOYMENT")
     ) {
       throw new Error("upstream_health_not_ready");
     }
