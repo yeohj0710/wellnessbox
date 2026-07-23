@@ -18,6 +18,9 @@ export const WB_RND_INTERIM_OPERATIONS = [
   ["GET", "/v1/interim/admin/runtime"],
   ["GET", "/v1/interim/admin/reviews"],
   ["POST", "/v1/interim/admin/reviews/{review_id}/decision"],
+  ["GET", "/v1/interim/admin/ai-drafts"],
+  ["POST", "/v1/interim/admin/ai-drafts/{draft_id}/decision"],
+  ["POST", "/v1/interim/admin/ai-drafts/consume-approved"],
 ] as const;
 
 export type WbRndInterimOperation = (typeof WB_RND_INTERIM_OPERATIONS)[number];

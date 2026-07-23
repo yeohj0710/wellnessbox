@@ -425,6 +425,46 @@ export async function runPharmInterimDecisionRoute(
   }
 }
 
+export async function runPharmAiDraftsRoute(
+  dependencies: Partial<WbRndPharmReviewRouteDependencies> = {}
+) {
+  if (!isWbRndInterimEnabled()) return disabled();
+  const authenticate = dependencies.requirePharmSessionImpl ?? requirePharmSession;
+  const callInterim = dependencies.callWbRndInterimImpl ?? callWbRndInterim;
+  const auth = await authenticate();
+  if (!auth.ok) return auth.response;
+  try {
+    return noStore(await callInterim("/v1/interim/admin/ai-drafts", "GET"));
+  } catch (error) {
+    return proxyError(error);
+  }
+}
+
+export async function runPharmAiDraftDecisionRoute(
+  req: Request,
+  draftId: string,
+  dependencies: Partial<WbRndPharmReviewRouteDependencies> = {}
+) {
+  if (!isWbRndInterimEnabled()) return disabled();
+  const authenticate = dependencies.requirePharmSessionImpl ?? requirePharmSession;
+  const callInterim = dependencies.callWbRndInterimImpl ?? callWbRndInterim;
+  const auth = await authenticate();
+  if (!auth.ok) return auth.response;
+  if (!/^draft_[a-f0-9]+$/.test(draftId)) return noStore({ error: "invalid draft id" }, 400);
+  try {
+    const body = await readJson(req);
+    return noStore(
+      await callInterim(
+        `/v1/interim/admin/ai-drafts/${draftId}/decision`,
+        "POST",
+        { ...body, reviewer_id: `pharmacy:${auth.data.pharmacyId}` }
+      )
+    );
+  } catch (error) {
+    return reviewProxyError(error);
+  }
+}
+
 export async function runAdminInterimDashboardRoute(
   dependencies: Partial<WbRndAdminDashboardRouteDependencies> = {}
 ) {

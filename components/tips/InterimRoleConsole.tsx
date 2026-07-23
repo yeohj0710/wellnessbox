@@ -10,7 +10,9 @@ type Props = {
 export default function InterimRoleConsole({ role }: Props) {
   const [payload, setPayload] = useState<Record<string, unknown>>({ loading: true });
   const [submitting, setSubmitting] = useState<string | null>(null);
-  const path = role === "admin" ? "/api/admin/tips" : "/api/pharm/tips/reviews";
+  const [editedContent, setEditedContent] = useState("");
+  const [rejectionReason, setRejectionReason] = useState("");
+  const path = role === "admin" ? "/api/admin/tips" : "/api/pharm/tips/ai-drafts";
 
   useEffect(() => {
     const controller = new AbortController();
@@ -33,21 +35,32 @@ export default function InterimRoleConsole({ role }: Props) {
     ? (payload.items as Array<Record<string, unknown>>)
     : [];
 
-  async function decide(reviewId: string) {
-    setSubmitting(reviewId);
+  async function decide(
+    draftId: string,
+    reviewStatus: "approved" | "approved_with_edits" | "rejected",
+  ) {
+    setSubmitting(draftId);
     try {
-      const response = await fetch(`/api/pharm/tips/reviews/${reviewId}`, {
+      const response = await fetch(`/api/pharm/tips/ai-drafts/${draftId}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ decision: "acknowledged_proxy_review" }),
+        body: JSON.stringify({
+          review_status: reviewStatus,
+          ...(reviewStatus === "approved_with_edits"
+            ? { edited_content: JSON.parse(editedContent) }
+            : {}),
+          ...(reviewStatus === "rejected" ? { rejection_reason: rejectionReason } : {}),
+        }),
       });
       const body = await response.json();
       if (!response.ok) throw new Error(body.error ?? `request_${response.status}`);
       setPayload((current) => ({
         ...current,
-        items: reviewItems.filter((item) => item.review_id !== reviewId),
+        items: reviewItems.filter((item) => item.draft_id !== draftId),
         lastDecision: body,
       }));
+      setEditedContent("");
+      setRejectionReason("");
     } catch (error) {
       setPayload((current) => ({
         ...current,
@@ -62,12 +75,12 @@ export default function InterimRoleConsole({ role }: Props) {
       <div className={styles.shell}>
         <p className={styles.eyebrow}>{isAdmin ? "관리자 연구 현황" : "약사 검토함"}</p>
         <h1 className={styles.title}>
-          {isAdmin ? "연구 운영 현황 및 성과지표" : "시뮬레이션 검토 요청 목록"}
+          {isAdmin ? "연구 운영 현황 및 성과지표" : "AI 초안 검토"}
         </h1>
         <p className={styles.lead}>
           {isAdmin
             ? "소스·모델·KPI·교체 gate를 한 화면에서 확인합니다."
-            : "이 큐는 실제 조제·복약지도 기록이 아닙니다. 결정은 한 번만 제출됩니다."}
+            : "초안과 근거를 확인하고 건별로 승인, 수정 승인 또는 반려하세요."}
         </p>
         <span className={styles.badge}>PROXY_GOLD_SIMULATION</span>
         <section className={`${styles.card} ${styles.wide}`} style={{ marginTop: 48 }}>
@@ -79,16 +92,43 @@ export default function InterimRoleConsole({ role }: Props) {
           </p>
           {!isAdmin &&
             reviewItems.map((item) => (
-              <div key={String(item.review_id)} className={styles.notice}>
-                <strong>{String(item.urgency ?? "ROUTINE")}</strong>{" "}
-                {String(item.review_id)} · PROXY_GOLD_SIMULATION
+              <div key={String(item.draft_id)} className={styles.notice}>
+                <strong>{String(item.record_type)}</strong> {String(item.draft_id)}
+                <pre className={styles.output}>{JSON.stringify(item.content, null, 2)}</pre>
+                <p>판단 근거: {JSON.stringify(item.rationale)}</p>
+                <textarea
+                  aria-label="수정한 초안 JSON"
+                  placeholder="수정 승인할 때만 JSON을 입력하세요."
+                  value={editedContent}
+                  onChange={(event) => setEditedContent(event.target.value)}
+                />
+                <input
+                  aria-label="반려 이유"
+                  placeholder="반려할 때 이유를 입력하세요."
+                  value={rejectionReason}
+                  onChange={(event) => setRejectionReason(event.target.value)}
+                />
                 <div style={{ marginTop: 12 }}>
                   <button
                     className={styles.button}
-                    disabled={submitting === item.review_id}
-                    onClick={() => decide(String(item.review_id))}
+                    disabled={submitting === item.draft_id}
+                    onClick={() => decide(String(item.draft_id), "approved")}
                   >
-                    검토 확인 제출
+                    승인
+                  </button>
+                  <button
+                    className={styles.button}
+                    disabled={submitting === item.draft_id || !editedContent}
+                    onClick={() => decide(String(item.draft_id), "approved_with_edits")}
+                  >
+                    수정 승인
+                  </button>
+                  <button
+                    className={styles.button}
+                    disabled={submitting === item.draft_id || !rejectionReason}
+                    onClick={() => decide(String(item.draft_id), "rejected")}
+                  >
+                    반려
                   </button>
                 </div>
               </div>
