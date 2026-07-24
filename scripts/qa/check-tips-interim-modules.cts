@@ -13,6 +13,7 @@ const replay = read("lib/server/tips-lab/rnd-session-replay.ts");
 const runtime = read("lib/server/tips-lab/runtime.ts");
 const userPage = read("components/tips/InterimUserConsole.tsx");
 const rolePage = read("components/tips/InterimRoleConsole.tsx");
+const localResearchLogin = read("lib/server/verify-password-route.ts");
 
 assert.match(client, /WB_RND_INTERIM_ENABLED/);
 assert.match(client, /createHmac\("sha256"/);
@@ -53,6 +54,10 @@ assert.match(rolePage, /simulation badge/);
 assert.match(rolePage, /지금 처리할 AI 초안이 없습니다/);
 assert.match(rolePage, /운영 화면으로 돌아가기/);
 assert.match(rolePage, /\{isAdmin && \(\s*<pre className=\{styles\.output\}/);
+assert.match(localResearchLogin, /session\.user = \{/);
+assert.match(localResearchLogin, /kakaoId: 900000001/);
+assert.match(localResearchLogin, /session\.test = \{ loggedIn: true \}/);
+assert.match(localResearchLogin, /session\.pharm = \{ id: 0, loggedIn: true \}/);
 
 console.log(
   JSON.stringify(

@@ -91,6 +91,11 @@ export async function runLocalResearchLoginGetRoute(req: Request) {
   }
 
   const session = await getSession();
+  session.user = {
+    kakaoId: 900000001,
+    nickname: "로컬 연구 사용자",
+    loggedIn: true,
+  };
   session.test = { loggedIn: true };
   session.pharm = { id: 0, loggedIn: true };
   await session.save();
