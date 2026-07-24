@@ -457,7 +457,13 @@ export async function runPharmAiDraftDecisionRoute(
       await callInterim(
         `/v1/interim/admin/ai-drafts/${draftId}/decision`,
         "POST",
-        { ...body, reviewer_id: `pharmacy:${auth.data.pharmacyId}` }
+        {
+          ...body,
+          reviewer_id:
+            auth.data.pharmacyId === 0
+              ? "웰니스박스"
+              : `pharmacy:${auth.data.pharmacyId}`,
+        }
       )
     );
   } catch (error) {
