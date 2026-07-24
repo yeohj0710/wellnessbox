@@ -14,6 +14,7 @@ const runtime = read("lib/server/tips-lab/runtime.ts");
 const userPage = read("components/tips/InterimUserConsole.tsx");
 const rolePage = read("components/tips/InterimRoleConsole.tsx");
 const localResearchLogin = read("lib/server/verify-password-route.ts");
+const sessionSource = read("lib/session.ts");
 
 assert.match(client, /WB_RND_INTERIM_ENABLED/);
 assert.match(client, /createHmac\("sha256"/);
@@ -58,6 +59,7 @@ assert.match(localResearchLogin, /session\.user = \{/);
 assert.match(localResearchLogin, /kakaoId: 900000001/);
 assert.match(localResearchLogin, /session\.test = \{ loggedIn: true \}/);
 assert.match(localResearchLogin, /session\.pharm = \{ id: 0, loggedIn: true \}/);
+assert.match(sessionSource, /secure: process\.env\.NODE_ENV === "production"/);
 
 console.log(
   JSON.stringify(

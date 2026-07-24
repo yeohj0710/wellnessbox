@@ -69,6 +69,12 @@ export default async function getSession() {
   const session = await getIronSession<SessionContent>(sessionCookies, {
     cookieName: "cookie",
     password: process.env.COOKIE_PASSWORD,
+    cookieOptions: {
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      httpOnly: true,
+      path: "/",
+    },
   });
   normalizeSessionContent(session);
   return session;
