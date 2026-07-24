@@ -4,7 +4,6 @@ import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState }
 import {
   PRO_INSTRUMENTS,
   cohortKpis,
-  emptyProAnswers,
   participantResult,
   proScore,
   type ProAnswers,
@@ -27,6 +26,15 @@ const INGREDIENTS: Record<string, string> = {
   vitamin_d3: "비타민 D3",
   zinc: "아연",
 };
+
+function suggestedAnswers(instrument: ProInstrumentId, score: number): ProAnswers {
+  const definition = PRO_INSTRUMENTS[instrument];
+  const bounded = Math.min(definition.itemMax, Math.max(definition.itemMin, score));
+  return {
+    instrument,
+    responses: Array.from({ length: definition.itemCount }, () => bounded),
+  };
+}
 
 function proRequestError(cause: unknown, fallback: string) {
   const detail = cause instanceof Error ? cause.message.toLowerCase() : "";
@@ -75,20 +83,21 @@ export type ProStudySimulationHandle = { next: () => Promise<boolean>; previous:
 type Props = { onStepChange?: (step: 0 | 1 | 2 | 3) => void };
 
 const ProStudySimulation = forwardRef<ProStudySimulationHandle, Props>(function ProStudySimulation({ onStepChange }, ref) {
-  const [step, setStep] = useState<0 | 1 | 2 | 3>(0);
+  const [step, setStep] = useState<0 | 1 | 2 | 3>(1);
   const [participants, setParticipants] = useState<StudyParticipant[]>([]);
   const [selectedId, setSelectedId] = useState("");
-  const [name, setName] = useState("테스터 01");
+  const [name, setName] = useState("연구 참여자 01");
   const [age, setAge] = useState(41);
   const [goal, setGoal] = useState("sleep quality");
   const [instrument, setInstrument] = useState<ProInstrumentId>("PSQI");
-  const [baseline, setBaseline] = useState<ProAnswers>(() => emptyProAnswers("PSQI"));
-  const [followup, setFollowup] = useState<ProAnswers>(() => emptyProAnswers("PSQI"));
+  const [baseline, setBaseline] = useState<ProAnswers>(() => suggestedAnswers("PSQI", 2));
+  const [followup, setFollowup] = useState<ProAnswers>(() => suggestedAnswers("PSQI", 1));
   const [week, setWeek] = useState<2 | 4>(2);
   const [adherence, setAdherence] = useState(85);
   const [adverseEvent, setAdverseEvent] = useState(false);
   const [consentAccepted, setConsentAccepted] = useState(false);
-  const [dataClass, setDataClass] = useState<ProOutcomeDataClass>("SYNTHETIC_OUTCOME_PROXY");
+  const [followupConfirmed, setFollowupConfirmed] = useState(false);
+  const [dataClass, setDataClass] = useState<ProOutcomeDataClass>("REAL_WORLD_OUTCOME");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const resultRef = useRef<HTMLDivElement>(null);
@@ -117,12 +126,13 @@ const ProStudySimulation = forwardRef<ProStudySimulationHandle, Props>(function 
     setFollowup(saved?.answers ?? { instrument: participant.baseline.instrument, responses: participant.baseline.responses.map((value) => Math.max(0, value - 1)) });
     setAdherence(saved?.adherencePercent ?? 85);
     setAdverseEvent(saved?.adverseEvent ?? false);
+    setFollowupConfirmed(false);
   }, [participants, selectedId, week]);
 
   function changeInstrument(next: ProInstrumentId) {
     setInstrument(next);
-    setBaseline(emptyProAnswers(next));
-    setFollowup(emptyProAnswers(next));
+    setBaseline(suggestedAnswers(next, 2));
+    setFollowup(suggestedAnswers(next, 1));
   }
   function updateAnswers(setter: (value: ProAnswers) => void, current: ProAnswers, index: number, value: number) {
     setter({ ...current, responses: current.responses.map((item, currentIndex) => currentIndex === index ? value : item) });
@@ -172,6 +182,10 @@ const ProStudySimulation = forwardRef<ProStudySimulationHandle, Props>(function 
 
   async function saveFollowup() {
     if (!selected?.executionId || !selected.planId) return false;
+    if (!followupConfirmed) {
+      setError("사전 입력값이 실제 후속 상태와 일치하는지 확인한 뒤 체크하세요.");
+      return false;
+    }
     setBusy(true);
     setError("");
     try {
@@ -202,6 +216,7 @@ const ProStudySimulation = forwardRef<ProStudySimulationHandle, Props>(function 
         }].sort((a, b) => a.week - b.week),
       }));
       setStep(3);
+      setFollowupConfirmed(false);
       requestAnimationFrame(() => resultRef.current?.scrollIntoView({ behavior: "smooth", block: "center" }));
       return true;
     } catch (cause) {
@@ -242,7 +257,7 @@ const ProStudySimulation = forwardRef<ProStudySimulationHandle, Props>(function 
       setStep((step - 1) as 0 | 1 | 2 | 3);
       return true;
     },
-  }), [busy, step, age, goal, name, baseline, consentAccepted, dataClass, selected, followup, week, adherence, adverseEvent]);
+  }), [busy, step, age, goal, name, baseline, consentAccepted, dataClass, selected, followup, followupConfirmed, week, adherence, adverseEvent]);
 
   return <section className={`${styles.section} ${styles.proStudy}`} aria-labelledby="pro-study-title">
     <p className={styles.sectionLabel}>복용 전후 건강 변화 평가</p>
@@ -259,6 +274,10 @@ const ProStudySimulation = forwardRef<ProStudySimulationHandle, Props>(function 
 
     {step === 1 && <div className={styles.studyStep}>
       <h3>복용 전 상태를 기록하세요</h3>
+      <div className={styles.feedback}>
+        <strong>모범 입력값을 미리 채웠습니다.</strong>
+        <p>실제 값과 다른 항목만 고친 뒤, 맨 아래 확인란을 체크하고 다음을 누르세요.</p>
+      </div>
       <div className={styles.formGrid}>
         <label className={styles.control}><span>테스터명</span><input className={styles.field} value={name} onChange={(event) => setName(event.target.value)} /></label>
         <label className={styles.control}><span>나이</span><input className={styles.field} type="number" min="18" max="120" value={age} onChange={(event) => setAge(+event.target.value)} /></label>
@@ -267,16 +286,21 @@ const ProStudySimulation = forwardRef<ProStudySimulationHandle, Props>(function 
         <label className={styles.control}><span>결과 데이터 종류</span><select className={styles.field} value={dataClass} onChange={(event) => setDataClass(event.target.value as ProOutcomeDataClass)}><option value="SYNTHETIC_OUTCOME_PROXY">시험용 합성 결과</option><option value="REAL_WORLD_OUTCOME">실제 관찰 결과</option></select></label>
       </div>
       <Questionnaire value={baseline} onChange={(index, value) => updateAnswers(setBaseline, baseline, index, value)} />
-      <label className={styles.aeCheck}><input type="checkbox" checked={consentAccepted} onChange={(event) => setConsentAccepted(event.target.checked)} /> 설문 응답과 추천 계획을 연구 데이터 저장소에 보관하는 데 동의합니다.</label>
+      <label className={styles.aeCheck}><input type="checkbox" checked={consentAccepted} onChange={(event) => setConsentAccepted(event.target.checked)} /> 위 입력값이 실제 복용 전 상태와 일치함을 확인했으며 연구 저장에 동의합니다.</label>
     </div>}
 
     {step === 2 && selected && <div className={styles.studyStep}>
       <h3>{week}주 후 상태를 기록하세요</h3>
       <p>{selected.name}님의 계획 <code>{selected.planId}</code>에 결과를 연결합니다.</p>
+      <div className={styles.feedback}>
+        <strong>개선된 후속평가 모범값을 미리 채웠습니다.</strong>
+        <p>실제 상태와 다르면 점수와 복용 순응도만 고치세요.</p>
+      </div>
       <label className={styles.control}><span>측정 시점</span><select className={styles.field} value={week} onChange={(event) => setWeek(Number(event.target.value) as 2 | 4)}><option value={2}>2주</option><option value={4}>4주</option></select></label>
       <Questionnaire value={followup} onChange={(index, value) => updateAnswers(setFollowup, followup, index, value)} />
       <label className={styles.rangeRow}><span>복용 순응도</span><input type="range" min="0" max="100" value={adherence} onChange={(event) => setAdherence(+event.target.value)} /><b>{adherence}%</b></label>
       <label className={styles.aeCheck}><input type="checkbox" checked={adverseEvent} onChange={(event) => setAdverseEvent(event.target.checked)} /> 이상사례가 있었습니다.</label>
+      <label className={styles.aeCheck}><input type="checkbox" checked={followupConfirmed} onChange={(event) => setFollowupConfirmed(event.target.checked)} /> 위 입력값이 실제 후속 상태와 일치함을 확인했습니다.</label>
     </div>}
 
     {step === 3 && selected && result && <div ref={resultRef} className={styles.studyStep} aria-live="polite">

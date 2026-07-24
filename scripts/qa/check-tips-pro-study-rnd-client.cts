@@ -7,6 +7,10 @@ async function run() {
   const component = await readFile("components/tips/ProStudySimulation.tsx", "utf8");
   assert.match(component, /import \{ enrollProPlan, saveProFollowup, type ProOutcomeDataClass \}/);
   assert.match(component, /REAL_WORLD_OUTCOME/);
+  assert.match(component, /useState<0 \| 1 \| 2 \| 3>\(1\)/);
+  assert.match(component, /연구 참여자 01/);
+  assert.match(component, /suggestedAnswers\("PSQI", 2\)/);
+  assert.match(component, /사전 입력값이 실제 후속 상태와 일치하는지 확인/);
   assert.match(component, /lastRndActionDecision/);
   assert.match(component, /maintain: "유지"/);
   assert.match(component, /reduce: "감량"/);
