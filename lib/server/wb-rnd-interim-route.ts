@@ -311,10 +311,18 @@ export async function runUserInterimProFollowUpRoute(
   if (!auth.ok) return auth.response;
   try {
     const body = await readJson(req);
+    const researchProfileId =
+      typeof body.researchProfileId === "string" && /^profile-[0-9]{2}$/.test(body.researchProfileId)
+        ? body.researchProfileId
+        : null;
     return noStore(
       await callInterim("/v1/interim/pro/followups", "POST", {
         execution_id: body.executionId,
-        profile_id: pseudonymizeInterimUserId(auth.data.appUserId),
+        profile_id: pseudonymizeInterimUserId(
+          researchProfileId
+            ? `${auth.data.appUserId}:${researchProfileId}`
+            : auth.data.appUserId
+        ),
         plan_id: body.planId,
         timepoint: body.timepoint,
         answers: body.answers,
