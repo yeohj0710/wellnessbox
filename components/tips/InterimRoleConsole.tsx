@@ -12,6 +12,7 @@ export default function InterimRoleConsole({ role }: Props) {
   const [submitting, setSubmitting] = useState<string | null>(null);
   const [editedContent, setEditedContent] = useState("");
   const [rejectionReason, setRejectionReason] = useState("");
+  const [reviewerName, setReviewerName] = useState("권혁찬");
   const path = role === "admin" ? "/api/admin/tips" : "/api/pharm/tips/ai-drafts";
 
   useEffect(() => {
@@ -48,6 +49,7 @@ export default function InterimRoleConsole({ role }: Props) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           review_status: reviewStatus,
+          reviewer_name: reviewerName.trim(),
           ...(reviewStatus === "approved_with_edits"
             ? { edited_content: JSON.parse(editedContent) }
             : {}),
@@ -95,6 +97,14 @@ export default function InterimRoleConsole({ role }: Props) {
           {!isAdmin &&
             reviewItems.map((item) => (
               <div key={String(item.draft_id)} className={styles.notice}>
+                <label>
+                  약사 검토자
+                  <input
+                    aria-label="약사 검토자"
+                    value={reviewerName}
+                    onChange={(event) => setReviewerName(event.target.value)}
+                  />
+                </label>
                 <strong>{String(item.record_type)}</strong> {String(item.draft_id)}
                 <pre className={styles.output}>{JSON.stringify(item.content, null, 2)}</pre>
                 <p>판단 근거: {JSON.stringify(item.rationale)}</p>
@@ -113,21 +123,21 @@ export default function InterimRoleConsole({ role }: Props) {
                 <div style={{ marginTop: 12 }}>
                   <button
                     className={styles.button}
-                    disabled={submitting === item.draft_id}
+                    disabled={submitting === item.draft_id || !reviewerName.trim()}
                     onClick={() => decide(String(item.draft_id), "approved")}
                   >
                     승인
                   </button>
                   <button
                     className={styles.button}
-                    disabled={submitting === item.draft_id || !editedContent}
+                    disabled={submitting === item.draft_id || !reviewerName.trim() || !editedContent}
                     onClick={() => decide(String(item.draft_id), "approved_with_edits")}
                   >
                     수정 승인
                   </button>
                   <button
                     className={styles.button}
-                    disabled={submitting === item.draft_id || !rejectionReason}
+                    disabled={submitting === item.draft_id || !reviewerName.trim() || !rejectionReason}
                     onClick={() => decide(String(item.draft_id), "rejected")}
                   >
                     반려

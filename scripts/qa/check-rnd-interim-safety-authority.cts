@@ -57,7 +57,7 @@ assert.deepEqual(valid.response.recommendations, []);
 assert.equal(valid.response.safety_authority.mode, "rnd_final");
 assert.equal(
   valid.response.ingredient_identifier_mapping.mapping_version,
-  "2026-07-16.1"
+  "2026-07-24.1"
 );
 
 const mappedReady = enforceWbRndInterimSafetyAuthority(
@@ -70,7 +70,7 @@ assert.equal(
 );
 
 const unmappedReady = enforceWbRndInterimSafetyAuthority(
-  readyResponse("l_theanine")
+  readyResponse("berberine")
 );
 assert.equal(unmappedReady.ok, false);
 assert.equal(
@@ -78,6 +78,10 @@ assert.equal(
   "unmapped_rnd_ingredient_identifier"
 );
 assert.deepEqual(unmappedReady.response.recommendations, []);
+assert.equal(
+  unmappedReady.response.ingredient_identifier_mapping_error?.rnd_ingredient_key,
+  "berberine"
+);
 
 for (const invalid of [
   blockedResponse({ recommendations: [{ ingredient: "unsafe" }] }),

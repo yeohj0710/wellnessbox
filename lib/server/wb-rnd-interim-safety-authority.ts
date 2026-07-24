@@ -142,7 +142,11 @@ export function enforceWbRndInterimSafetyAuthority(value: unknown) {
   if (!mapped.ok) {
     return {
       ok: false as const,
-      response: buildWbRndInterimFailClosedResponse(mapped.reason),
+      response: {
+        ...buildWbRndInterimFailClosedResponse(mapped.reason),
+        ingredient_identifier_mapping_error:
+          "diagnostic" in mapped ? mapped.diagnostic : undefined,
+      },
     };
   }
   const safetyAuthority: WbRndInterimSafetyAuthority = {

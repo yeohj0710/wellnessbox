@@ -45,7 +45,7 @@ assert.equal(new Set(mappedRndKeys).size, mappedRndKeys.length);
 for (const mapping of contract.mappings) {
   assert.match(mapping.service_ingredient_id, /^ING:[A-Z0-9_]+$/);
   assert.match(mapping.rnd_ingredient_key, /^[a-z0-9_]+$/);
-  assert.ok(["equivalent", "service_broader"].includes(mapping.relationship));
+  assert.ok(["equivalent", "service_broader", "service_narrower"].includes(mapping.relationship));
   assert.deepEqual(
     new Set(mapping.allowed_directions),
     mapping.relationship === "equivalent"
@@ -60,10 +60,14 @@ const coveredServiceIds = new Set([
     (item) => item.service_ingredient_id
   ),
 ]);
-assert.deepEqual(coveredServiceIds, new Set(proxyModel.ingredients));
+assert.deepEqual(
+  new Set([...coveredServiceIds].filter((id) => proxyModel.ingredients.includes(id))),
+  new Set(proxyModel.ingredients)
+);
 
 assert.equal(mapRndIngredientToService("omega3"), "ING:OMEGA3");
-assert.equal(mapRndIngredientToService("soluble_fiber"), null);
+assert.equal(mapRndIngredientToService("soluble_fiber"), "ING:PSYLLIUM");
+assert.equal(mapRndIngredientToService("l_theanine"), "ING:L_THEANINE");
 
 const enriched = enrichWbRndRecommendationIdentifiers({
   recommendations: [
@@ -90,7 +94,7 @@ if (enriched.ok) {
 const rejected = enrichWbRndRecommendationIdentifiers({
   recommendations: [
     {
-      ingredient: "soluble_fiber",
+      ingredient: "berberine",
       rank: 1,
       score: 0.8,
       evidence_ids: ["EV-1"],
@@ -100,6 +104,14 @@ const rejected = enrichWbRndRecommendationIdentifiers({
 assert.deepEqual(rejected, {
   ok: false,
   reason: "unmapped_rnd_ingredient_identifier",
+  diagnostic: {
+    recommendation_index: 0,
+    rnd_ingredient_key: "berberine",
+    rnd_namespace: "wellnessbox_rnd_catalog_v1",
+    service_namespace: "wellnessbox_tips_lab_proxy_model_v1",
+    mapping_version: contract.mapping_version,
+    failure: "no_rnd_to_service_mapping",
+  },
 });
 
 console.log(

@@ -1,6 +1,6 @@
 {
   "schema_version": "wb_rnd_product_candidate_match_v1",
-  "mapping_version": "2026-07-16.1",
+  "mapping_version": "2026-07-24.1",
   "catalog_contract_version": "wb_rnd_selling_product_catalog_v1",
   "combination_contract_version": "wb_rnd_product_combination_v1",
   "optimization_constraints_contract_version": "product_optimization_constraints_v1",
@@ -10,7 +10,7 @@
   "inventory_context_contract_version": "product_combination_inventory_context_v1",
   "stock_substitution_contract_version": "product_combination_stock_substitution_v1",
   "cart_candidate_contract_version": "product_combination_cart_candidate_v1",
-  "ingredient_mapping_version": "2026-07-16.1",
+  "ingredient_mapping_version": "2026-07-24.1",
   "product_catalog_source": "wellnessbox Prisma Product + in-stock PharmacyProduct",
   "max_candidates_per_ingredient": 5,
   "max_product_combinations": 64,
@@ -30,12 +30,20 @@
       "match_terms": ["magnesium", "마그네슘"]
     },
     {
+      "service_ingredient_id": "ING:L_THEANINE",
+      "match_terms": ["theanine"]
+    },
+    {
       "service_ingredient_id": "ING:OMEGA3",
       "match_terms": ["omega3", "오메가3"]
     },
     {
       "service_ingredient_id": "ING:PROBIOTIC",
       "match_terms": ["probiotic", "probiotics", "프로바이오틱스", "유산균"]
+    },
+    {
+      "service_ingredient_id": "ING:PSYLLIUM",
+      "match_terms": ["psyllium", "차전자피"]
     },
     {
       "service_ingredient_id": "ING:VITAMIN_C",

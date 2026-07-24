@@ -7,7 +7,7 @@ type JsonRecord = Record<string, unknown>;
 type IngredientMapping = {
   serviceIngredientId: string;
   rndIngredientKey: string;
-  relationship: "equivalent" | "service_broader";
+  relationship: "equivalent" | "service_broader" | "service_narrower";
   allowedDirections: ReadonlySet<"rnd_to_service" | "service_to_rnd">;
 };
 
@@ -55,13 +55,13 @@ function loadContract(value: unknown): IngredientMapContract {
         ? directionSet.size === 2 &&
           directionSet.has("rnd_to_service") &&
           directionSet.has("service_to_rnd")
-        : relationship === "service_broader"
+        : relationship === "service_broader" || relationship === "service_narrower"
           ? directionSet.size === 1 && directionSet.has("rnd_to_service")
           : false;
     if (
       !nonEmptyString(serviceIngredientId) ||
       !nonEmptyString(rndIngredientKey) ||
-      !["equivalent", "service_broader"].includes(String(relationship)) ||
+      !["equivalent", "service_broader", "service_narrower"].includes(String(relationship)) ||
       !Array.isArray(directions) ||
       directions.length === 0 ||
       directionSet.size !== directions.length ||
@@ -114,9 +114,13 @@ export function enrichWbRndRecommendationIdentifiers(value: JsonRecord) {
     return { ok: false as const, reason: "invalid_recommendation_collection" };
   }
   const recommendations = [];
-  for (const recommendation of value.recommendations) {
+  for (const [recommendationIndex, recommendation] of value.recommendations.entries()) {
     if (!isRecord(recommendation) || !nonEmptyString(recommendation.ingredient)) {
-      return { ok: false as const, reason: "invalid_recommendation_identifier" };
+      return {
+        ok: false as const,
+        reason: "invalid_recommendation_identifier",
+        diagnostic: { recommendation_index: recommendationIndex },
+      };
     }
     const serviceIngredientId = mapRndIngredientToService(
       recommendation.ingredient
@@ -125,6 +129,14 @@ export function enrichWbRndRecommendationIdentifiers(value: JsonRecord) {
       return {
         ok: false as const,
         reason: "unmapped_rnd_ingredient_identifier",
+        diagnostic: {
+          recommendation_index: recommendationIndex,
+          rnd_ingredient_key: recommendation.ingredient,
+          rnd_namespace: contract.rndNamespace,
+          service_namespace: contract.serviceNamespace,
+          mapping_version: contract.mappingVersion,
+          failure: "no_rnd_to_service_mapping",
+        },
       };
     }
     recommendations.push({

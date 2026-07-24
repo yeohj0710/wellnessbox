@@ -84,7 +84,15 @@ const readyFixture = {
   uncertainty: "op050 route fixture",
 };
 
-const productCatalog = catalogSnapshot.products.map((product, index) => ({
+const productCatalog = [...catalogSnapshot.products, {
+  id: 9001,
+  name: "L-Theanine research fixture",
+  categories: ["theanine"],
+}, {
+  id: 9002,
+  name: "Psyllium research fixture",
+  categories: ["psyllium"],
+}].map((product, index) => ({
   ...product,
   ingredientDeclarations: [
     {
@@ -163,8 +171,10 @@ const expectedPrimaryProductIdByServiceIngredient = {
   "ING:CALCIUM": 29,
   "ING:COQ10": 44,
   "ING:MAGNESIUM": 29,
+  "ING:L_THEANINE": 9001,
   "ING:OMEGA3": 31,
   "ING:PROBIOTIC": 35,
+  "ING:PSYLLIUM": 9002,
   "ING:VITAMIN_C": 30,
   "ING:VITAMIN_D": 29,
   "ING:ZINC": 29,
@@ -477,10 +487,10 @@ async function run() {
   const sharedProductCombination = matched.product_combinations?.find(
     (item) =>
       JSON.stringify(item.selected_products?.map((product) => product.product_id)) ===
-      JSON.stringify([29, 30, 31, 35, 44])
+      JSON.stringify([29, 30, 31, 35, 44, 9001, 9002])
   );
   assert.ok(sharedProductCombination);
-  assert.equal(sharedProductCombination?.product_count, 5);
+  assert.equal(sharedProductCombination?.product_count, 7);
   assert.equal(
     sharedProductCombination?.recommendation_service_ingredient_ids?.length,
     ingredientContract.mappings.length
@@ -839,8 +849,8 @@ async function run() {
 
   const constrainedPolicy = {
     schema_version: "product_optimization_constraints_v1",
-    max_total_cost_krw: 65_000,
-    max_products: 5,
+    max_total_cost_krw: 100_000,
+    max_products: 7,
     excluded_ingredient_keys: [] as string[],
     safety_rule_ids: [] as string[],
   };
@@ -869,7 +879,7 @@ async function run() {
   assert.ok((constrained.product_combinations?.length ?? 0) > 0);
   assert.ok(
     constrained.product_combinations?.every(
-      (item) => Number(item.total_cost_krw) <= 65_000 && Number(item.product_count) <= 5
+      (item) => Number(item.total_cost_krw) <= 100_000 && Number(item.product_count) <= 7
     )
   );
   assert.ok(

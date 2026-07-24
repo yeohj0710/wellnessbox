@@ -270,7 +270,15 @@ export async function runUserInterimProPlanRoute(
     if (dataClass !== "SYNTHETIC_OUTCOME_PROXY" && dataClass !== "REAL_WORLD_OUTCOME") {
       return noStore({ error: "PRO 결과 데이터 종류가 올바르지 않습니다." }, 400);
     }
-    const subjectId = pseudonymizeInterimUserId(auth.data.appUserId);
+    const researchProfileId =
+      typeof body.researchProfileId === "string" && /^profile-[0-9]{2}$/.test(body.researchProfileId)
+        ? body.researchProfileId
+        : null;
+    const subjectId = pseudonymizeInterimUserId(
+      researchProfileId
+        ? `${auth.data.appUserId}:${researchProfileId}`
+        : auth.data.appUserId
+    );
     const recommendationRequest = mapWellnessBoxProfileToWbRndRequest(body.profile, {
       requestId: body.requestId,
       subjectId,
@@ -453,15 +461,25 @@ export async function runPharmAiDraftDecisionRoute(
   if (!/^draft_[a-f0-9]+$/.test(draftId)) return noStore({ error: "invalid draft id" }, 400);
   try {
     const body = await readJson(req);
+    const researchReviewerName =
+      typeof body.reviewer_name === "string" ? body.reviewer_name.trim() : "";
+    if (auth.data.pharmacyId === 0 && !researchReviewerName) {
+      return noStore({ error: "research reviewer name is required" }, 400);
+    }
+    if (auth.data.pharmacyId === 0 && researchReviewerName === "여형준") {
+      return noStore({ error: "project owner cannot register pharmacist review" }, 400);
+    }
+    const decision = { ...body };
+    delete decision.reviewer_name;
     return noStore(
       await callInterim(
         `/v1/interim/admin/ai-drafts/${draftId}/decision`,
         "POST",
         {
-          ...body,
+          ...decision,
           reviewer_id:
             auth.data.pharmacyId === 0
-              ? "웰니스박스"
+              ? researchReviewerName
               : `pharmacy:${auth.data.pharmacyId}`,
         }
       )

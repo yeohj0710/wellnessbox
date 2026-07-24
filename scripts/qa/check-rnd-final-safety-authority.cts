@@ -202,7 +202,7 @@ async function run() {
   assert.equal(ready.product_candidate_resolution?.complete, true);
   assert.equal(
     ready.ingredient_identifier_mapping?.mapping_version,
-    "2026-07-16.1"
+    "2026-07-24.1"
   );
 
   const unmappedUpstream = (async () => ({
