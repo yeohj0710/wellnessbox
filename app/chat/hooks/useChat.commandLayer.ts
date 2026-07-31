@@ -1,7 +1,7 @@
 "use client";
 
 import type { ChatActionType } from "@/lib/chat/agent-actions";
-import type { ChatSession } from "@/types/chat";
+import type { ChatMessageStatus, ChatSession } from "@/types/chat";
 import { getTzOffsetMinutes } from "../utils";
 import { requestActionExecutionDecision } from "./useChat.api";
 import { createInChatAssessmentHandlers } from "./useChat.assessmentHandlers";
@@ -16,6 +16,7 @@ import { CHAT_COPY, toAssistantErrorText } from "./useChat.copy";
 import { createInteractiveCommands } from "./useChat.interactiveCommands";
 import { createMessageFlowHandlers } from "./useChat.messageFlowHandlers";
 import type { UseChatRefs } from "./useChat.refs";
+import { createRetryHandler } from "./useChat.retry";
 import { createSessionCommands } from "./useChat.sessionCommands";
 import type { UseChatState } from "./useChat.state";
 
@@ -55,8 +56,16 @@ export function createChatCommandLayer({
   const patchAssistantMessage = (
     sessionId: string,
     messageId: string,
-    content: string
-  ) => updateAssistantMessage(state.setSessions, sessionId, messageId, content);
+    content: string,
+    status: ChatMessageStatus | null = null
+  ) =>
+    updateAssistantMessage(
+      state.setSessions,
+      sessionId,
+      messageId,
+      content,
+      status
+    );
 
   const { finalizeAssistantTurn, generateTitle } = createAssistantTurnHandlers({
     activeId: state.activeId,
@@ -122,7 +131,6 @@ export function createChatCommandLayer({
     firstUserMessageRef: refs.firstUserMessageRef,
     setSessions: state.setSessions,
     stickToBottomRef: refs.stickToBottomRef,
-    messagesContainerRef: refs.messagesContainerRef,
     tryHandleInChatAssessmentInput,
     isBrowserOnline,
     tryHandleAgentActionDecision,
@@ -144,6 +152,21 @@ export function createChatCommandLayer({
     readyToPersistRef: refs.readyToPersistRef,
     offlineChatMessage: CHAT_COPY.offlineChat,
     offlineInitMessage: CHAT_COPY.offlineInit,
+  });
+
+  const retryLastAssistantTurn = createRetryHandler({
+    active,
+    loading: state.loading,
+    setLoading: state.setLoading,
+    setSessions: state.setSessions,
+    stickToBottomRef: refs.stickToBottomRef,
+    clearFollowups: resetFollowups,
+    buildContextPayload,
+    buildRuntimeContextPayload,
+    abortRef: refs.abortRef,
+    updateAssistantMessage: patchAssistantMessage,
+    finalizeAssistantTurn,
+    toAssistantErrorText,
   });
 
   const {
@@ -179,6 +202,7 @@ export function createChatCommandLayer({
     sendMessage,
     startInitialAssistantMessage,
     handleInteractiveAction,
+    retryLastAssistantTurn,
     newChat,
     deleteChat,
     renameChat,

@@ -1,6 +1,7 @@
 import type { ChatActionType } from "@/lib/chat/agent-actions";
+import type { ChatMessageStatus } from "@/types/chat";
 import { rememberActionMemoryList } from "./useChat.actionMemory";
-import { replaceSessionMessageContent } from "./useChat.sessionState";
+import { patchSessionMessage } from "./useChat.sessionState";
 import type { UseChatState } from "./useChat.state";
 
 export function rememberExecutedActions(
@@ -23,9 +24,10 @@ export function updateAssistantMessage(
   setSessions: UseChatState["setSessions"],
   sessionId: string,
   messageId: string,
-  content: string
+  content: string,
+  status: ChatMessageStatus | null = null
 ) {
   setSessions((prev) =>
-    replaceSessionMessageContent(prev, sessionId, messageId, content)
+    patchSessionMessage(prev, sessionId, messageId, { content, status })
   );
 }

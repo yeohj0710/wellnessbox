@@ -8,6 +8,7 @@ import type {
   NormalizedHealthLinkSummary,
   NormalizedOrderSummary,
 } from "./useChat.results";
+import { toModelTranscript } from "./useChat.transcript";
 
 type ActorContext = {
   loggedIn: boolean;
@@ -54,10 +55,12 @@ function buildContextSessionPayload(
       id: session.id,
       title: session.title,
       updatedAt: session.updatedAt || session.createdAt,
-      messages: session.messages.slice(-4).map((message) => ({
-        role: message.role,
-        content: message.content,
-      })),
+      messages: toModelTranscript(session.messages)
+        .slice(-4)
+        .map((message) => ({
+          role: message.role,
+          content: message.content,
+        })),
     }));
 }
 

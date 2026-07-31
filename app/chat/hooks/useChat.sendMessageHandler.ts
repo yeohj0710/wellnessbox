@@ -4,7 +4,7 @@ import type {
   RefObject,
   SetStateAction,
 } from "react";
-import type { ChatSession } from "@/types/chat";
+import type { ChatMessageStatus, ChatSession } from "@/types/chat";
 import { appendMessagesToSession } from "./useChat.sessionState";
 import { prepareOutgoingTurn } from "./useChat.sendMessage";
 import {
@@ -12,7 +12,7 @@ import {
   type SendMessageBranchInput,
 } from "./useChat.sendMessageFlow";
 import { runStreamedAssistantTurn } from "./useChat.streamTurn";
-import { scrollContainerToBottom } from "./useChat.ui";
+import { toModelTranscript } from "./useChat.transcript";
 import type { FinalizeAssistantTurnInput } from "./useChat.finalizeFlow";
 
 type SendMessageFlowDeps = {
@@ -24,7 +24,6 @@ type SendMessageFlowDeps = {
   firstUserMessageRef: MutableRefObject<string>;
   setSessions: Dispatch<SetStateAction<ChatSession[]>>;
   stickToBottomRef: MutableRefObject<boolean>;
-  messagesContainerRef: RefObject<HTMLDivElement | null>;
   tryHandleInChatAssessmentInput: (
     input: SendMessageBranchInput
   ) => Promise<boolean>;
@@ -36,7 +35,8 @@ type SendMessageFlowDeps = {
   updateAssistantMessage: (
     sessionId: string,
     messageId: string,
-    content: string
+    content: string,
+    status?: ChatMessageStatus | null
   ) => void;
   offlineChatMessage: string;
   setLoading: Dispatch<SetStateAction<boolean>>;
@@ -79,10 +79,9 @@ export async function runSendMessageFlow(
     appendMessagesToSession(prev, sessionId, [userMessage, assistantMessage], now)
   );
 
+  // Sending re-pins the feed; the scroll itself is owned by useChatScrollAnchor,
+  // which reacts to the new message and re-pins again after late layout.
   deps.stickToBottomRef.current = true;
-  requestAnimationFrame(() =>
-    requestAnimationFrame(() => scrollContainerToBottom(deps.messagesContainerRef))
-  );
 
   const branchResult = await resolveSendMessageBranch(
     {
@@ -103,7 +102,8 @@ export async function runSendMessageFlow(
         deps.updateAssistantMessage(
           targetSessionId,
           targetAssistantMessage.id,
-          deps.offlineChatMessage
+          deps.offlineChatMessage,
+          "error"
         );
       },
       tryHandleAgentActionDecision: deps.tryHandleAgentActionDecision,
@@ -117,30 +117,30 @@ export async function runSendMessageFlow(
     await runStreamedAssistantTurn({
       mode: "chat",
       sessionId,
-      messages: sessionMessages.concat(userMessage),
+      messages: toModelTranscript(sessionMessages).concat(userMessage),
       assistantMessage,
       buildContextPayload: deps.buildContextPayload,
       buildRuntimeContextPayload: deps.buildRuntimeContextPayload,
       updateAssistantMessage: deps.updateAssistantMessage,
       setAbortController: deps.setAbortController,
-      onComplete: async (fullText) => {
+      onComplete: async (fullText, outcome) => {
         await deps.finalizeAssistantTurn({
           sessionId,
           content: fullText,
           assistantMessage,
           userMessage,
           isFirst,
+          outcome,
         });
       },
     });
   } catch (error) {
-    if ((error as { name?: string } | undefined)?.name !== "AbortError") {
-      deps.updateAssistantMessage(
-        sessionId,
-        assistantMessage.id,
-        deps.toAssistantErrorText(error)
-      );
-    }
+    deps.updateAssistantMessage(
+      sessionId,
+      assistantMessage.id,
+      deps.toAssistantErrorText(error),
+      "error"
+    );
   } finally {
     deps.setLoading(false);
   }

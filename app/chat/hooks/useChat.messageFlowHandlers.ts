@@ -19,7 +19,6 @@ type CreateMessageFlowHandlersInput = {
   firstUserMessageRef: MutableRefObject<string>;
   setSessions: Dispatch<SetStateAction<ChatSession[]>>;
   stickToBottomRef: MutableRefObject<boolean>;
-  messagesContainerRef: RefObject<HTMLDivElement | null>;
   tryHandleInChatAssessmentInput: (
     input: SendMessageBranchInput
   ) => Promise<boolean>;
@@ -65,7 +64,6 @@ export function createMessageFlowHandlers({
   firstUserMessageRef,
   setSessions,
   stickToBottomRef,
-  messagesContainerRef,
   tryHandleInChatAssessmentInput,
   isBrowserOnline,
   tryHandleAgentActionDecision,
@@ -98,7 +96,6 @@ export function createMessageFlowHandlers({
       firstUserMessageRef,
       setSessions,
       stickToBottomRef,
-      messagesContainerRef,
       tryHandleInChatAssessmentInput,
       isBrowserOnline,
       tryHandleAgentActionDecision,

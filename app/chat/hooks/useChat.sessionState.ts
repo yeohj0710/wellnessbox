@@ -1,4 +1,36 @@
-import type { ChatMessage, ChatSession } from "@/types/chat";
+import type { ChatMessage, ChatMessageStatus, ChatSession } from "@/types/chat";
+
+export type ChatMessagePatch = {
+  content?: string;
+  /** `null` clears the status back to a normal, complete turn. */
+  status?: ChatMessageStatus | null;
+};
+
+export function patchSessionMessage(
+  sessions: ChatSession[],
+  sessionId: string,
+  messageId: string,
+  patch: ChatMessagePatch,
+  updatedAt: number = Date.now()
+) {
+  return sessions.map((session) =>
+    session.id === sessionId
+      ? {
+          ...session,
+          updatedAt,
+          messages: session.messages.map((message) => {
+            if (message.id !== messageId) return message;
+
+            const next: ChatMessage = { ...message };
+            if (patch.content !== undefined) next.content = patch.content;
+            if (patch.status === null) delete next.status;
+            else if (patch.status !== undefined) next.status = patch.status;
+            return next;
+          }),
+        }
+      : session
+  );
+}
 
 export function updateSessionTitle(
   sessions: ChatSession[],
@@ -17,16 +49,12 @@ export function replaceSessionMessageContent(
   content: string,
   updatedAt: number = Date.now()
 ) {
-  return sessions.map((session) =>
-    session.id === sessionId
-      ? {
-          ...session,
-          updatedAt,
-          messages: session.messages.map((message) =>
-            message.id === messageId ? { ...message, content } : message
-          ),
-        }
-      : session
+  return patchSessionMessage(
+    sessions,
+    sessionId,
+    messageId,
+    { content },
+    updatedAt
   );
 }
 
@@ -77,7 +105,7 @@ export function fillPendingAssistantError(
           updatedAt,
           messages: session.messages.map((message) =>
             message.role === "assistant" && message.content === ""
-              ? { ...message, content: errorText }
+              ? { ...message, content: errorText, status: "error" as const }
               : message
           ),
         }

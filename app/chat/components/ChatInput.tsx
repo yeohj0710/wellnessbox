@@ -1,6 +1,7 @@
 "use client";
 
 import { ArrowUpIcon, PlusIcon, StopIcon } from "@heroicons/react/24/outline";
+import { CHAT_MESSAGE_CONTENT_MAX_LENGTH } from "@/lib/chat/constants";
 import { ChatInputActionAssist } from "./ChatInputActionAssist";
 import type { ChatInputProps } from "./chatInput.types";
 import { useChatInputController } from "./useChatInputController";
@@ -90,16 +91,29 @@ export default function ChatInput(props: ChatInputProps) {
               ref={taRef}
               className="block w-full resize-none bg-transparent px-1.5 text-[15px] text-slate-800 placeholder:text-slate-400 focus:outline-none"
               placeholder="메시지를 입력하세요"
+              aria-label="상담 메시지 입력"
               value={input}
               rows={1}
               disabled={disabled}
+              enterKeyHint="send"
+              // The save endpoint rejects longer content, and the failure is
+              // swallowed - a pasted wall of text would vanish from history.
+              maxLength={CHAT_MESSAGE_CONTENT_MAX_LENGTH}
               onChange={(event) => setInput(event.target.value)}
               onInput={resizeToContent}
               onKeyDown={(event) => {
-                if (event.key === "Enter" && !event.shiftKey && !loading) {
-                  event.preventDefault();
-                  doSend();
+                if (event.key !== "Enter" || event.shiftKey || loading) return;
+                // Hangul is composed key by key; Enter while the IME is still
+                // composing commits the syllable, it does not send. Submitting
+                // here would swallow the last character the user typed.
+                if (
+                  event.nativeEvent.isComposing ||
+                  event.nativeEvent.keyCode === 229
+                ) {
+                  return;
                 }
+                event.preventDefault();
+                doSend();
               }}
             />
 
@@ -128,11 +142,13 @@ export default function ChatInput(props: ChatInputProps) {
               </button>
             )}
           </div>
-          {!input.trim() && (
+          {!input.trim() && helperHint ? (
             <div className="px-4 pb-2">
-              <p className="truncate text-[11px] text-slate-400">{helperHint}</p>
+              <p className="truncate text-[11px] text-slate-400" title={helperHint}>
+                {helperHint}
+              </p>
             </div>
-          )}
+          ) : null}
         </div>
       </div>
     </div>

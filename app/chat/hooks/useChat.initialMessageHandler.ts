@@ -3,7 +3,7 @@ import type {
   MutableRefObject,
   SetStateAction,
 } from "react";
-import type { ChatSession } from "@/types/chat";
+import type { ChatMessageStatus, ChatSession } from "@/types/chat";
 import { getClientIdLocal, getTzOffsetMinutes } from "../utils";
 import { saveChatOnce } from "./useChat.persistence";
 import { startInitialAssistantMessageFlow } from "./useChat.initialAssistant";
@@ -25,7 +25,8 @@ type RunInitialAssistantMessageHandlerInput = {
   updateAssistantMessage: (
     sessionId: string,
     messageId: string,
-    content: string
+    content: string,
+    status?: ChatMessageStatus | null
   ) => void;
   fetchSuggestions: (lastAssistantText: string, sessionIdOverride?: string) => Promise<void>;
   fetchInteractiveActions: (
@@ -53,9 +54,11 @@ export async function runInitialAssistantMessageHandler(
     buildContextPayload: input.buildContextPayload,
     buildRuntimeContextPayload: input.buildRuntimeContextPayload,
     updateAssistantMessage: input.updateAssistantMessage,
-    onComplete: async ({ fullText, assistantMessage }) => {
-      input.fetchSuggestions(fullText, input.sessionId).catch(() => {});
-      input.fetchInteractiveActions(fullText, input.sessionId).catch(() => {});
+    onComplete: async ({ fullText, assistantMessage, outcome }) => {
+      if (outcome !== "stopped") {
+        input.fetchSuggestions(fullText, input.sessionId).catch(() => {});
+        input.fetchInteractiveActions(fullText, input.sessionId).catch(() => {});
+      }
       input.firstAssistantMessageRef.current = fullText;
 
       try {

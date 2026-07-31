@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { ChatSession } from "@/types/chat";
 import ChatDrawerDeleteDialog from "./ChatDrawerDeleteDialog";
 import ChatDrawerHeader from "./ChatDrawerHeader";
@@ -25,6 +25,33 @@ export default function ChatDrawer({
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [confirmDeleteTitle, setConfirmDeleteTitle] = useState("");
   const [deleting, setDeleting] = useState(false);
+
+  // Escape unwinds one layer at a time: the confirm dialog, then a rename in
+  // progress, then the drawer itself.
+  useEffect(() => {
+    if (!drawerVisible) return;
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      if (deleting) return;
+
+      if (confirmDeleteId) {
+        setConfirmDeleteId(null);
+        setConfirmDeleteTitle("");
+        return;
+      }
+      if (editingId) {
+        setEditingId(null);
+        setEditingTitle("");
+        return;
+      }
+      setMenuOpenId(null);
+      closeDrawer();
+    };
+
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [closeDrawer, confirmDeleteId, deleting, drawerVisible, editingId]);
 
   function commitRename() {
     if (editingId && editingTitle.trim()) {

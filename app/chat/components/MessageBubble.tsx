@@ -4,13 +4,18 @@ import { CheckIcon, DocumentDuplicateIcon } from "@heroicons/react/24/outline";
 import { useEffect, useMemo, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import AutoDismissTimerBar from "@/components/common/AutoDismissTimerBar";
-import type { ChatMessage } from "@/types/chat";
+import type { ChatMessage, ChatMessageStatus } from "@/types/chat";
 import { normalizeMessageText } from "./messageBubble.format";
 import {
   createMessageBubbleMarkdownComponents,
   getMessageBubbleRehypePlugins,
   getMessageBubbleRemarkPlugins,
 } from "./messageBubble.markdown";
+import {
+  MessageErrorCard,
+  MessageLoadingCard,
+  MessageStoppedFooter,
+} from "./messageBubble.states";
 
 const COPY_FEEDBACK_AUTO_HIDE_MS = 1500;
 
@@ -42,10 +47,16 @@ export default function MessageBubble({
   role,
   content,
   loadingContextText = "",
+  status,
+  onRetry,
+  retrying = false,
 }: {
   role: ChatMessage["role"];
   content: string;
   loadingContextText?: string;
+  status?: ChatMessageStatus;
+  onRetry?: () => void;
+  retrying?: boolean;
 }) {
   const isUser = role === "user";
   const [copied, setCopied] = useState(false);
@@ -65,6 +76,8 @@ export default function MessageBubble({
 
   const text = useMemo(() => normalizeMessageText(content || ""), [content]);
   const multiline = text.includes("\n");
+  const isError = !isUser && status === "error";
+  const isStopped = !isUser && status === "stopped" && Boolean(text);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -101,11 +114,21 @@ export default function MessageBubble({
           className="relative max-w-[86%] rounded-[18px] bg-[#f7f7f8] px-4 py-2 text-[13px] font-normal leading-[1.65] tracking-[-0.005em] text-slate-800 shadow-none antialiased data-[multiline]:py-3.5 sm:max-w-[74%] sm:text-[14px] md:max-w-[70%]"
           data-multiline={multiline ? "true" : undefined}
         >
-          <div className="whitespace-pre-wrap break-all">{text}</div>
+          {/* break-keep keeps Korean phrases whole; break-words only kicks in
+              for a token too long to fit, instead of chopping every line. */}
+          <div className="whitespace-pre-wrap break-keep break-words">
+            {text}
+          </div>
         </div>
       ) : (
         <div className="relative antialiased tracking-[-0.005em]">
-          {text ? (
+          {isError ? (
+            <MessageErrorCard
+              message={text || "답변을 받아오지 못했어요."}
+              onRetry={onRetry}
+              retrying={retrying}
+            />
+          ) : text ? (
             <div
               className={`
                 prose prose-slate max-w-none leading-[1.75] text-slate-800
@@ -128,44 +151,25 @@ export default function MessageBubble({
               </ReactMarkdown>
             </div>
           ) : (
-            <div
-              role="status"
-              aria-live="polite"
-              className="w-full max-w-[min(92vw,31rem)] rounded-[1.35rem] border border-slate-200/90 bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(248,250,252,0.98))] px-4 py-3.5 shadow-[0_16px_36px_-28px_rgba(15,23,42,0.24)] sm:max-w-[28rem] sm:px-4.5"
-            >
-              <div className="flex min-w-0 items-start gap-3">
-                <div className="mt-0.5 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-sky-50 ring-1 ring-sky-100">
-                  <div className="inline-flex items-center justify-center gap-1">
-                    <span className="h-1.25 w-1.25 animate-[wb-dot_1.2s_ease-in-out_infinite] rounded-full bg-sky-500" />
-                    <span
-                      className="h-1.25 w-1.25 animate-[wb-dot_1.2s_ease-in-out_infinite] rounded-full bg-sky-500"
-                      style={{ animationDelay: "0.18s" }}
-                    />
-                    <span
-                      className="h-1.25 w-1.25 animate-[wb-dot_1.2s_ease-in-out_infinite] rounded-full bg-sky-500"
-                      style={{ animationDelay: "0.36s" }}
-                    />
-                  </div>
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-sky-600">
-                    Loading
-                  </p>
-                  <p className="mt-1 min-w-0 text-pretty break-keep text-[13px] font-medium leading-6 text-slate-700 sm:text-[14px]">
-                    {loadingHint}
-                  </p>
-                </div>
-              </div>
-            </div>
+            <MessageLoadingCard hint={loadingHint} />
           )}
-          {text ? (
-            <div className="h-0 overflow-hidden opacity-0 transition-[height,opacity,margin] duration-200 group-hover/message:mt-0.5 group-hover/message:h-10 group-hover/message:opacity-100">
-              <div className="-ms-2.5 -me-1 flex flex-wrap items-center gap-y-1 p-1 select-none pointer-events-none group-hover/message:pointer-events-auto">
+
+          {isStopped ? (
+            <MessageStoppedFooter onRetry={onRetry} retrying={retrying} />
+          ) : null}
+
+          {text && !isError ? (
+            /* Pointer devices reveal the toolbar on hover. Touch devices have
+               no hover, so there it stays visible - otherwise copy is
+               unreachable on mobile, which is most of this service's traffic. */
+            <div className="mt-0.5 h-10 opacity-100 transition-opacity duration-200 [@media(hover:hover)]:h-0 [@media(hover:hover)]:overflow-hidden [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover/message:mt-0.5 [@media(hover:hover)]:group-hover/message:h-10 [@media(hover:hover)]:group-hover/message:opacity-100 [@media(hover:hover)]:group-focus-within/message:h-10 [@media(hover:hover)]:group-focus-within/message:opacity-100">
+              <div className="-ms-2.5 -me-1 flex flex-wrap items-center gap-y-1 p-1 select-none">
                 <div className="relative">
                 <button
+                  type="button"
                   onClick={handleCopy}
-                  className="rounded-lg text-slate-500 hover:bg-slate-100"
-                  aria-label="복사"
+                  className="rounded-lg text-slate-500 hover:bg-slate-100 focus-visible:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400"
+                  aria-label={copied ? "답변이 복사됨" : "답변 복사"}
                 >
                   <span className="flex h-8 w-8 items-center justify-center">
                     {copied ? (

@@ -1,7 +1,11 @@
-import type { ChatMessage, ChatSession } from "@/types/chat";
+import type { ChatMessage, ChatMessageStatus, ChatSession } from "@/types/chat";
 import { uid } from "../utils";
+import { toAssistantErrorText } from "./useChat.copy";
 import { fillPendingAssistantError, replaceSessionMessages } from "./useChat.sessionState";
-import { runStreamedAssistantTurn } from "./useChat.streamTurn";
+import {
+  runStreamedAssistantTurn,
+  type AssistantTurnOutcome,
+} from "./useChat.streamTurn";
 
 type SetSessions = (updater: (prev: ChatSession[]) => ChatSession[]) => void;
 
@@ -17,11 +21,17 @@ type StartInitialAssistantMessageFlowInput = {
   setAbortController: (controller: AbortController | null) => void;
   buildContextPayload: (sessionId: string) => Record<string, unknown>;
   buildRuntimeContextPayload: Parameters<typeof runStreamedAssistantTurn>[0]["buildRuntimeContextPayload"];
-  updateAssistantMessage: (sessionId: string, messageId: string, content: string) => void;
+  updateAssistantMessage: (
+    sessionId: string,
+    messageId: string,
+    content: string,
+    status?: ChatMessageStatus | null
+  ) => void;
   onComplete: (input: {
     sessionId: string;
     fullText: string;
     assistantMessage: ChatMessage;
+    outcome: AssistantTurnOutcome;
   }) => Promise<void> | void;
 };
 
@@ -51,7 +61,8 @@ export async function startInitialAssistantMessageFlow(
     input.updateAssistantMessage(
       input.sessionId,
       assistantMessage.id,
-      input.offlineMessage
+      input.offlineMessage,
+      "error"
     );
     return;
   }
@@ -67,21 +78,23 @@ export async function startInitialAssistantMessageFlow(
       buildRuntimeContextPayload: input.buildRuntimeContextPayload,
       updateAssistantMessage: input.updateAssistantMessage,
       setAbortController: input.setAbortController,
-      onComplete: async (fullText) => {
+      onComplete: async (fullText, outcome) => {
         await input.onComplete({
           sessionId: input.sessionId,
           fullText,
           assistantMessage,
+          outcome,
         });
       },
     });
   } catch (error) {
-    if ((error as any)?.name !== "AbortError") {
-      const errText = (error as Error).message || "문제가 발생했어요.";
-      input.setSessions((prev) =>
-        fillPendingAssistantError(prev, input.sessionId, `오류: ${errText}`)
-      );
-    }
+    input.setSessions((prev) =>
+      fillPendingAssistantError(
+        prev,
+        input.sessionId,
+        toAssistantErrorText(error)
+      )
+    );
   } finally {
     input.setLoading(false);
   }

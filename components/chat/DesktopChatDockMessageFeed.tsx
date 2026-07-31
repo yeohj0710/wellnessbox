@@ -9,6 +9,7 @@ import ChatConversationTimeline from "@/app/chat/components/ChatConversationTime
 import ProfileBanner from "@/app/chat/components/ProfileBanner";
 import AssessmentActionCard from "@/app/chat/components/AssessmentActionCard";
 import AgentCapabilityHub from "@/app/chat/components/AgentCapabilityHub";
+import ScrollToBottomButton from "@/app/chat/components/ScrollToBottomButton";
 import type { AssistantLoadingMeta } from "./DesktopChatDockPanel.loading";
 
 type DesktopChatDockMessageFeedProps = {
@@ -36,6 +37,9 @@ type DesktopChatDockMessageFeedProps = {
   inChatAssessmentPrompt: Parameters<typeof AssessmentActionCard>[0]["prompt"];
   onCancelInChatAssessment: () => void;
   onOpenAssessmentPage: Parameters<typeof AssessmentActionCard>[0]["onOpenPage"];
+  onRetryLastTurn: () => void;
+  atBottom: boolean;
+  onScrollToBottom: () => void;
 };
 
 export default function DesktopChatDockMessageFeed({
@@ -63,10 +67,18 @@ export default function DesktopChatDockMessageFeed({
   inChatAssessmentPrompt,
   onCancelInChatAssessment,
   onOpenAssessmentPage,
+  onRetryLastTurn,
+  atBottom,
+  onScrollToBottom,
 }: DesktopChatDockMessageFeedProps) {
   return (
     <div className="relative flex-1 overflow-hidden bg-[radial-gradient(circle_at_top,_#f8fafc_0%,_#f8fafc_38%,_#ffffff_100%)]">
       <div
+        role="log"
+        // See the full-page route: an always-live transcript re-announces every
+        // streamed chunk, so status is announced once from the timeline.
+        aria-live="off"
+        aria-label="상담 대화 내용"
         className="h-full overflow-y-auto overscroll-contain px-3 pb-4 pt-3"
         ref={messagesContainerRef}
       >
@@ -112,10 +124,17 @@ export default function DesktopChatDockMessageFeed({
             inChatAssessmentPrompt={inChatAssessmentPrompt}
             onCancelInChatAssessment={onCancelInChatAssessment}
             onOpenAssessmentPage={onOpenAssessmentPage}
+            onRetryLastTurn={onRetryLastTurn}
             messagesEndRef={messagesEndRef}
           />
         </div>
       </div>
+
+      <ScrollToBottomButton
+        show={!atBottom}
+        onClick={onScrollToBottom}
+        className="pointer-events-none absolute inset-x-0 bottom-3 z-10"
+      />
     </div>
   );
 }

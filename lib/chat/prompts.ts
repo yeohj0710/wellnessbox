@@ -105,7 +105,7 @@ export function buildMessages(input: BuildMessagesInput): PromptMessage[] {
     messages.push({
       role: "user",
       content:
-        "상담을 시작합니다. user_context_summary를 바탕으로 첫 응답을 작성해 주세요. 길게 분석하지 말고, 먼저 지금 파악된 점을 짧게 말한 뒤 바로 가능한 제안을 주세요. 확인 질문이 꼭 필요하면 마지막에 1개만 해주세요. 사용자가 먼저 요청하지 않았다면 보고서처럼 길게 쓰지 말고, 필요할 때만 markdown 목록을 사용해 주세요.",
+        "상담을 시작합니다. 짧게 인사한 뒤 바로 도움이 되는 제안으로 넘어가 주세요. 어떤 정보가 있고 없는지는 설명하지 말고, 지금 바로 할 수 있는 것에 집중해 주세요. 확인 질문이 꼭 필요하면 마지막에 1개만 해주세요. 보고서처럼 길게 쓰지 말고, 필요할 때만 markdown 목록을 사용해 주세요.",
     });
     return messages;
   }

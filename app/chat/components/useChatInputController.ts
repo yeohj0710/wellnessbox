@@ -137,6 +137,12 @@ export function useChatInputController({
     if (!canSend) return;
     sendMessage();
     resetBox();
+    // Keep the caret in the composer so a follow-up can be typed straight away.
+    // Touch devices are excluded: refocusing there re-opens the keyboard and
+    // covers the answer the user just asked for.
+    if (window.matchMedia?.("(hover: hover)").matches) {
+      taRef.current?.focus();
+    }
   };
 
   const runUnifiedAction = (action: UnifiedAction) => {

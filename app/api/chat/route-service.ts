@@ -9,6 +9,10 @@ import {
   isWbRndInterimEnabled,
   pseudonymizeInterimSubjectId,
 } from "@/lib/server/wb-rnd-interim-client";
+import {
+  CHAT_STREAM_FAILURE_MARKER,
+  CHAT_STREAM_MESSAGES,
+} from "@/lib/chat/stream-protocol";
 import { persistRndCounselingTurn } from "./save/route-service";
 
 const STREAM_HEADERS = {
@@ -21,9 +25,6 @@ const STREAM_HEADERS = {
 const SMOKE_TEST_HEADERS = {
   "Content-Type": "text/plain; charset=utf-8",
 } as const;
-
-const CHAT_STREAM_FALLBACK_MESSAGE =
-  "\uC751\uB2F5\uC744 \uC900\uBE44\uD558\uB294 \uC911 \uC77C\uC2DC\uC801\uC778 \uBB38\uC81C\uAC00 \uBC1C\uC0DD\uD588\uC5B4\uC694. \uC7A0\uC2DC \uD6C4 \uB2E4\uC2DC \uC2DC\uB3C4\uD574 \uC8FC\uC138\uC694.";
 
 function asRecord(value: unknown) {
   if (!value || typeof value !== "object" || Array.isArray(value)) return {};
@@ -54,15 +55,19 @@ function withPatchedChatBody(rawBody: unknown, actor: RequestActor): ChatRequest
   } as ChatRequestBody;
 }
 
-function toSafeStreamErrorMessage(error: unknown) {
-  const raw =
+/**
+ * Upstream failures carry provider payloads, model ids and occasionally request
+ * details. None of that belongs in a counseling transcript, so the raw error is
+ * logged server-side and the user only ever sees fixed Korean copy.
+ */
+function logStreamFailure(error: unknown) {
+  const detail =
     error instanceof Error
-      ? error.message
+      ? `${error.name}: ${error.message}`
       : typeof error === "string"
       ? error
-      : String(error ?? "");
-  const safe = raw.replace(/[{}]/g, (char) => (char === "{" ? "(" : ")"));
-  return safe || CHAT_STREAM_FALLBACK_MESSAGE;
+      : String(error ?? "unknown");
+  console.error("[chat:stream] turn failed", detail);
 }
 
 function setActorCookie(response: NextResponse, actor: RequestActor) {
@@ -209,15 +214,30 @@ export async function buildChatStreamResponse(input: {
   headers: Headers;
 }) {
   const patchedBody = withPatchedChatBody(input.rawBody, input.actor);
+  // Set when the reader goes away - reload, navigation, or the user hitting
+  // stop. Writing to a cancelled controller throws, so every write is gated.
+  let clientGone = false;
 
   const stream = new ReadableStream<Uint8Array>({
     async start(controller) {
       const encoder = new TextEncoder();
       let wroteToken = false;
 
+      const write = (text: string) => {
+        if (clientGone || !text) return;
+        try {
+          controller.enqueue(encoder.encode(text));
+        } catch {
+          clientGone = true;
+        }
+      };
+      const fail = (message: string) => {
+        write(`${message}${CHAT_STREAM_FAILURE_MARKER}`);
+      };
+
       try {
         // Flush stream headers quickly while upstream context/model bootstraps.
-        controller.enqueue(encoder.encode("\u200b"));
+        write("\u200b");
         const rndAnswer =
           isWbRndInterimEnabled() && process.env.NODE_ENV !== "production"
           ? await runRndCounseling({
@@ -234,15 +254,29 @@ export async function buildChatStreamResponse(input: {
 
         for await (const token of iterable) {
           if (token == null) continue;
-          controller.enqueue(encoder.encode(String(token)));
+          if (clientGone) break;
+          write(String(token));
           wroteToken = true;
         }
       } catch (error) {
-        controller.enqueue(encoder.encode(toSafeStreamErrorMessage(error)));
+        // A reader that went away is not a failure worth reporting.
+        if (!clientGone) {
+          logStreamFailure(error);
+          // A partially streamed answer stays on screen; the marker tells the
+          // client this turn is incomplete and should offer a retry.
+          fail(wroteToken ? "" : CHAT_STREAM_MESSAGES.failure);
+        }
+        wroteToken = true;
       } finally {
-        if (!wroteToken) controller.enqueue(encoder.encode(" "));
-        controller.close();
+        // An empty body used to render as a loading bubble that never resolved.
+        if (!wroteToken) fail(CHAT_STREAM_MESSAGES.empty);
+        try {
+          controller.close();
+        } catch {}
       }
+    },
+    cancel() {
+      clientGone = true;
     },
   });
 

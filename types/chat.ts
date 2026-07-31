@@ -1,10 +1,19 @@
 export type ChatRole = "system" | "user" | "assistant";
 
+/**
+ * Outcome of an assistant turn.
+ * - `error`   the turn failed; content holds user-facing error copy
+ * - `stopped` the user aborted mid-stream; content holds the partial answer
+ * Absent means a normal, complete turn.
+ */
+export type ChatMessageStatus = "error" | "stopped";
+
 export interface ChatMessage {
   id: string;
   role: ChatRole;
   content: string;
   createdAt: number;
+  status?: ChatMessageStatus;
 }
 
 export interface UserProfile {

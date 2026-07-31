@@ -1,4 +1,5 @@
 import type { ChatMessage } from "@/types/chat";
+import type { AssistantTurnOutcome } from "./useChat.streamTurn";
 
 export type FinalizeAssistantTurnInput = {
   sessionId: string;
@@ -6,6 +7,7 @@ export type FinalizeAssistantTurnInput = {
   assistantMessage: ChatMessage;
   userMessage?: ChatMessage;
   isFirst?: boolean;
+  outcome?: AssistantTurnOutcome;
 };
 
 type FinalizeAssistantTurnFlowInput = {
@@ -22,14 +24,20 @@ type FinalizeAssistantTurnFlowInput = {
 export async function finalizeAssistantTurnFlow(
   input: FinalizeAssistantTurnFlowInput
 ) {
-  if (input.turn.isFirst && input.onFirstTurn) {
+  // The user just pressed stop; firing follow-up generation would spend the
+  // request they cancelled and base it on a half-finished answer.
+  const stopped = input.turn.outcome === "stopped";
+
+  if (input.turn.isFirst && input.onFirstTurn && !stopped) {
     await input.onFirstTurn(input.turn.content);
   }
 
-  await Promise.all([
-    input.fetchSuggestions(input.turn.content, input.turn.sessionId),
-    input.fetchInteractiveActions(input.turn.content, input.turn.sessionId),
-  ]);
+  if (!stopped) {
+    await Promise.all([
+      input.fetchSuggestions(input.turn.content, input.turn.sessionId),
+      input.fetchInteractiveActions(input.turn.content, input.turn.sessionId),
+    ]);
+  }
 
   try {
     await input.persistTurn(input.turn);

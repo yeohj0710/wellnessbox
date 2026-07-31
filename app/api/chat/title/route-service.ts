@@ -55,13 +55,23 @@ function sanitizeTitle(raw: string) {
   return cleaned || DEFAULT_CHAT_TITLE;
 }
 
+/**
+ * Title used when the model is unavailable.
+ *
+ * Built from what the user actually asked, clipped at a word boundary. Joining
+ * every message and slicing produced titles cut mid-word out of the assistant's
+ * greeting, which said nothing about the conversation.
+ */
 function buildFallbackTitle(input: TitleInput) {
-  const text = [input.firstAssistantMessage, input.firstUserMessage, input.assistantReply]
-    .join(" ")
+  const source = (input.firstUserMessage || input.assistantReply)
     .replace(/\s+/g, " ")
-    .trim()
-    .slice(0, 18);
-  return text || DEFAULT_CHAT_TITLE;
+    .trim();
+  if (!source) return DEFAULT_CHAT_TITLE;
+  if (source.length <= 18) return source;
+
+  const clipped = source.slice(0, 18);
+  const lastSpace = clipped.lastIndexOf(" ");
+  return (lastSpace > 8 ? clipped.slice(0, lastSpace) : clipped).trim() || DEFAULT_CHAT_TITLE;
 }
 
 async function requestModelTitle(
@@ -84,12 +94,11 @@ async function requestModelTitle(
   );
 
   if (!response.ok) {
+    // Provider responses carry request details; log them, and let the caller
+    // fall back to a title derived from the conversation itself.
     const text = await response.text().catch(() => "");
-    return {
-      ok: false,
-      error: `OpenAI error: ${response.status} ${text}`,
-      status: 500,
-    };
+    console.error("[chat:title] provider error", response.status, text.slice(0, 500));
+    return { ok: true, title: buildFallbackTitle(input) };
   }
 
   const json = await response.json().catch(() => ({}));
@@ -130,9 +139,8 @@ export async function runChatTitlePostRoute(req: Request) {
     }
     return jsonResponse({ title: resolved.title });
   } catch (error: unknown) {
-    return jsonResponse(
-      { error: error instanceof Error ? error.message : "Unknown error" },
-      500
-    );
+    console.error("[chat:title] request failed", error);
+    // A missing title is cosmetic, so never surface an error to the chat UI.
+    return jsonResponse({ title: DEFAULT_CHAT_TITLE });
   }
 }

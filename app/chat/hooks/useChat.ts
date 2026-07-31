@@ -8,20 +8,25 @@ import { useChatDerivedState } from "./useChat.derived";
 import type { ChatPageAgentContext } from "@/lib/chat/page-agent-context";
 import { createChatCommandLayer } from "./useChat.commandLayer";
 import {
-  useActiveSessionScrollEffect,
   useAutoInitAssistantEffect,
-  useStickToBottomTrackingEffect,
+  useChatScrollAnchor,
 } from "./useChat.scrollEffects";
 import { useChatFollowupActions } from "./useChat.followupActions";
 import { useChatLocalEffects } from "./useChat.localEffects";
 import { useChatState } from "./useChat.state";
 import { useChatRefs } from "./useChat.refs";
+import type { ChatScrollMode } from "./useChat.ui";
 
 type UseChatOptions = {
   manageFooter?: boolean;
   remoteBootstrap?: boolean;
   enableAutoInit?: boolean;
   pageContext?: ChatPageAgentContext | null;
+  /**
+   * `document` for the full-page route, whose feed grows and lets the window
+   * scroll; `container` for the dock, whose feed has a fixed height.
+   */
+  scrollMode?: ChatScrollMode;
 };
 
 export default function useChat(options: UseChatOptions = {}) {
@@ -29,6 +34,7 @@ export default function useChat(options: UseChatOptions = {}) {
   const remoteBootstrap = options.remoteBootstrap ?? true;
   const enableAutoInit = options.enableAutoInit ?? true;
   const pageContext = options.pageContext ?? null;
+  const scrollMode = options.scrollMode ?? "document";
   const chatState = useChatState();
   const {
     sessions, setSessions, activeId, setActiveId, profile, setProfile, input, setInput,
@@ -156,6 +162,7 @@ export default function useChat(options: UseChatOptions = {}) {
     sendMessage,
     startInitialAssistantMessage,
     handleInteractiveAction,
+    retryLastAssistantTurn,
     newChat,
     deleteChat,
     renameChat,
@@ -176,11 +183,12 @@ export default function useChat(options: UseChatOptions = {}) {
     fetchInteractiveActions,
   });
 
-  useActiveSessionScrollEffect({
+  const { atBottom, scrollToBottom } = useChatScrollAnchor({
     active,
     activeId,
     messagesContainerRef,
     stickToBottomRef,
+    scrollMode,
   });
 
   useAutoInitAssistantEffect({
@@ -190,11 +198,6 @@ export default function useChat(options: UseChatOptions = {}) {
     activeId,
     sessions,
     startInitialAssistantMessage,
-  });
-
-  useStickToBottomTrackingEffect({
-    messagesContainerRef,
-    stickToBottomRef,
   });
 
   const inChatAssessmentPrompt = useMemo(
@@ -254,12 +257,15 @@ export default function useChat(options: UseChatOptions = {}) {
     inChatAssessmentPrompt,
     messagesContainerRef,
     messagesEndRef,
+    atBottom,
+    scrollToBottom,
     newChat,
     deleteChat,
     renameChat,
     stopStreaming,
     sendMessage,
     handleInteractiveAction,
+    retryLastAssistantTurn,
     cancelInChatAssessment,
     openAssessmentPageFromChat,
     generateTitle,

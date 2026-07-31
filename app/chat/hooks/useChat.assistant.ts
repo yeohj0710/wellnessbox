@@ -1,4 +1,5 @@
 import type { ChatMessage } from "@/types/chat";
+import { parseChatStreamPayload } from "@/lib/chat/stream-protocol";
 import { requestChatStream } from "./useChat.api";
 import { hydrateRecommendationPrices } from "./useChat.recommendation";
 import { readStreamingText } from "./useChat.stream";
@@ -17,9 +18,14 @@ type StreamAssistantReplyInput = {
   onChunk: (textSoFar: string) => void;
 };
 
+export type StreamAssistantReplyResult = {
+  text: string;
+  failed: boolean;
+};
+
 export async function streamAssistantReply(
   input: StreamAssistantReplyInput
-): Promise<string> {
+): Promise<StreamAssistantReplyResult> {
   const response = await requestChatStream({
     mode: input.mode,
     messages: input.messages,
@@ -29,13 +35,17 @@ export async function streamAssistantReply(
     signal: input.signal,
   });
 
-  let fullText = await readStreamingText(response, input.onChunk);
+  const raw = await readStreamingText(response, input.onChunk);
+  const { text, failed } = parseChatStreamPayload(raw);
 
-  fullText = sanitizeAssistantText(fullText, true);
+  let fullText = sanitizeAssistantText(text, true);
 
-  try {
-    fullText = await hydrateRecommendationPrices(fullText);
-  } catch {}
+  // Price hydration hits the catalog; a failed turn has nothing to hydrate.
+  if (!failed) {
+    try {
+      fullText = await hydrateRecommendationPrices(fullText);
+    } catch {}
+  }
 
-  return sanitizeAssistantText(fullText, true);
+  return { text: sanitizeAssistantText(fullText, true), failed };
 }

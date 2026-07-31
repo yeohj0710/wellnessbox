@@ -3,8 +3,12 @@ const META_LINE_PATTERNS = [
   /^\s*(evidence|summary_json|rag_sources_json)\s*:\s*[^\n\r]*/gim,
 ];
 
-const LIST_LINE_PATTERN = /^\s*(?:[-*+]\s|\d+\.\s)/;
+// A block is "structured" when any of its lines is markdown syntax that depends
+// on the line break surviving. Such blocks must never be re-flowed into prose.
+const STRUCTURED_LINE_PATTERN = /^\s*(?:[-*+]\s|\d+[.)]\s|#{1,6}\s|>\s?|\||```|~~~)/;
 const SENTENCE_END_SPLIT_PATTERN = /(?<=[.!?。])\s+/;
+const CODE_FENCE_PATTERN = /(```|~~~)[\s\S]*?(?:\1|$)/g;
+const CODE_PLACEHOLDER = (index: number) => `[[wb-code-${index}]]`;
 
 function stripMetaLines(text: string) {
   let next = text;
@@ -12,6 +16,31 @@ function stripMetaLines(text: string) {
     next = next.replace(pattern, "");
   }
   return next;
+}
+
+/**
+ * Lifts fenced code blocks out before formatting so no spacing rule can reflow
+ * them, then restores them untouched.
+ */
+function protectCodeBlocks(text: string) {
+  const blocks: string[] = [];
+  const masked = text.replace(CODE_FENCE_PATTERN, (match) => {
+    const index = blocks.push(match) - 1;
+    return CODE_PLACEHOLDER(index);
+  });
+
+  return {
+    masked,
+    restore: (value: string) =>
+      value.replace(
+        /\[\[wb-code-(\d+)\]\]/g,
+        (_match, index: string) => blocks[Number(index)] ?? ""
+      ),
+  };
+}
+
+function isStructuredBlock(block: string) {
+  return block.split("\n").some((line) => STRUCTURED_LINE_PATTERN.test(line));
 }
 
 function normalizeRecommendationHeading(text: string) {
@@ -23,18 +52,18 @@ function normalizeRecommendationHeading(text: string) {
 
 function normalizeInlineNumberedList(text: string) {
   return text
-    .replace(/(?:^|\s)([1-9])\)\s+/g, "\n$1. ")
+    .replace(/^[ \t]*([1-9])\)[ \t]+/gm, "$1. ")
     .replace(/\n{3,}/g, "\n\n");
 }
 
 function normalizeOrdinalBullets(text: string) {
-  const ordinalMatches = text.match(/(?:첫째|둘째|셋째|넷째)\s*,/g);
-  if (!ordinalMatches || ordinalMatches.length < 2) {
+  const ordinalLines = text.match(/^[ \t]*(?:첫째|둘째|셋째|넷째)\s*,/gm);
+  if (!ordinalLines || ordinalLines.length < 2) {
     return text;
   }
 
   return text
-    .replace(/\s*(첫째|둘째|셋째|넷째)\s*,\s*/g, "\n- ")
+    .replace(/^[ \t]*(첫째|둘째|셋째|넷째)\s*,\s*/gm, "- ")
     .replace(/\n{3,}/g, "\n\n");
 }
 
@@ -72,13 +101,20 @@ function groupSentences(sentences: string[]) {
   return chunks;
 }
 
+/**
+ * Breaks up wall-of-text paragraphs. Only plain single-line prose is eligible:
+ * a block carrying markdown structure, or one the model already split across
+ * lines, keeps its line breaks — re-flowing it would collapse the structure
+ * into a run-on paragraph.
+ */
 function rebalanceLongParagraphs(text: string) {
   const paragraphs = text.split(/\n{2,}/);
 
   const nextParagraphs = paragraphs.flatMap((paragraph) => {
     const trimmed = paragraph.trim();
     if (!trimmed) return [];
-    if (LIST_LINE_PATTERN.test(trimmed)) return [trimmed];
+    if (isStructuredBlock(trimmed)) return [trimmed];
+    if (trimmed.includes("\n")) return [trimmed];
     if (trimmed.length < 150) return [trimmed];
 
     const sentences = splitParagraphSentences(trimmed);
@@ -91,11 +127,19 @@ function rebalanceLongParagraphs(text: string) {
   return nextParagraphs.join("\n\n");
 }
 
+/**
+ * Separates a list from the prose around it. Markers are matched at line start
+ * only, so a hyphen inside a sentence never splits a paragraph, and indented
+ * continuation lines stay attached to their list item.
+ */
 function insertSpacingAroundLists(text: string) {
   return text
-    .replace(/([^\n])\n([ \t]*(?:[-*+]\s|\d+\.\s))/g, "$1\n\n$2")
     .replace(
-      /((?:[-*+]\s|\d+\.\s)[^\n]+)\n(?![ \t]*(?:[-*+]\s|\d+\.\s))/g,
+      /^(?![ \t]*(?:[-*+]\s|\d+\.\s))(\S.*)\n(?=[ \t]*(?:[-*+]\s|\d+\.\s))/gm,
+      "$1\n\n"
+    )
+    .replace(
+      /^([ \t]*(?:[-*+]\s|\d+\.\s).*)\n(?![ \t]*(?:[-*+]\s|\d+\.\s)|[ \t]+\S|[ \t]*$)/gm,
       "$1\n\n"
     );
 }
@@ -105,7 +149,9 @@ function insertSpacingBeforeQuestion(text: string) {
 }
 
 function formatAssistantText(text: string) {
-  let next = normalizeRecommendationHeading(text);
+  const { masked, restore } = protectCodeBlocks(text);
+
+  let next = normalizeRecommendationHeading(masked);
   next = normalizeInlineNumberedList(next);
   next = normalizeOrdinalBullets(next);
   next = rebalanceLongParagraphs(next);
@@ -116,7 +162,7 @@ function formatAssistantText(text: string) {
     .replace(/([^\n])\n(추천 제품\(7일 기준 가격\))/g, "$1\n\n$2")
     .replace(/\n{3,}/g, "\n\n");
 
-  return next.trim();
+  return restore(next).trim();
 }
 
 export function normalizeNewlines(text: string) {

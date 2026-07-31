@@ -6,6 +6,7 @@ import { usePathname, useSearchParams } from "next/navigation";
 import ChatInput from "./components/ChatInput";
 import ProfileBanner from "./components/ProfileBanner";
 import ChatTopBar from "./components/ChatTopBar";
+import ScrollToBottomButton from "./components/ScrollToBottomButton";
 import useChat from "./hooks/useChat";
 import { buildPageAgentContext } from "@/lib/chat/page-agent-context";
 import { buildAssistantLoadingMetaMap } from "@/components/chat/DesktopChatDockPanel.loading";
@@ -89,10 +90,13 @@ export default function ChatPage() {
     deleteChat,
     renameChat,
     handleInteractiveAction,
+    retryLastAssistantTurn,
     cancelInChatAssessment,
     openAssessmentPageFromChat,
     messagesContainerRef,
     messagesEndRef,
+    atBottom,
+    scrollToBottom,
     active,
     generateTitle,
     handleProfileChange,
@@ -101,9 +105,9 @@ export default function ChatPage() {
   });
   const appliedDraftRef = useRef("");
 
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [active?.messages.length, messagesEndRef]);
+  // Auto-scroll lives in useChat's stick-to-bottom effect. A second, unguarded
+  // scrollIntoView here used to override it and drag the user back down every
+  // time a message arrived, even while they were scrolled up reading.
 
   useEffect(() => {
     if (!draft) return;
@@ -134,13 +138,19 @@ export default function ChatPage() {
         </div>
       </div>
       <div className="h-12" />
-      <main className="flex flex-1 flex-col">
+      <main className="relative flex min-h-0 flex-1 flex-col">
         <div
+          role="log"
+          // role="log" implies aria-live="polite"; left on, a streaming answer
+          // is re-announced on every chunk. Turn status is announced once by
+          // the status line inside the timeline instead.
+          aria-live="off"
+          aria-label="상담 대화 내용"
           className="
             mx-auto max-w-3xl w-full px-5 sm:px-6 md:px-8 flex-1 pt-4
-            pb-[calc(100vh-240px)]
-            sm:pb-[calc(100vh-210px)]
-            overflow-y-auto
+            pb-[calc(11rem+env(safe-area-inset-bottom))]
+            sm:pb-[calc(10rem+env(safe-area-inset-bottom))]
+            overflow-y-auto overscroll-contain
           "
           ref={messagesContainerRef}
         >
@@ -193,10 +203,16 @@ export default function ChatPage() {
               inChatAssessmentPrompt={inChatAssessmentPrompt}
               onCancelInChatAssessment={cancelInChatAssessment}
               onOpenAssessmentPage={openAssessmentPageFromChat}
+              onRetryLastTurn={retryLastAssistantTurn}
               messagesEndRef={messagesEndRef}
             />
           </div>
         </div>
+        <ScrollToBottomButton
+          show={!atBottom}
+          onClick={scrollToBottom}
+          className="pointer-events-none fixed inset-x-0 bottom-[calc(7.25rem+env(safe-area-inset-bottom))] z-20"
+        />
         <ChatInput
           input={input}
           setInput={setInput}

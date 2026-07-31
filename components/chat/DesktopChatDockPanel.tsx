@@ -59,10 +59,13 @@ function DesktopChatDockPanel({
     deleteChat,
     renameChat,
     handleInteractiveAction,
+    retryLastAssistantTurn,
     cancelInChatAssessment,
     openAssessmentPageFromChat,
     messagesContainerRef,
     messagesEndRef,
+    atBottom,
+    scrollToBottom,
     active,
     handleProfileChange,
     titleLoading,
@@ -73,6 +76,9 @@ function DesktopChatDockPanel({
     remoteBootstrap: false,
     enableAutoInit: isOpen,
     pageContext: pageAgentContext,
+    // The dock's feed has a fixed height and scrolls itself, unlike the
+    // full-page route where the document scrolls.
+    scrollMode: "container",
   });
   const {
     panelRef,
@@ -178,6 +184,9 @@ function DesktopChatDockPanel({
           inChatAssessmentPrompt={inChatAssessmentPrompt}
           onCancelInChatAssessment={cancelInChatAssessment}
           onOpenAssessmentPage={openAssessmentPageFromChat}
+          onRetryLastTurn={retryLastAssistantTurn}
+          atBottom={atBottom}
+          onScrollToBottom={scrollToBottom}
         />
 
         <ChatInput

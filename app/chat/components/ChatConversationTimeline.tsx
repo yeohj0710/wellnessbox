@@ -27,6 +27,7 @@ type ChatConversationTimelineProps = Pick<
   inChatAssessmentPrompt: Parameters<typeof AssessmentActionCard>[0]["prompt"];
   onCancelInChatAssessment: () => void;
   onOpenAssessmentPage: Parameters<typeof AssessmentActionCard>[0]["onOpenPage"];
+  onRetryLastTurn: () => void;
   messagesEndRef: MutableRefObject<HTMLDivElement | null>;
 };
 
@@ -49,17 +50,36 @@ export default function ChatConversationTimeline({
   inChatAssessmentPrompt,
   onCancelInChatAssessment,
   onOpenAssessmentPage,
+  onRetryLastTurn,
   messagesEndRef,
 }: ChatConversationTimelineProps) {
+  const lastIndex = active ? active.messages.length - 1 : -1;
+  const lastMessage = lastIndex >= 0 ? active?.messages[lastIndex] : undefined;
+
+  // One announcement per turn instead of one per streamed chunk. Failures are
+  // already announced by the error card's role="alert".
+  const turnStatus = loading
+    ? "답변을 생성하고 있어요."
+    : lastMessage?.role === "assistant" && lastMessage.status !== "error"
+    ? "답변이 도착했어요."
+    : "";
+
   return (
     <>
+      <p className="sr-only" role="status" aria-live="polite">
+        {turnStatus}
+      </p>
+
       {bootstrapPending && (!active || active.messages.length === 0)
         ? bootstrapFallback || null
         : null}
 
       {active && active.messages.length > 0
         ? active.messages.map((message, index) => (
-            <div key={message.id}>
+            <div
+              key={message.id}
+              aria-label={message.role === "user" ? "내 메시지" : "AI 답변"}
+            >
               {index === 0 ? (
                 <ReferenceData
                   summary={summary}
@@ -73,13 +93,18 @@ export default function ChatConversationTimeline({
               <MessageBubble
                 role={message.role}
                 content={message.content}
+                status={message.status}
                 loadingContextText={
                   message.role === "assistant"
                     ? assistantLoadingMetaByIndex.get(index)?.contextText || ""
                     : ""
                 }
+                // Only the newest turn can be retried: replaying an older one
+                // would discard everything said after it.
+                onRetry={index === lastIndex ? onRetryLastTurn : undefined}
+                retrying={index === lastIndex && loading}
               />
-              {message.role === "assistant" ? (
+              {message.role === "assistant" && message.status !== "error" ? (
                 <RecommendedProductActions content={message.content} />
               ) : null}
             </div>
