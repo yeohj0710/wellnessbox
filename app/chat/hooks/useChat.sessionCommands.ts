@@ -40,6 +40,18 @@ type CreateSessionCommandsInput = {
 
 export function createSessionCommands(input: CreateSessionCommandsInput) {
   function newChat() {
+    // Already sitting on an untouched chat: reuse it. Creating another would
+    // stack identical empty rows in the drawer and spend a second opening
+    // briefing on a conversation the user has not started yet.
+    const current = input.sessions.find(
+      (session) => session.id === input.activeId
+    );
+    if (current && !current.messages.some((message) => message.role === "user")) {
+      input.clearFollowups();
+      input.setInChatAssessment(null);
+      return;
+    }
+
     const created = createNewChatSession({
       sessions: input.sessions,
       actor: {

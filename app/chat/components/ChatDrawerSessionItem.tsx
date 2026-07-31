@@ -75,8 +75,13 @@ export default function ChatDrawerSessionItem({
           )}
         </div>
 
+        {/* The row actions are visible by default; only pointer devices hide
+            them behind hover. Touch has no hover, so renaming and deleting were
+            unreachable - and because the hidden controls kept their hit area, a
+            tap near the row's edge opened the delete dialog with nothing
+            shown. */}
         {!editing && (
-          <div className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+          <div className="flex items-center gap-1 transition-opacity [@media(hover:hover)]:pointer-events-none [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover:pointer-events-auto [@media(hover:hover)]:group-hover:opacity-100 [@media(hover:hover)]:group-focus-within:pointer-events-auto [@media(hover:hover)]:group-focus-within:opacity-100">
             <div
               role="button"
               tabIndex={0}

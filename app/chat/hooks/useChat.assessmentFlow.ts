@@ -147,7 +147,7 @@ export async function handleInChatAssessmentInputFlow(
     input.setInChatAssessment(nextState);
     const nextQuestion = nextState.questions[nextState.currentIndex];
     const nextText = [
-      `${currentQuestion.id} 응답: ${parsed.label}`,
+      `선택하신 답변: ${parsed.label}`,
       "",
       formatAssessmentQuestionPrompt({
         mode: nextState.mode,
@@ -179,7 +179,7 @@ export async function handleInChatAssessmentInputFlow(
         });
 
   const doneText = [
-    `${currentQuestion.id} 응답: ${parsed.label}`,
+    `선택하신 답변: ${parsed.label}`,
     "",
     createAssessmentResultSummary({
       mode: state.mode,

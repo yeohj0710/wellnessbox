@@ -191,11 +191,11 @@ export function createInteractiveCommands(input: CreateInteractiveCommandsInput)
       })
     ) {
       return;
-      }
-      input.lastInteractiveActionRef.current = nextInteractiveActionMark(
-        actionType,
-        now
-      );
+    }
+    input.lastInteractiveActionRef.current = nextInteractiveActionMark(
+      actionType,
+      now
+    );
 
     input.setActionLoading(true);
     try {
