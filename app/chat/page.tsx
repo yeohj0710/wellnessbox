@@ -8,6 +8,7 @@ import ProfileBanner from "./components/ProfileBanner";
 import ChatTopBar from "./components/ChatTopBar";
 import ScrollToBottomButton from "./components/ScrollToBottomButton";
 import useChat from "./hooks/useChat";
+import { CHAT_ACTION_LABELS } from "@/lib/chat/agent-actions";
 import { buildPageAgentContext } from "@/lib/chat/page-agent-context";
 import { buildAssistantLoadingMetaMap } from "@/components/chat/DesktopChatDockPanel.loading";
 
@@ -120,6 +121,31 @@ export default function ChatPage() {
   const assistantLoadingMetaByIndex = useMemo(() => {
     return active ? buildAssistantLoadingMetaMap(active.messages) : new Map();
   }, [active]);
+  const pageQuickActions = useMemo(() => {
+    if (inChatAssessmentPrompt) return interactiveActions;
+
+    const assessmentTypes = new Set([
+      "start_chat_quick_check",
+      "start_chat_assess",
+    ]);
+    const assessmentActions = [
+      {
+        type: "start_chat_quick_check" as const,
+        label: CHAT_ACTION_LABELS.start_chat_quick_check,
+        reason: "페이지 이동 없이 채팅에서 빠른 문답을 시작합니다.",
+      },
+      {
+        type: "start_chat_assess" as const,
+        label: CHAT_ACTION_LABELS.start_chat_assess,
+        reason: "페이지 이동 없이 채팅에서 정밀 문답을 시작합니다.",
+      },
+    ];
+    const remainingActions = interactiveActions.filter(
+      (action) => !assessmentTypes.has(action.type)
+    );
+
+    return [...assessmentActions, ...remainingActions].slice(0, 4);
+  }, [inChatAssessmentPrompt, interactiveActions]);
 
   return (
     <div className="relative flex min-h-[calc(100vh-56px)] w-full flex-col bg-gradient-to-b from-slate-50 to-white">
@@ -230,7 +256,7 @@ export default function ChatPage() {
           showAgentGuide={showAgentGuide}
           agentExamples={agentGuideExamples}
           onSelectAgentExample={(prompt) => sendMessage(prompt)}
-          quickActions={interactiveActions}
+          quickActions={pageQuickActions}
           onSelectQuickAction={handleInteractiveAction}
           onStop={stopStreaming}
         />
