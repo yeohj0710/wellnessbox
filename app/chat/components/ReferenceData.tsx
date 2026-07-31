@@ -95,6 +95,7 @@ export default function ReferenceData({
             ease-out
             [will-change:max-height,opacity,transform]
             group-open:max-h-[1200px]
+            group-open:overflow-y-auto
             group-open:opacity-100
             group-open:translate-y-0
           "
