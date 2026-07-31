@@ -21,6 +21,10 @@ const COPY_FEEDBACK_AUTO_HIDE_MS = 1500;
 
 function buildLoadingHint(contextText: string) {
   const source = contextText.trim();
+  // No preceding question means this is the opening turn - there is no answer
+  // being "organised" yet, so say what is actually happening.
+  if (!source) return "상담을 준비하고 있어요.";
+
   const sourceLower = source.toLowerCase();
 
   const isActionIntent =

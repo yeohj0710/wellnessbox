@@ -146,11 +146,16 @@ export default function ChatPage() {
           // the status line inside the timeline instead.
           aria-live="off"
           aria-label="상담 대화 내용"
+          // No overscroll-contain here. On this route the feed grows and the
+          // document scrolls, so containing overscroll stops the wheel from
+          // chaining to the document and the page cannot be scrolled at all
+          // while the cursor is over the transcript. The dock is different -
+          // its feed is the real scroller, so it keeps overscroll-contain.
           className="
             mx-auto max-w-3xl w-full px-5 sm:px-6 md:px-8 flex-1 pt-4
             pb-[calc(11rem+env(safe-area-inset-bottom))]
             sm:pb-[calc(10rem+env(safe-area-inset-bottom))]
-            overflow-y-auto overscroll-contain
+            overflow-y-auto
           "
           ref={messagesContainerRef}
         >
