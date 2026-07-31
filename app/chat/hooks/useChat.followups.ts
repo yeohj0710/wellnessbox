@@ -13,6 +13,7 @@ import {
   rememberSuggestions,
 } from "./useChat.suggestions";
 import { sortActionsByMemory, type ActionMemoryMap } from "./useChat.actionMemory";
+import { toModelTranscript } from "./useChat.transcript";
 
 type FetchSuggestionsForSessionParams = {
   sessionId: string;
@@ -65,9 +66,11 @@ export async function fetchSuggestionsForSession(
     CHAT_SUGGESTION_COUNT,
     recentSuggestionHistory
   );
-  const recentMessages =
-    params.sessions.find((session) => session.id === params.sessionId)?.messages ??
-    [];
+  // Failed turns hold service copy, not conversation - feeding them to the
+  // suggestion model produces follow-ups about the error message.
+  const recentMessages = toModelTranscript(
+    params.sessions.find((session) => session.id === params.sessionId)?.messages ?? []
+  );
 
   let fromApi: string[] = [];
   try {
@@ -104,9 +107,9 @@ export async function fetchInteractiveActionsForSession(
     return [];
   }
 
-  const recentMessages =
-    params.sessions.find((session) => session.id === params.sessionId)?.messages ??
-    [];
+  const recentMessages = toModelTranscript(
+    params.sessions.find((session) => session.id === params.sessionId)?.messages ?? []
+  );
   const contextSummaryText = params.buildActionContextText(params.sessionId);
   const fallbackRows = sortActionsByMemory(
     buildFallbackInteractiveActions(params.lastAssistantText),
