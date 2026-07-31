@@ -1,7 +1,7 @@
 import db from "@/lib/db";
 
 export const CHAT_MODEL_CONFIG_KEY = "chatModel";
-export const DEFAULT_CHAT_MODEL = "gpt-4o-mini";
+export const DEFAULT_CHAT_MODEL = "gpt-5.6-luna";
 const BASELINE_MODEL_FOR_COST_INDEX = "gpt-4o-mini";
 
 export type ChatModelFamily =
@@ -120,6 +120,14 @@ const CHAT_MODEL_SEEDS: readonly ChatModelSeed[] = [
     description: "GPT-5.2 최신 버전",
     inputUsdPer1M: 2,
     outputUsdPer1M: 8,
+  },
+  {
+    id: "gpt-5.6-luna",
+    label: "GPT-5.6 Luna",
+    family: "gpt-5",
+    description: "GPT-5.6 경제형(기본)",
+    inputUsdPer1M: 0.2,
+    outputUsdPer1M: 1.2,
   },
   {
     id: "gpt-3.5-turbo",

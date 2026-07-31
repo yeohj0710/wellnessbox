@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 
-const DEFAULT_CHAT_MODEL = "gpt-4o-mini";
+const DEFAULT_CHAT_MODEL = "gpt-5.6-luna";
 
 export type ChatModelOption = {
   id: string;
