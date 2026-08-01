@@ -18,6 +18,14 @@ import {
   BUSINESS_SUPPORT_PHONE,
 } from "@/lib/site-identity";
 
+// 서버(UTC)와 클라이언트(KST)가 같은 값을 렌더링하도록 서울 기준 연도를 쓴다.
+function resolveSeoulYear() {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Seoul",
+    year: "numeric",
+  }).format(new Date());
+}
+
 const footerLinks = [
   { href: "/about/terms", label: "이용약관" },
   { href: "/about/privacy", label: "개인정보처리방침" },
@@ -149,7 +157,7 @@ function FooterInner() {
             </div>
 
             <p className="mt-6 text-xs text-slate-500">
-              © 2025 웰니스박스. All rights reserved.
+              © {resolveSeoulYear()} 웰니스박스. All rights reserved.
             </p>
           </div>
 

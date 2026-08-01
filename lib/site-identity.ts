@@ -9,7 +9,7 @@ export const BUSINESS_SUPPORT_PHONE = "02-6241-5530";
 export const BUSINESS_SUPPORT_PHONE_E164 = "+82-2-6241-5530";
 export const BUSINESS_SUPPORT_EMAIL = "contact@wellnessbox.kr";
 export const BUSINESS_ADDRESS =
-  "서울특별시 동대문구 경희대로 26, 2층 211호(회기동, 삼의원창업센터)";
+  "서울특별시 광진구 광나루로 520, 신용보증기금 4층 NEST AI LAB 402호";
 
 export const BUSINESS_INFO_ROWS = [
   `상호명: ${BUSINESS_LEGAL_NAME}`,
