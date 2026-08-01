@@ -9,8 +9,9 @@ const {
 } = require("./lib/dev-server.cjs");
 const { acquireQaLock } = require("./lib/qa-lock.cjs");
 const {
+  assertQaColumnMutationTarget,
   buildAdminPasswordCandidates,
-  deleteColumnPost,
+  cleanupCreatedColumnPosts,
 } = require("./lib/column-admin-api.cjs");
 const {
   runRouteScrollAndColumnCardScenario,
@@ -30,17 +31,17 @@ function pushFailure(output, key, detail) {
 async function cleanupCreatedPosts(baseUrl, context, createdPosts, output) {
   if (!context || createdPosts.length === 0) return;
 
-  const deletedStatuses = [];
-  for (const post of createdPosts) {
-    const deletedStatus = await deleteColumnPost(baseUrl, context, post.id).catch(() => null);
-    deletedStatuses.push({
-      postId: post.id,
-      status: deletedStatus,
-    });
-    if (deletedStatus !== null && ![200, 404].includes(deletedStatus)) {
+  const deletedStatuses = await cleanupCreatedColumnPosts(
+    baseUrl,
+    context,
+    createdPosts
+  );
+  for (const deleted of deletedStatuses) {
+    if (deleted.status !== null && ![200, 404].includes(deleted.status)) {
       pushFailure(output, "column_post_delete_failed", {
-        postId: post.id,
-        status: deletedStatus,
+        postId: deleted.postId,
+        title: deleted.title,
+        status: deleted.status,
       });
     }
   }
@@ -48,6 +49,7 @@ async function cleanupCreatedPosts(baseUrl, context, createdPosts, output) {
 }
 
 async function run() {
+  assertQaColumnMutationTarget(BASE_URL, process.env);
   if (ADMIN_PASSWORD_CANDIDATES.length === 0) {
     throw new Error("ADMIN_PASSWORD is required for qa:route-scroll");
   }
@@ -95,15 +97,15 @@ async function run() {
     });
     const page = await context.newPage();
 
-    const scenario = await runRouteScrollAndColumnCardScenario({
+    await runRouteScrollAndColumnCardScenario({
       page,
       context,
       baseUrl: BASE_URL,
       adminPasswordCandidates: ADMIN_PASSWORD_CANDIDATES,
+      createdPosts,
       output,
       pushFailure,
     });
-    createdPosts.push(...(scenario.createdPosts || []));
   } finally {
     await cleanupCreatedPosts(BASE_URL, context, createdPosts, output);
 

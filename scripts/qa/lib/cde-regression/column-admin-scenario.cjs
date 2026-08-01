@@ -4,10 +4,15 @@ async function runColumnAndAdminCrudScenario(input) {
     context,
     baseUrl,
     adminPasswordCandidates,
+    createdPosts,
     result,
     pushFailure,
     waitFor,
   } = input;
+
+  if (!Array.isArray(createdPosts)) {
+    throw new Error("createdPosts registry is required");
+  }
 
   const columnRes = await page.goto("/column", {
     waitUntil: "networkidle",
@@ -111,6 +116,8 @@ async function runColumnAndAdminCrudScenario(input) {
 
   await page.goto("/admin/column/editor", { waitUntil: "networkidle", timeout: 120000 });
   const title = `qa-auto-${Date.now()}`;
+  const trackedPost = { id: null, slug: null, title };
+  createdPosts.push(trackedPost);
   const titleField = page.getByTestId("column-editor-title");
   const titleFieldReady = await titleField
     .waitFor({ state: "visible", timeout: 15000 })
@@ -188,6 +195,8 @@ async function runColumnAndAdminCrudScenario(input) {
     pushFailure(result.failures, "column_created_post_not_found", null);
     throw new Error("column_created_post_not_found");
   }
+  trackedPost.id = postId;
+  trackedPost.slug = post?.slug || null;
 
   await page.getByTestId("column-editor-publish").click();
   await page.waitForTimeout(1000);

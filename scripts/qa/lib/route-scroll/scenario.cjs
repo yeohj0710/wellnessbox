@@ -45,11 +45,15 @@ async function runRouteScrollAndColumnCardScenario(input) {
     context,
     baseUrl,
     adminPasswordCandidates,
+    createdPosts,
     output,
     pushFailure,
   } = input;
-  const createdPosts = [];
   let detailPath = null;
+
+  if (!Array.isArray(createdPosts)) {
+    throw new Error("createdPosts registry is required");
+  }
 
   const login = await loginAdmin(baseUrl, context, adminPasswordCandidates);
   output.checks.loginStatus = login.status;
@@ -62,6 +66,8 @@ async function runRouteScrollAndColumnCardScenario(input) {
   const createdPostCount = 5;
   for (let index = 0; index < createdPostCount; index += 1) {
     const title = `qa-scroll-card-${Date.now()}-${index + 1}`;
+    const trackedPost = { id: null, slug: null, title };
+    createdPosts.push(trackedPost);
     const created = await createPublishedColumnPost(baseUrl, context, title);
     if (created.status !== 200 || !created.postId || !created.slug) {
       pushFailure(output, "column_post_create_failed", {
@@ -71,11 +77,8 @@ async function runRouteScrollAndColumnCardScenario(input) {
       });
       throw new Error(`column post create failed at index ${index}`);
     }
-    createdPosts.push({
-      id: created.postId,
-      slug: created.slug,
-      title,
-    });
+    trackedPost.id = created.postId;
+    trackedPost.slug = created.slug;
   }
   const targetPost = createdPosts[0];
   detailPath = `/column/${encodeURIComponent(targetPost.slug)}`;
