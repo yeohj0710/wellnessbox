@@ -103,9 +103,9 @@ function PopularIngredientsSectionFallback() {
               <p className="hidden text-[11px] font-semibold tracking-[0.22em] text-[#4568F5]">
                 POPULAR INGREDIENTS
               </p>
-              <h1 className="text-xl font-extrabold tracking-tight bg-gradient-to-r from-[#3B82F6] to-[#6C4DFF] bg-clip-text text-transparent">
+              <h2 className="text-xl font-extrabold tracking-tight bg-gradient-to-r from-[#3B82F6] to-[#6C4DFF] bg-clip-text text-transparent">
                 인기 성분
-              </h1>
+              </h2>
               <p className="hidden mt-2 text-sm leading-6 text-[#5D6984]">
                 많이 찾는 성분부터 먼저 둘러보고, 바로 제품 흐름으로
                 이어지도록 가볍게 정리했어요.

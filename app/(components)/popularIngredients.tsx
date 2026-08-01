@@ -28,6 +28,8 @@ interface PopularIngredientsProps {
   onSelectCategory: (target: number | string) => void;
   onCategoryIntent?: (target: number | string) => void;
   initialCategories?: PopularCategory[];
+  /** 이 섹션이 첫 화면에 바로 보이는 페이지에서만 켠다. 첫 카드 이미지를 LCP로 미리 불러온다. */
+  prioritizeImages?: boolean;
 }
 
 type PopularCategoryBootstrap = {
@@ -211,6 +213,7 @@ export default function PopularIngredients({
   onSelectCategory,
   onCategoryIntent,
   initialCategories = [],
+  prioritizeImages = false,
 }: PopularIngredientsProps) {
   const [bootstrap] = useState<PopularCategoryBootstrap>(() =>
     resolveInitialPopularCategories(initialCategories)
@@ -285,9 +288,9 @@ export default function PopularIngredients({
               <p className="hidden text-[11px] font-semibold tracking-[0.22em] text-[#4568F5]">
                 POPULAR INGREDIENTS
               </p>
-              <h1 className="text-xl font-extrabold tracking-tight bg-gradient-to-r from-[#3B82F6] to-[#6C4DFF] bg-clip-text text-transparent">
+              <h2 className="text-xl font-extrabold tracking-tight bg-gradient-to-r from-[#3B82F6] to-[#6C4DFF] bg-clip-text text-transparent">
                 인기 성분
-              </h1>
+              </h2>
               <p className="hidden mt-2 text-sm leading-6 text-[#5D6984]">
                 많이 찾는 성분부터 먼저 둘러보고, 바로 제품 흐름으로
                 이어지도록 가볍게 정리했어요.
@@ -357,6 +360,7 @@ export default function PopularIngredients({
                         alt={category.name || "Category"}
                         fill
                         sizes="512px"
+                        priority={prioritizeImages && index < 2}
                         unoptimized={shouldBypassNextImageOptimizer(
                           category.image
                         )}
@@ -399,11 +403,8 @@ export default function PopularIngredients({
 
                 <div className="flex items-center justify-between gap-3 border-t border-[#E9EEF9] bg-white px-4 py-3">
                   <div className="min-w-0">
-                    <div className="text-sm font-semibold text-[#223150]">
+                    <div className="line-clamp-1 text-sm font-semibold text-[#223150]">
                       추천 제품 보기
-                    </div>
-                    <div className="mt-1 line-clamp-1 text-[11px] text-[#72819E]">
-                      {category.name}
                     </div>
                   </div>
                   <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#EEF2FF] text-[#4568F5] transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5">

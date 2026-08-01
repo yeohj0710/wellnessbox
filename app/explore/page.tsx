@@ -37,7 +37,11 @@ async function ExplorePopularIngredientsSection({
 }) {
   const { categories } = await homeDataPromise;
   return (
-    <PopularIngredientsNav basePath="/explore" initialCategories={categories} />
+    <PopularIngredientsNav
+      basePath="/explore"
+      initialCategories={categories}
+      prioritizeImages
+    />
   );
 }
 
@@ -60,6 +64,17 @@ export default function ExplorePage() {
 
   return (
     <div className="w-full overflow-x-hidden">
+      <header className="mx-auto w-full max-w-[640px] px-4 pt-6">
+        <p className="text-[11px] font-semibold tracking-[0.22em] text-[#4568F5]">
+          BROWSE
+        </p>
+        <h1 className="mt-2 break-keep text-[1.45rem] font-black leading-[1.2] tracking-tight text-slate-900">
+          인기 성분과 영양제를 한 번에 둘러보세요
+        </h1>
+        <p className="mt-2 break-keep text-sm leading-6 text-slate-500">
+          많이 찾는 성분부터 보고, 바로 제품으로 이어서 확인하실 수 있어요.
+        </p>
+      </header>
       <Suspense fallback={<CardSectionFallback />}>
         <ExplorePopularIngredientsSection homeDataPromise={homeDataPromise} />
       </Suspense>

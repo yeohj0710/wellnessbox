@@ -102,11 +102,11 @@ export default function SupplementRanking({
   return (
     <section className="w-full max-w-[640px] mx-auto mt-8">
       <div className="px-4">
-        <h1 className="text-xl font-extrabold tracking-tight">
+        <h2 className="text-xl font-extrabold tracking-tight">
           <span className="bg-gradient-to-r from-[#3B82F6] to-[#6C4DFF] bg-clip-text text-transparent">
             인기 영양제
           </span>
-        </h1>
+        </h2>
       </div>
 
       {isLoading ? (

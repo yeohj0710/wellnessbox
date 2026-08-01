@@ -7,6 +7,17 @@ interface HeroSectionProps {
   onSelect7Day: () => void;
 }
 
+const PARTNER_LOGOS = [
+  { file: "1.svg", name: "DDM 청년창업센터 유니콘", width: 136, height: 31 },
+  { file: "2.svg", name: "DRx Solution", width: 122, height: 31 },
+  { file: "3.svg", name: "NPK Solutions", width: 159, height: 15 },
+  { file: "4.svg", name: "infobank", width: 105, height: 19 },
+  { file: "5.svg", name: "연세대학교 창업지원단", width: 172, height: 31 },
+  { file: "6.svg", name: "광운대학교", width: 32, height: 31 },
+  { file: "7.svg", name: "경희대학교 캠퍼스타운", width: 31, height: 31 },
+  { file: "8.svg", name: "위드팜", width: 94, height: 31 },
+] as const;
+
 export default function HeroSection({ onSelect7Day }: HeroSectionProps) {
   return (
     <section
@@ -28,19 +39,10 @@ export default function HeroSection({ onSelect7Day }: HeroSectionProps) {
         </div>
 
         <h1 className="mt-4 sm:mt-6 text-center text-[#0F1222] font-extrabold tracking-tight flex flex-col items-center gap-2 sm:gap-3 md:gap-4">
-          <span className="block sm:hidden leading-[1.4] text-3xl">
-            내 몸에 딱 맞는
-            <br />
+          <span className="block text-3xl leading-[1.4] sm:text-4xl sm:leading-none md:text-5xl lg:text-7xl">
+            내 몸에 딱 맞는{" "}
+            <br className="sm:hidden" />
             “AI+약사 설계”
-          </span>
-          <span className="hidden sm:block md:hidden leading-none text-4xl">
-            내 몸에 딱 맞는 “AI+약사 설계”
-          </span>
-          <span className="hidden md:block lg:hidden leading-none text-5xl">
-            내 몸에 딱 맞는 “AI+약사 설계”
-          </span>
-          <span className="hidden lg:block leading-none text-7xl">
-            내 몸에 딱 맞는 “AI+약사 설계”
           </span>
           <span className="leading-none bg-clip-text text-transparent bg-gradient-to-r from-[#1E40FF] via-[#3B5BFF] to-[#6C4DFF] text-3xl sm:text-4xl md:text-5xl lg:text-7xl">
             Premium 건강 솔루션
@@ -66,17 +68,20 @@ export default function HeroSection({ onSelect7Day }: HeroSectionProps) {
         </div>
 
         <div className="mt-10 sm:mt-14">
-          <ul className="flex flex-wrap items-center justify-center gap-x-6 sm:gap-x-8 md:gap-x-10 gap-y-5 sm:gap-y-6">
-            {Array.from({ length: 8 }, (_, i) => (
-              <li key={i} className="shrink-0">
+          <p className="text-center text-[11px] font-semibold tracking-[0.18em] text-[#8E93A8]">
+            함께하는 기관 · 파트너
+          </p>
+          <ul className="mt-5 flex flex-wrap items-center justify-center gap-x-6 sm:gap-x-8 md:gap-x-10 gap-y-5 sm:gap-y-6">
+            {PARTNER_LOGOS.map((logo) => (
+              <li key={logo.file} className="shrink-0">
                 <Image
-                  src={`/landingPage2/logos/${i + 1}.svg`}
-                  alt=""
-                  width={0}
-                  height={0}
-                  sizes="100vw"
+                  src={`/landingPage2/logos/${logo.file}`}
+                  alt={logo.name}
+                  title={logo.name}
+                  width={logo.width}
+                  height={logo.height}
                   unoptimized
-                  className="block h-[20px] sm:h-[22px] md:h-6 lg:h-7 w-auto brightness-0 invert"
+                  className="block h-[20px] sm:h-[22px] md:h-6 lg:h-7 w-auto brightness-0 opacity-45 transition-opacity duration-200 hover:opacity-70"
                 />
               </li>
             ))}

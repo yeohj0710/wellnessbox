@@ -10,6 +10,7 @@ import { enqueueRoutePrefetch } from "@/lib/navigation/prefetch";
 interface PopularIngredientsNavProps {
   basePath: string;
   initialCategories?: any[];
+  prioritizeImages?: boolean;
 }
 
 type PopularCategoryTarget = number | string;
@@ -17,6 +18,7 @@ type PopularCategoryTarget = number | string;
 export default function PopularIngredientsNav({
   basePath,
   initialCategories = [],
+  prioritizeImages = false,
 }: PopularIngredientsNavProps) {
   const router = useRouter();
   const { showLoading } = useLoading();
@@ -54,6 +56,7 @@ export default function PopularIngredientsNav({
       onSelectCategory={handleSelectCategory}
       onCategoryIntent={handleCategoryIntent}
       initialCategories={initialCategories}
+      prioritizeImages={prioritizeImages}
     />
   );
 }
