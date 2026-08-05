@@ -121,12 +121,11 @@ export default function SupplementRanking({
         <div className="grid grid-cols-2 gap-3 p-3 sm:grid-cols-3 sm:gap-4 sm:p-4">
           {products.map((product, index) => (
               <button
+                type="button"
                 key={product.id}
                 onPointerEnter={() => scheduleProductIntent(product.id)}
-                onMouseEnter={() => scheduleProductIntent(product.id)}
                 onFocus={() => onProductIntent?.(product.id)}
                 onPointerLeave={clearIntentTimer}
-                onMouseLeave={clearIntentTimer}
                 onBlur={clearIntentTimer}
                 onClick={() => {
                   clearIntentTimer();

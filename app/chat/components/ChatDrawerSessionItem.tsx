@@ -126,6 +126,7 @@ export default function ChatDrawerSessionItem({
         {menuOpen && !editing && (
           <div className="absolute right-6 top-9 z-10 w-36 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-lg">
             <button
+              type="button"
               className="block w-full px-4 py-2 text-left text-sm text-slate-700 hover:bg-slate-50"
               onClick={(e) => {
                 e.stopPropagation();

@@ -31,11 +31,12 @@ export type ChatStreamReadResult = {
  * Splits the trailing failure marker off a completed stream body.
  */
 export function parseChatStreamPayload(raw: string): ChatStreamReadResult {
-  const markerIndex = raw.indexOf(CHAT_STREAM_FAILURE_MARKER);
-  if (markerIndex < 0) return { text: raw, failed: false };
+  if (!raw.endsWith(CHAT_STREAM_FAILURE_MARKER)) {
+    return { text: raw, failed: false };
+  }
 
   return {
-    text: raw.slice(0, markerIndex),
+    text: raw.slice(0, -CHAT_STREAM_FAILURE_MARKER.length),
     failed: true,
   };
 }

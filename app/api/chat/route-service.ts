@@ -289,9 +289,8 @@ export async function buildChatStreamResponse(input: {
 }
 
 export function buildChatRouteUnhandledErrorResponse(error: unknown) {
-  const message =
-    error instanceof Error && error.message ? error.message : "Unknown error";
-  return new NextResponse(message, {
+  logStreamFailure(error);
+  return new NextResponse(CHAT_STREAM_MESSAGES.failure, {
     status: 500,
     headers: { "Content-Type": "text/plain; charset=utf-8" },
   });

@@ -27,10 +27,13 @@ function parseTitleInput(rawBody: unknown): TitleParseResult {
     rawBody && typeof rawBody === "object" ? (rawBody as Record<string, unknown>) : {};
 
   const firstUserMessage =
-    typeof body.firstUserMessage === "string" ? body.firstUserMessage : "";
+    typeof body.firstUserMessage === "string" ? body.firstUserMessage.trim() : "";
   const firstAssistantMessage =
-    typeof body.firstAssistantMessage === "string" ? body.firstAssistantMessage : "";
-  const assistantReply = typeof body.assistantReply === "string" ? body.assistantReply : "";
+    typeof body.firstAssistantMessage === "string"
+      ? body.firstAssistantMessage.trim()
+      : "";
+  const assistantReply =
+    typeof body.assistantReply === "string" ? body.assistantReply.trim() : "";
 
   if (!firstUserMessage || !firstAssistantMessage || !assistantReply) {
     return { ok: false, error: "Missing messages", status: 400 };

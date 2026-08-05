@@ -328,12 +328,11 @@ export default function PopularIngredients({
 
             return (
               <button
+                type="button"
                 key={category.id ?? category.name}
                 onPointerEnter={() => scheduleCategoryIntent(category)}
-                onMouseEnter={() => scheduleCategoryIntent(category)}
                 onFocus={() => onCategoryIntent?.(category.id ?? category.name)}
                 onPointerLeave={clearIntentTimer}
-                onMouseLeave={clearIntentTimer}
                 onBlur={clearIntentTimer}
                 onClick={() => {
                   clearIntentTimer();
