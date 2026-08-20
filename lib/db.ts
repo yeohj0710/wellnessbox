@@ -1,8 +1,9 @@
-import { PrismaClient } from "@prisma/client";
+import { Prisma, PrismaClient } from "@prisma/client";
 import {
   ensurePrismaEnvConfigured,
   resolvePrismaEnvErrorMessage,
 } from "@/lib/db-env";
+import { normalizePrismaConnectionUrl } from "@/lib/prisma-connection-url";
 
 const globalForPrisma = globalThis as unknown as {
   prisma?: PrismaClient;
@@ -10,6 +11,7 @@ const globalForPrisma = globalThis as unknown as {
 };
 
 const prismaEnv = ensurePrismaEnvConfigured();
+const runtimeDatabaseUrl = normalizePrismaConnectionUrl(process.env.DATABASE_URL ?? "");
 
 const enableQueryLogging =
   process.env.NODE_ENV !== "production" &&
@@ -22,13 +24,14 @@ function createPrismaClient() {
     throw new Error(prismaEnv.message || "Prisma 환경변수 설정이 올바르지 않습니다.");
   }
 
-  return new PrismaClient(
-    enableQueryLogging
-      ? {
-          log: [{ emit: "event", level: "query" }],
-        }
-      : undefined
-  );
+  const options: Prisma.PrismaClientOptions = {};
+  if (runtimeDatabaseUrl) {
+    options.datasources = { db: { url: runtimeDatabaseUrl } };
+  }
+  if (enableQueryLogging) {
+    options.log = [{ emit: "event", level: "query" }];
+  }
+  return new PrismaClient(options);
 }
 
 function attachQueryLogging(client: PrismaClient) {
