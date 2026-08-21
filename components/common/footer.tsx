@@ -30,6 +30,7 @@ const footerLinks = [
   { href: "/about/terms", label: "이용약관" },
   { href: "/about/privacy", label: "개인정보처리방침" },
   { href: "/about/contact", label: "문의하기" },
+  { href: "/about/adverse-event", label: "이상반응 신고" },
 ];
 
 const operatorLinks = [

@@ -77,7 +77,7 @@ model Order {
   requestNotes     String?
   entrancePassword String?
   directions       String?
-  paymentId        String?         @unique
+  paymentId        String?        @unique
   transactionType  String?
   txId             String?
   totalPrice       Int?
@@ -496,29 +496,29 @@ model B2bEmployee {
 }
 
 model B2bEmployeeSyncState {
-  employeeId         String      @id
-  appUserId          String
-  periodKey          String?
-  status             String      @default("idle")
-  step               String?
-  forceRefresh       Boolean     @default(false)
-  requestedAt        DateTime?
-  startedAt          DateTime?
-  lastAttemptAt      DateTime?
-  nextRetryAt        DateTime?
-  completedAt        DateTime?
-  attemptCount       Int         @default(0)
-  runnerToken        String?
-  runnerHeartbeatAt  DateTime?
-  lastErrorCode      String?
-  lastErrorMessage   String?
-  lastResultSource   String?
-  lastSnapshotId     String?
-  lastReportId       String?
-  createdAt          DateTime    @default(now())
-  updatedAt          DateTime    @default(now()) @updatedAt
-  employee           B2bEmployee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
-  appUser            AppUser     @relation(fields: [appUserId], references: [id], onDelete: Cascade)
+  employeeId        String      @id
+  appUserId         String
+  periodKey         String?
+  status            String      @default("idle")
+  step              String?
+  forceRefresh      Boolean     @default(false)
+  requestedAt       DateTime?
+  startedAt         DateTime?
+  lastAttemptAt     DateTime?
+  nextRetryAt       DateTime?
+  completedAt       DateTime?
+  attemptCount      Int         @default(0)
+  runnerToken       String?
+  runnerHeartbeatAt DateTime?
+  lastErrorCode     String?
+  lastErrorMessage  String?
+  lastResultSource  String?
+  lastSnapshotId    String?
+  lastReportId      String?
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @default(now()) @updatedAt
+  employee          B2bEmployee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  appUser           AppUser     @relation(fields: [appUserId], references: [id], onDelete: Cascade)
 
   @@index([appUserId, updatedAt])
   @@index([status, nextRetryAt, updatedAt])
@@ -763,12 +763,12 @@ model rag_chunks {
 }
 
 model TipsLabSession {
-  id            String         @id @default(cuid())
+  id            String            @id @default(cuid())
   state         String
   profile       Json
-  consentScopes String[]       @default([])
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @default(now()) @updatedAt
+  consentScopes String[]          @default([])
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @default(now()) @updatedAt
   events        TipsLabEvent[]
   artifacts     TipsLabArtifact[]
   workItems     TipsLabWorkItem[]
@@ -891,4 +891,46 @@ enum PaytenPocValidationStage {
   PILOT_RESERVED
   CONVERTED
   CLOSED_LOST
+}
+
+/// 건강기능식품 복용 후 이상반응 신고. KPI-6(연 5건 이하) 집계의 원천이다.
+/// 엔진 추천으로 복용한 건과 그렇지 않은 건을 나눠 저장한다. 지표 정의가
+/// "엔진 추천 건강기능식품 복용으로 인한" 이상반응이라 둘을 섞으면 안 된다.
+model AdverseEventReport {
+  id                      String                   @id @default(cuid())
+  submittedAt             DateTime                 @default(now())
+  clientId                String?
+  appUserId               String?
+  productName             String
+  symptomText             String
+  severity                AdverseEventSeverity
+  onsetAt                 DateTime?
+  stillTaking             Boolean                  @default(false)
+  relatedToRecommendation Boolean                  @default(false)
+  orderId                 String?
+  contactEmail            String?
+  contactPhone            String?
+  privacyConsented        Boolean                  @default(false)
+  status                  AdverseEventReportStatus @default(RECEIVED)
+  reviewedAt              DateTime?
+  reviewNote              String?
+  forwardedToRndAt        DateTime?
+  rndCaseId               String?                  @unique
+
+  @@index([submittedAt])
+  @@index([severity, status])
+  @@index([relatedToRecommendation, submittedAt])
+}
+
+enum AdverseEventSeverity {
+  MILD
+  MODERATE
+  SERIOUS
+}
+
+enum AdverseEventReportStatus {
+  RECEIVED
+  UNDER_REVIEW
+  ESCALATED
+  CLOSED
 }
