@@ -934,3 +934,51 @@ enum AdverseEventReportStatus {
   ESCALATED
   CLOSED
 }
+
+/// 복용 전후 환자보고결과(PRO). KPI-2(효과 개선도 SCGI) 측정의 원천이다.
+///
+/// 지표 정의가 "개인 i의 복용 전·후 수치화된 효과 측정치"이고 통과 조건이
+/// "복용 전·후 PRO 최소 100쌍, 평균 0pp 초과"다. 합성 자료로는 채울 수 없다.
+/// 3차년도에 측정하므로 표본은 지금부터 쌓아야 한다.
+///
+/// 한 참여자의 전(BASELINE)과 후(FOLLOWUP)를 잇는 열쇠는 participantToken 이다.
+/// 이름이나 연락처를 새로 받지 않는다. 짝을 지을 수 있으면 그것으로 충분하다.
+model ProOutcomeResponse {
+  id                String          @id @default(cuid())
+  submittedAt       DateTime        @default(now())
+  /// 전후를 잇는 익명 열쇠. 사람을 식별하려는 값이 아니라 짝을 짓기 위한 값이다.
+  participantToken  String
+  phase             ProOutcomePhase
+  /// 참여자가 개선하려는 목표. 성분이 아니라 상태로 적는다(수면, 피로 등).
+  goalKey           String
+  /// 목표 상태 자기평가 0~10. 값이 클수록 좋다. 표준화 전 원점수다.
+  goalScore         Int
+  /// 전반적 컨디션 자기평가 0~10. 목표와 무관한 변화가 섞이는지 보는 대조 문항이다.
+  generalScore      Int
+  /// 수면, 소화, 활력 세 축 0~10. 목표가 달라도 비교할 수 있게 고정한다.
+  sleepScore        Int
+  digestionScore    Int
+  energyScore       Int
+  /// 후속 응답에만 있다. 실제로 며칠 복용했는지. 복용을 안 했으면 짝에서 뺀다.
+  daysTaken         Int?
+  adherencePercent  Int?
+  note              String?
+  /// 연구 이용 동의. 없으면 KPI 집계에 넣지 않는다.
+  researchConsented Boolean         @default(false)
+  consentVersion    String?
+  clientId          String?
+  appUserId         String?
+  orderId           String?
+  /// 집계에서 제외된 응답과 그 이유. 제외를 조용히 하지 않기 위한 자리다.
+  excludedReason    String?
+
+  @@unique([participantToken, phase])
+  @@index([submittedAt])
+  @@index([phase, researchConsented])
+  @@index([goalKey])
+}
+
+enum ProOutcomePhase {
+  BASELINE
+  FOLLOWUP
+}
