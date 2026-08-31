@@ -22,6 +22,12 @@ import {
 /** 후속 응답이 이만큼도 안 되면 복용했다고 보기 어렵다. */
 const MIN_DAYS_TAKEN = 7;
 const MIN_ADHERENCE_PERCENT = 50;
+/**
+ * 자기보고 복용 일수와 실제 접수 간격이 이만큼 넘게 어긋나면 뺀다.
+ * 두 응답을 같은 날 내면서 14일 복용했다고 적으면 복용 전 점수가 기억이 된다.
+ * 하루치는 봐준다. 아침에 못 낸 복용 전 설문을 저녁에 같이 내는 식은 정상이다.
+ */
+const MAX_SELF_REPORT_GAP_DAYS = 1;
 
 function selftest(): number {
   const failures: string[] = [];
@@ -94,6 +100,7 @@ async function report(): Promise<number> {
         goalScore: true,
         daysTaken: true,
         adherencePercent: true,
+        submittedAt: true,
       },
     });
 
@@ -115,6 +122,7 @@ async function report(): Promise<number> {
       goalChanged: 0,
       tooFewDays: 0,
       lowAdherence: 0,
+      selfReportExceedsElapsed: 0,
     };
 
     for (const [token, entry] of byToken) {
@@ -137,6 +145,14 @@ async function report(): Promise<number> {
       }
       if ((entry.followup.adherencePercent ?? 0) < MIN_ADHERENCE_PERCENT) {
         excluded.lowAdherence += 1;
+        continue;
+      }
+      // 적어 낸 복용 일수가 실제 접수 간격보다 길면 복용 전 점수가 잰 값이 아니라 기억이다.
+      const elapsedDays =
+        (entry.followup.submittedAt.getTime() - entry.baseline.submittedAt.getTime()) /
+        86_400_000;
+      if ((entry.followup.daysTaken ?? 0) - elapsedDays > MAX_SELF_REPORT_GAP_DAYS) {
+        excluded.selfReportExceedsElapsed += 1;
         continue;
       }
       pairs.push({
