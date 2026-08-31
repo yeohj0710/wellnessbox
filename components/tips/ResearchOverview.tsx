@@ -1,12 +1,38 @@
 "use client";
 
 import researchJson from "@/data/tips/interim-research-summary.json";
+import sealedJson from "@/data/tips/sealed-kpi-measurement.json";
 import type { ResearchSummary } from "./research-types";
 import styles from "./interim.module.css";
 import DatasetEvaluationWorkbench from "./DatasetEvaluationWorkbench";
 import { useState } from "react";
 
 const research = researchJson as ResearchSummary;
+
+type SealedIndicator = {
+  id: string;
+  state: "MEASURED" | "COLLECTING" | "ACCUMULATING" | "NOT_STARTED";
+  measuredPct: number | null;
+  targetPct: number | null;
+  targetMet: boolean;
+  caseCount: number;
+  measuredAt: string | null;
+  detail?: string;
+};
+type SealedSnapshot = { latestMeasuredAt: string | null; note: string; indicators: SealedIndicator[] };
+const sealed = sealedJson as SealedSnapshot;
+const sealedById = Object.fromEntries(sealed.indicators.map((item) => [item.id, item])) as Record<string, SealedIndicator>;
+const SEALED_STATE_LABEL: Record<SealedIndicator["state"], string> = {
+  MEASURED: "봉인 정답 100건",
+  COLLECTING: "표본 모으는 중",
+  ACCUMULATING: "12개월 창 축적 중",
+  NOT_STARTED: "미착수",
+};
+
+function formatMeasuredAt(value: string | null) {
+  if (!value) return "";
+  return value.slice(0, 10).replace(/-/g, ".");
+}
 const splits = [
   ["학습", research.dataset.splits.train, "train"],
   ["검증", research.dataset.splits.validation, "validation"],
@@ -83,20 +109,33 @@ export default function ResearchOverview({ onNavigate }: { onNavigate: (stage: n
       </div>
       {verificationError&&<p className={styles.datasetError}>{verificationError}</p>}
       <div className={styles.kpiEvaluationTable}>
-        <div className={styles.kpiEvaluationHead} aria-hidden="true"><span>성과지표</span><span>측정·평가 방법</span><span>판정 기준</span><span>이번 실행 결과</span><span>직접 평가</span></div>
+        <div className={styles.kpiEvaluationHead} aria-hidden="true"><span>성과지표</span><span>측정·평가 방법</span><span>판정 기준</span><span>봉인 실측</span><span>프록시 재실행</span><span>직접 평가</span></div>
         {research.kpis.map((kpi) => {
           const path = evaluationPaths[kpi.id];
           const current=currentResults[kpi.id];
+          const sealedRow=sealedById[kpi.id];
           return <article key={kpi.id} className={styles.kpiEvaluationRow}>
             <div className={styles.kpiIdentity}><span>{kpi.id}</span><strong>{kpi.name}</strong><small>n={formatNumber(kpi.n)}</small></div>
             <div className={styles.kpiMethod}><strong>{path.target}</strong><span>{path.method}</span></div>
             <div className={styles.kpiCriterion}><small>계획 기준</small><strong>{kpi.threshold}</strong><span>평가 기준 {kpi.guardband}</span></div>
+            <div className={styles.kpiSealed}>
+              <small>{SEALED_STATE_LABEL[sealedRow?.state ?? "NOT_STARTED"]}</small>
+              <strong>{sealedRow?.measuredPct != null ? `${sealedRow.measuredPct.toFixed(2)}%` : "미측정"}</strong>
+              {sealedRow?.measuredPct != null
+                ? <span data-pass={sealedRow.targetMet}>{sealedRow.targetMet ? "기준 충족" : "기준 미충족"}</span>
+                : <span data-pending="true">{sealedRow?.detail ?? "실사용자 자료 필요"}</span>}
+              {sealedRow?.measuredAt ? <small>{formatMeasuredAt(sealedRow.measuredAt)} 측정</small> : null}
+            </div>
             <div className={styles.kpiObserved}><small>{current?`${formatNumber(current.evaluated)}건 현재 재계산`:`직전 산출물 ${kpi.displayValue}`}</small><strong>{current?current.display:"실행 전"}</strong><span data-pass={current?.passed??false} data-pending={!current}>{current?(current.passed?"기준 충족":"기준 미충족"):"재평가 필요"}</span>{current&&<small>{current.detail}</small>}</div>
             <button type="button" onClick={() => onNavigate(path.stage)}>{path.action}</button>
           </article>;
         })}
       </div>
-      <p className={styles.kpiFootnote}>KPI-1의 100.00%는 독립 프록시 시험 5,000건의 추천 목록 일치율입니다. KPI-3의 Agent 판단·실행 성능과는 별도로 산출됩니다.</p>
+      <p className={styles.kpiFootnote}>
+        <b>봉인 실측</b>은 미리 봉인해 둔 정답 100건으로 잰 값입니다. 연구 기간 내부 측정값이고, 연구가 끝나면 공인시험기관 검증을 따로 받습니다.
+        <b> 프록시 재실행</b>은 생성기가 만든 답을 생성기가 맞힌 결과라 성과지표로 읽으면 안 됩니다. 두 값이 크게 다른 지표가 있습니다.
+        {sealed.latestMeasuredAt && ` 가장 최근 봉인 측정은 ${formatMeasuredAt(sealed.latestMeasuredAt)}입니다.`}
+      </p>
     </section>
   );
 }
