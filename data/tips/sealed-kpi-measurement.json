@@ -1,17 +1,17 @@
 {
   "schemaVersion": "sealed_kpi_snapshot_v1",
   "source": "wellnessbox-rnd/data/original_plan/kpi/measurements",
-  "latestMeasuredAt": "2026-08-31T03:22:19.002360Z",
+  "latestMeasuredAt": "2026-08-31T05:48:14.295745Z",
   "note": "봉인 정답 100건으로 잰 연구 기간 내부 측정값이다. 같은 화면의 프록시 값은 생성기가 만든 답을 생성기가 맞힌 결과라 지표로 읽으면 안 된다. 연구 종료 후 공인시험기관 검증은 별도다.",
   "indicators": [
     {
       "id": "KPI-1",
       "state": "MEASURED",
-      "measuredPct": 51.08,
+      "measuredPct": 49.58,
       "targetPct": 80.0,
       "targetMet": false,
       "caseCount": 100,
-      "measuredAt": "2026-08-24T09:37:08.204403Z",
+      "measuredAt": "2026-08-31T05:48:14.295745Z",
       "sealIntact": true,
       "environment": "research_phase_internal_measurement"
     },
@@ -22,7 +22,7 @@
       "targetPct": 80.0,
       "targetMet": true,
       "caseCount": 100,
-      "measuredAt": "2026-08-24T09:37:11.454137Z",
+      "measuredAt": "2026-08-31T05:36:12.000475Z",
       "sealIntact": true,
       "environment": "research_phase_internal_measurement"
     },
@@ -40,11 +40,11 @@
     {
       "id": "KPI-5",
       "state": "MEASURED",
-      "measuredPct": 81.0,
+      "measuredPct": 96.0,
       "targetPct": 95.0,
-      "targetMet": false,
+      "targetMet": true,
       "caseCount": 100,
-      "measuredAt": "2026-08-24T09:37:19.196799Z",
+      "measuredAt": "2026-08-31T05:42:55.487945Z",
       "sealIntact": true,
       "environment": "research_phase_internal_measurement"
     },
