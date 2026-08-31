@@ -4,6 +4,14 @@ import { ProOutcomePhase } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
 import db from "@/lib/db";
 import { resolveActorForRequest } from "@/lib/server/actor";
+import {
+  PRO_CONSENT_VERSION,
+  PRO_GOAL_KEYS,
+  PRO_TOKEN_MAX_LENGTH,
+  PRO_TOKEN_MIN_LENGTH,
+} from "@/lib/server/pro-outcome-constants";
+
+export { PRO_CONSENT_VERSION, PRO_GOAL_KEYS };
 
 /**
  * 복용 전후 PRO 접수. KPI-2(효과 개선도) 표본을 쌓는 경로다.
@@ -12,26 +20,11 @@ import { resolveActorForRequest } from "@/lib/server/actor";
  * 짝짓기는 participantToken 하나로 한다.
  */
 
-const MAX_TOKEN_LENGTH = 64;
-const MIN_TOKEN_LENGTH = 16;
+const MAX_TOKEN_LENGTH = PRO_TOKEN_MAX_LENGTH;
+const MIN_TOKEN_LENGTH = PRO_TOKEN_MIN_LENGTH;
 const MAX_GOAL_KEY_LENGTH = 40;
 const MAX_NOTE_LENGTH = 500;
 const MAX_ORDER_ID_LENGTH = 100;
-
-/** 지금 받고 있는 동의문 판. 문구가 바뀌면 이 값을 올리고 옛 판은 그대로 둔다. */
-export const PRO_CONSENT_VERSION = "pro-consent-2026-08-25";
-
-/** 목표는 성분이 아니라 상태로 받는다. 성분으로 받으면 엔진 추천을 되묻는 꼴이 된다. */
-export const PRO_GOAL_KEYS = [
-  "sleep",
-  "fatigue",
-  "digestion",
-  "immunity",
-  "joint",
-  "stress",
-  "blood_sugar",
-  "other",
-] as const;
 
 const GOAL_KEY_SET = new Set<string>(PRO_GOAL_KEYS);
 const PHASE_SET = new Set<string>(Object.values(ProOutcomePhase));
